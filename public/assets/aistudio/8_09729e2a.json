@@ -1,0 +1,4256 @@
+{
+  "id": "my-family-tree",
+  "title": "Моє родове дерево",
+  "description": "Хронологічне родове дерево",
+  "createdAt": "2026-11-07T13:01:33.588Z",
+  "updatedAt": "2026-11-08T20:21:03.306Z",
+  "selectedPersonId": "p-1794268387326-mq3jr",
+  "persons": {
+    "p-1794076499848": {
+      "id": "p-1794076499848",
+      "firstName": "Андрій",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "07.06.1993",
+      "birthDate": "07.06.1993",
+      "birthDay": "07",
+      "birthMonth": "06",
+      "birthYear": "1993",
+      "isDeceased": false,
+      "birthPlace": "м. Борислав",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "avatarUrl": "/uploads/de39f3d16a27fe8d36e7.jpg",
+      "parents": [
+        "p-1794076799927",
+        "p-1794076905516"
+      ],
+      "spouses": [
+        "p-1794264918708-5i2mj"
+      ],
+      "children": [],
+      "siblings": [
+        "p-1794076602697"
+      ],
+      "x": 451,
+      "y": 3997,
+      "isChronologicallyPinned": false
+    },
+    "p-1794076602697": {
+      "id": "p-1794076602697",
+      "firstName": "Галина",
+      "lastName": "Дидинська",
+      "gender": "female",
+      "yearsDisplay": "25.07.1985",
+      "birthDate": "25.07.1985",
+      "birthDay": "25",
+      "birthMonth": "07",
+      "birthYear": "1985",
+      "isDeceased": false,
+      "birthPlace": "м. Борислав",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "avatarUrl": "/uploads/c050e293c688e567023c.jpg",
+      "parents": [
+        "p-1794076905516",
+        "p-1794076799927"
+      ],
+      "spouses": [
+        "p-1794077002037",
+        "p-1794264952973-2wwr1"
+      ],
+      "children": [
+        "p-1794264165377-h9se5",
+        "p-1794264202777-9v1t7"
+      ],
+      "siblings": [
+        "p-1794076499848"
+      ],
+      "x": 1198,
+      "y": 3030,
+      "maidenName": "Даньків",
+      "isFullyVerified": false
+    },
+    "p-1794076799927": {
+      "id": "p-1794076799927",
+      "firstName": "Тарас",
+      "lastName": "Даньків",
+      "gender": "unknown",
+      "parents": [
+        "p-1794079788580",
+        "p-1794079867502"
+      ],
+      "spouses": [
+        "p-1794076905516"
+      ],
+      "children": [
+        "p-1794076499848",
+        "p-1794076602697"
+      ],
+      "x": 827,
+      "y": 2859,
+      "yearsDisplay": "1958",
+      "birthDate": "1958",
+      "birthYear": "1958",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "siblings": [
+        "p-1794079652217",
+        "p-1794079884031"
+      ]
+    },
+    "p-1794076905516": {
+      "id": "p-1794076905516",
+      "firstName": "Лілія",
+      "lastName": "Даньків",
+      "gender": "female",
+      "parents": [
+        "p-1794077530306",
+        "p-1794077575074"
+      ],
+      "spouses": [
+        "p-1794076799927"
+      ],
+      "children": [
+        "p-1794076499848",
+        "p-1794076602697"
+      ],
+      "x": 941,
+      "y": 2859,
+      "maidenName": "Кулинич",
+      "yearsDisplay": "1966",
+      "birthDate": "1966",
+      "birthYear": "1966",
+      "isDeceased": false,
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": []
+    },
+    "p-1794077002037": {
+      "id": "p-1794077002037",
+      "firstName": "Тарас",
+      "lastName": "Дидинський",
+      "gender": "unknown",
+      "parents": [],
+      "spouses": [
+        "p-1794076602697"
+      ],
+      "children": [
+        "p-1794264165377-h9se5",
+        "p-1794264202777-9v1t7"
+      ],
+      "x": 1555,
+      "y": 3072,
+      "isDeceased": false,
+      "cardBgColor": "#b8c9ff",
+      "unverifiedRelations": []
+    },
+    "p-1794077530306": {
+      "id": "p-1794077530306",
+      "firstName": "Стефанія",
+      "lastName": "Паращак",
+      "nickname": "чол.прізв. Кулинич",
+      "gender": "female",
+      "yearsDisplay": "1942",
+      "birthDate": "1942",
+      "birthYear": "1942",
+      "isDeceased": false,
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794077680309",
+        "p-1794078397129",
+        "p-1794078397129"
+      ],
+      "spouses": [
+        "p-1794077575074"
+      ],
+      "children": [
+        "p-1794076905516"
+      ],
+      "x": 1298,
+      "y": 2687
+    },
+    "p-1794077575074": {
+      "id": "p-1794077575074",
+      "firstName": "Степан",
+      "lastName": "Кулинич",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794077530306"
+      ],
+      "children": [
+        "p-1794076905516"
+      ],
+      "x": 1412,
+      "y": 2687
+    },
+    "p-1794077680309": {
+      "id": "p-1794077680309",
+      "firstName": "Гнат",
+      "lastName": "Паращак",
+      "gender": "male",
+      "yearsDisplay": "18.12.1908 — 1946",
+      "birthDate": "18.12.1908",
+      "birthYear": "1908",
+      "deathDate": "1946",
+      "deathYear": "1946",
+      "isDeceased": true,
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794077912772",
+        "p-1794078206731"
+      ],
+      "spouses": [
+        "p-1794078397129"
+      ],
+      "children": [
+        "p-1794077530306"
+      ],
+      "siblings": [
+        "p-1794077810577"
+      ],
+      "x": 2029,
+      "y": 2423,
+      "birthDay": "18",
+      "birthMonth": "12",
+      "houseNumber": "286",
+      "isFullyVerified": true,
+      "metricDocuments": [
+        {
+          "id": "doc-1794182454313-e0ywt",
+          "type": "other",
+          "url": "/uploads/1794182454075_____________________________________-02.jpg",
+          "title": "1"
+        }
+      ]
+    },
+    "p-1794077810577": {
+      "id": "p-1794077810577",
+      "firstName": "Григорій",
+      "lastName": "Паращак",
+      "nickname": "Гурало",
+      "gender": "male",
+      "yearsDisplay": "15.09.1911",
+      "birthDate": "15.09.1911",
+      "birthDay": "15",
+      "birthMonth": "09",
+      "birthYear": "1911",
+      "isDeceased": false,
+      "houseNumber": "286",
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794077912772",
+        "p-1794078206731",
+        "p-1794078206731"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794077680309"
+      ],
+      "x": 2224,
+      "y": 2423,
+      "metricDocuments": [
+        {
+          "id": "doc-1794079061666-nq2c3",
+          "type": "birth",
+          "url": "/uploads/bec0a21108b53bb34c56.png",
+          "title": "1"
+        }
+      ],
+      "isFullyVerified": true
+    },
+    "p-1794077912772": {
+      "id": "p-1794077912772",
+      "firstName": "Петро",
+      "lastName": "Паращак",
+      "gender": "male",
+      "yearsDisplay": "26.05.1872 — 1944",
+      "birthDate": "26.05.1872",
+      "birthYear": "1872",
+      "deathDate": "1944",
+      "deathYear": "1944",
+      "isDeceased": true,
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794078083047",
+        "p-1794078114040",
+        "p-1794078114040"
+      ],
+      "spouses": [
+        "p-1794078206731"
+      ],
+      "children": [
+        "p-1794077680309",
+        "p-1794077810577"
+      ],
+      "x": 2396,
+      "y": 2141,
+      "birthDay": "26",
+      "birthMonth": "05",
+      "houseNumber": "261",
+      "isFullyVerified": true,
+      "metricDocuments": [
+        {
+          "id": "doc-1794182397625-agic6",
+          "type": "other",
+          "url": "/uploads/1794182397384_________________.png",
+          "title": "фффффффффффффффф"
+        }
+      ]
+    },
+    "p-1794078083047": {
+      "id": "p-1794078083047",
+      "firstName": "Михайло",
+      "lastName": "Паращак",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794179214259-asdmh",
+        "p-1794179253980-5il8d"
+      ],
+      "spouses": [
+        "p-1794078114040"
+      ],
+      "children": [
+        "p-1794077912772"
+      ],
+      "x": 2070,
+      "y": 1933,
+      "yearsDisplay": "20.11.1834",
+      "birthDate": "20.11.1834",
+      "birthDay": "20",
+      "birthMonth": "11",
+      "birthYear": "1834",
+      "houseNumber": "198",
+      "isFullyVerified": true,
+      "metricDocuments": [
+        {
+          "id": "doc-1794182258832-owtkj",
+          "type": "other",
+          "url": "/uploads/1794182258591______________6.png",
+          "title": "ммммммммммммм6"
+        }
+      ]
+    },
+    "p-1794078114040": {
+      "id": "p-1794078114040",
+      "firstName": "Анна",
+      "lastName": "Паращак",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794179300149-sbv03",
+        "p-1794179348222-5ixbp"
+      ],
+      "spouses": [
+        "p-1794078083047"
+      ],
+      "children": [
+        "p-1794077912772"
+      ],
+      "x": 2184,
+      "y": 1933,
+      "maidenName": "Багрій",
+      "isFullyVerified": false
+    },
+    "p-1794078206731": {
+      "id": "p-1794078206731",
+      "firstName": "Анастасія",
+      "lastName": "Паращак",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794078273100",
+        "p-1794078310741",
+        "p-1794078310741"
+      ],
+      "spouses": [
+        "p-1794077912772"
+      ],
+      "children": [
+        "p-1794077680309",
+        "p-1794077810577"
+      ],
+      "x": 2510,
+      "y": 2141,
+      "maidenName": "Бавмкетнер",
+      "isFullyVerified": false
+    },
+    "p-1794078273100": {
+      "id": "p-1794078273100",
+      "firstName": "Іван",
+      "lastName": "Бавмкетнер",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794078310741"
+      ],
+      "children": [
+        "p-1794078206731"
+      ],
+      "x": 2456,
+      "y": 1933
+    },
+    "p-1794078310741": {
+      "id": "p-1794078310741",
+      "firstName": "Ева",
+      "lastName": "Бавмкетнер",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794172383222-0lrho",
+        "p-1794172558452-sepm5"
+      ],
+      "spouses": [
+        "p-1794078273100"
+      ],
+      "children": [
+        "p-1794078206731"
+      ],
+      "x": 2570,
+      "y": 1933,
+      "maidenName": "Кабатяк",
+      "isFullyVerified": false,
+      "siblings": [
+        "p-1794172344477-saqie"
+      ]
+    },
+    "p-1794078397129": {
+      "id": "p-1794078397129",
+      "firstName": "Катерина",
+      "lastName": "Багрій",
+      "nickname": "баба Кася",
+      "gender": "female",
+      "yearsDisplay": "12.02.1916 —",
+      "birthDate": "12.02.1916",
+      "birthDay": "12",
+      "birthMonth": "02",
+      "birthYear": "1916",
+      "isDeceased": true,
+      "houseNumber": "329",
+      "godparents": "Іван Сеньків, Марія Лазаревич жінка Івана",
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794078421384",
+        "p-1794078508546"
+      ],
+      "spouses": [
+        "p-1794077680309"
+      ],
+      "children": [
+        "p-1794077530306"
+      ],
+      "siblings": [
+        "p-1794078687712"
+      ],
+      "x": 1915,
+      "y": 2423,
+      "metricDocuments": [
+        {
+          "id": "doc-1794079244444-iqze0",
+          "type": "other",
+          "url": "/uploads/98fe978b0925424c822c.png",
+          "title": "Screenshot_6"
+        }
+      ]
+    },
+    "p-1794078421384": {
+      "id": "p-1794078421384",
+      "firstName": "Андрій",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794078464241",
+        "p-1794078477554"
+      ],
+      "spouses": [
+        "p-1794078508546"
+      ],
+      "children": [
+        "p-1794078397129",
+        "p-1794078687712"
+      ],
+      "x": 1758,
+      "y": 2141
+    },
+    "p-1794078464241": {
+      "id": "p-1794078464241",
+      "firstName": "Стефан",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794078477554"
+      ],
+      "children": [
+        "p-1794078421384"
+      ],
+      "x": 1470,
+      "y": 1933
+    },
+    "p-1794078477554": {
+      "id": "p-1794078477554",
+      "firstName": "Параскевія",
+      "lastName": "Рибало",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794078464241"
+      ],
+      "children": [
+        "p-1794078421384"
+      ],
+      "x": 1584,
+      "y": 1933
+    },
+    "p-1794078508546": {
+      "id": "p-1794078508546",
+      "firstName": "Марія",
+      "lastName": "Лазарович",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794078810906",
+        "p-1794078831363",
+        "p-1794078831363"
+      ],
+      "spouses": [
+        "p-1794078421384"
+      ],
+      "children": [
+        "p-1794078397129",
+        "p-1794078687712"
+      ],
+      "x": 1872,
+      "y": 2141
+    },
+    "p-1794078687712": {
+      "id": "p-1794078687712",
+      "firstName": "Володимир",
+      "lastName": "Багрій",
+      "gender": "male",
+      "yearsDisplay": "25.02.1913 — 01.07.1921",
+      "birthDate": "25.02.1913",
+      "birthDay": "25",
+      "birthMonth": "02",
+      "birthYear": "1913",
+      "deathDate": "01.07.1921",
+      "deathDay": "01",
+      "deathMonth": "07",
+      "deathYear": "1921",
+      "isDeceased": true,
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794078421384",
+        "p-1794078508546"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 1714,
+      "y": 2423
+    },
+    "p-1794078810906": {
+      "id": "p-1794078810906",
+      "firstName": "Яков",
+      "lastName": "Лазарович",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794078831363"
+      ],
+      "children": [
+        "p-1794078508546"
+      ],
+      "x": 1742,
+      "y": 1933
+    },
+    "p-1794078831363": {
+      "id": "p-1794078831363",
+      "firstName": "Катерина",
+      "lastName": "Кушнір",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794078810906"
+      ],
+      "children": [
+        "p-1794078508546"
+      ],
+      "x": 1856,
+      "y": 1933
+    },
+    "p-1794079788580": {
+      "id": "p-1794079788580",
+      "firstName": "Григорій",
+      "lastName": "Даньків",
+      "nickname": "Наконечний",
+      "gender": "male",
+      "yearsDisplay": "01.04.1929 —",
+      "birthDate": "01.04.1929",
+      "birthDay": "01",
+      "birthMonth": "04",
+      "birthYear": "1929",
+      "isDeceased": true,
+      "houseNumber": "237",
+      "godparents": "хресні Михайло Волянський і Анна Багрій, повитуха Софія Кушнір",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080184152",
+        "p-1794080229200"
+      ],
+      "spouses": [
+        "p-1794079867502"
+      ],
+      "children": [
+        "p-1794076799927",
+        "p-1794079884031"
+      ],
+      "x": -377,
+      "y": 1331,
+      "metricDocuments": [
+        {
+          "id": "doc-1794079805226-gph83",
+          "type": "other",
+          "url": "/uploads/b0bc607bec955af3903e.png",
+          "title": "Screenshot_7"
+        }
+      ]
+    },
+    "p-1794079867502": {
+      "id": "p-1794079867502",
+      "firstName": "Анна",
+      "lastName": "Кобилецька",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080264577",
+        "p-1794083240319"
+      ],
+      "spouses": [
+        "p-1794079788580"
+      ],
+      "children": [
+        "p-1794076799927",
+        "p-1794079884031"
+      ],
+      "siblings": [
+        "p-1794084762672",
+        "p-1794085131555",
+        "p-1794085180386"
+      ],
+      "x": -263,
+      "y": 1331
+    },
+    "p-1794079884031": {
+      "id": "p-1794079884031",
+      "firstName": "Іван",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794079788580",
+        "p-1794079867502"
+      ],
+      "spouses": [
+        "p-1794080056396"
+      ],
+      "children": [
+        "p-1794080087325",
+        "p-1794080101229"
+      ],
+      "x": -1912,
+      "y": 2485
+    },
+    "p-1794080056396": {
+      "id": "p-1794080056396",
+      "firstName": "Світлана",
+      "lastName": "",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794079884031"
+      ],
+      "children": [
+        "p-1794080087325",
+        "p-1794080101229"
+      ],
+      "x": -1798,
+      "y": 2485
+    },
+    "p-1794080087325": {
+      "id": "p-1794080087325",
+      "firstName": "Ростислав",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080056396",
+        "p-1794079884031"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -1953,
+      "y": 2787
+    },
+    "p-1794080101229": {
+      "id": "p-1794080101229",
+      "firstName": "Юлія",
+      "lastName": "",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080056396",
+        "p-1794079884031"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -1750,
+      "y": 2787
+    },
+    "p-1794080184152": {
+      "id": "p-1794080184152",
+      "firstName": "Іван",
+      "lastName": "Даньків",
+      "nickname": "Лісник",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080727421",
+        "p-1794080856786"
+      ],
+      "spouses": [
+        "p-1794080229200"
+      ],
+      "children": [
+        "p-1794079788580",
+        "p-1794085574405",
+        "p-1794085592469"
+      ],
+      "x": -1291,
+      "y": 1536,
+      "metricDocuments": [
+        {
+          "id": "doc-1794081051566-4md61",
+          "type": "other",
+          "url": "/uploads/04fdb0d58fa4c80bc3f4.png",
+          "title": "Screenshot_9"
+        }
+      ]
+    },
+    "p-1794080229200": {
+      "id": "p-1794080229200",
+      "firstName": "Теодозія",
+      "lastName": "Даньків",
+      "gender": "female",
+      "birthDay": "24",
+      "birthMonth": "07",
+      "isDeceased": false,
+      "houseNumber": "257",
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794083692332"
+      ],
+      "spouses": [
+        "p-1794080184152"
+      ],
+      "children": [
+        "p-1794079788580",
+        "p-1794085574405",
+        "p-1794085592469"
+      ],
+      "x": -1177,
+      "y": 1536,
+      "metricDocuments": [
+        {
+          "id": "doc-1794080307910-4egjt",
+          "type": "other",
+          "url": "/uploads/9dd6c558a5e75a42f2a5.png",
+          "title": "Screenshot_8"
+        }
+      ],
+      "maidenName": "Багрій",
+      "isFullyVerified": false
+    },
+    "p-1794080264577": {
+      "id": "p-1794080264577",
+      "firstName": "Омелян",
+      "lastName": "Кобилецький",
+      "nickname": "Мільчик",
+      "gender": "male",
+      "yearsDisplay": "18.10.1912 —",
+      "birthDate": "18.10.1912",
+      "birthDay": "18",
+      "birthMonth": "10",
+      "birthYear": "1912",
+      "isDeceased": true,
+      "houseNumber": "130",
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "avatarUrl": "/uploads/3135a5091b2a5f1fe055.png",
+      "parents": [
+        "p-1794081528715",
+        "p-1794082932407",
+        "p-1794082932407"
+      ],
+      "spouses": [
+        "p-1794083240319"
+      ],
+      "children": [
+        "p-1794079867502",
+        "p-1794084762672",
+        "p-1794085131555",
+        "p-1794085180386"
+      ],
+      "siblings": [
+        "p-1794081546307",
+        "p-1794081574259",
+        "p-1794081588660"
+      ],
+      "x": 843,
+      "y": 1054,
+      "metricDocuments": [
+        {
+          "id": "doc-1794081636646-zfvi0",
+          "type": "other",
+          "url": "/uploads/517da21504cd0d23cf3d.png",
+          "title": "Screenshot_11"
+        }
+      ]
+    },
+    "p-1794080425534": {
+      "id": "p-1794080425534",
+      "firstName": "Григорій",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794080443470"
+      ],
+      "children": [
+        "p-1794083692332"
+      ],
+      "x": -853,
+      "y": 965
+    },
+    "p-1794080443470": {
+      "id": "p-1794080443470",
+      "firstName": "Теодозія",
+      "lastName": "Бойко",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794080425534"
+      ],
+      "children": [
+        "p-1794083692332"
+      ],
+      "x": -739,
+      "y": 965
+    },
+    "p-1794080497535": {
+      "id": "p-1794080497535",
+      "firstName": "Анастасія",
+      "lastName": "Том'як",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080519856",
+        "p-1794080540937"
+      ],
+      "spouses": [
+        "p-1794083692332"
+      ],
+      "children": [],
+      "x": -783,
+      "y": 1331
+    },
+    "p-1794080519856": {
+      "id": "p-1794080519856",
+      "firstName": "Григорій",
+      "lastName": "Том'як",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794080540937"
+      ],
+      "children": [
+        "p-1794080497535"
+      ],
+      "x": -607,
+      "y": 965
+    },
+    "p-1794080540937": {
+      "id": "p-1794080540937",
+      "firstName": "Олена",
+      "lastName": "Кушнір",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794080519856"
+      ],
+      "children": [
+        "p-1794080497535"
+      ],
+      "x": -493,
+      "y": 965
+    },
+    "p-1794080727421": {
+      "id": "p-1794080727421",
+      "firstName": "Григорій",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "1877 —",
+      "birthDate": "1877",
+      "birthYear": "1877",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [
+        "p-1794080856786"
+      ],
+      "children": [
+        "p-1794080184152"
+      ],
+      "x": -1081,
+      "y": 790
+    },
+    "p-1794080787799": {
+      "id": "p-1794080787799",
+      "firstName": "Іван",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081207898",
+        "p-1794081237731"
+      ],
+      "spouses": [
+        "p-1794080805351"
+      ],
+      "children": [
+        "p-1794080727421",
+        "p-1794087033683",
+        "p-1794087141456",
+        "p-1794087180703",
+        "p-1794087206128",
+        "p-1794087235057",
+        "p-1794087259345",
+        "p-1794087336788",
+        "p-1794087373717"
+      ],
+      "x": -1953,
+      "y": 582
+    },
+    "p-1794080805351": {
+      "id": "p-1794080805351",
+      "firstName": "Марія",
+      "lastName": "Решетар",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081263923",
+        "p-1794081281252",
+        "p-1794081281252"
+      ],
+      "spouses": [
+        "p-1794080787799"
+      ],
+      "children": [
+        "p-1794080727421",
+        "p-1794087033683",
+        "p-1794087141456",
+        "p-1794087180703",
+        "p-1794087206128",
+        "p-1794087235057",
+        "p-1794087259345",
+        "p-1794087336788",
+        "p-1794087373717"
+      ],
+      "x": -1839,
+      "y": 582
+    },
+    "p-1794080856786": {
+      "id": "p-1794080856786",
+      "firstName": "Катерина",
+      "lastName": "Файтас",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080878641",
+        "p-1794080895234",
+        "p-1794080895234"
+      ],
+      "spouses": [
+        "p-1794080727421"
+      ],
+      "children": [
+        "p-1794080184152"
+      ],
+      "x": -967,
+      "y": 790
+    },
+    "p-1794080878641": {
+      "id": "p-1794080878641",
+      "firstName": "Василь",
+      "lastName": "Файтас",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794080895234"
+      ],
+      "children": [
+        "p-1794080856786"
+      ],
+      "x": -761,
+      "y": 516
+    },
+    "p-1794080895234": {
+      "id": "p-1794080895234",
+      "firstName": "Марія",
+      "lastName": "Леськів",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794080878641"
+      ],
+      "children": [
+        "p-1794080856786"
+      ],
+      "x": -647,
+      "y": 516
+    },
+    "p-1794081207898": {
+      "id": "p-1794081207898",
+      "firstName": "Данко",
+      "lastName": "Даньків",
+      "nickname": "Лангвериста",
+      "gender": "male",
+      "yearsDisplay": "1795 — 1844",
+      "birthDate": "1795",
+      "birthYear": "1795",
+      "deathDate": "1844",
+      "deathYear": "1844",
+      "isDeceased": true,
+      "houseNumber": "27",
+      "profession": "Лангвериста",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "notes": "35 років на момент одруження.",
+      "parents": [],
+      "spouses": [
+        "p-1794081237731"
+      ],
+      "children": [
+        "p-1794080787799",
+        "p-1794086506941",
+        "p-1794086652689",
+        "p-1794086728404",
+        "p-1794086766564"
+      ],
+      "x": -2879,
+      "y": 27
+    },
+    "p-1794081237731": {
+      "id": "p-1794081237731",
+      "firstName": "Анна",
+      "lastName": "Максимова",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081388798"
+      ],
+      "spouses": [
+        "p-1794081207898"
+      ],
+      "children": [
+        "p-1794080787799",
+        "p-1794086506941",
+        "p-1794086652689",
+        "p-1794086728404",
+        "p-1794086766564"
+      ],
+      "x": -2765,
+      "y": 27
+    },
+    "p-1794081263923": {
+      "id": "p-1794081263923",
+      "firstName": "Михайло",
+      "lastName": "Решетар",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794081281252"
+      ],
+      "children": [
+        "p-1794080805351"
+      ],
+      "x": -1713,
+      "y": 400
+    },
+    "p-1794081281252": {
+      "id": "p-1794081281252",
+      "firstName": "Анастасія",
+      "lastName": "Калапунь",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794081263923"
+      ],
+      "children": [
+        "p-1794080805351"
+      ],
+      "x": -1599,
+      "y": 400
+    },
+    "p-1794081388798": {
+      "id": "p-1794081388798",
+      "firstName": "Теодор",
+      "lastName": "Максимов",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794175017060-87wnp"
+      ],
+      "spouses": [],
+      "children": [
+        "p-1794081237731"
+      ],
+      "x": -3011,
+      "y": -178
+    },
+    "p-1794081528715": {
+      "id": "p-1794081528715",
+      "firstName": "Ігнатій",
+      "lastName": "Кобилецький",
+      "nickname": "де Годземба",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794082634751",
+        "p-1794082882550"
+      ],
+      "spouses": [
+        "p-1794082932407"
+      ],
+      "children": [
+        "p-1794080264577",
+        "p-1794081588660",
+        "p-1794150298934",
+        "p-1794166919139-w02hu"
+      ],
+      "x": 1486,
+      "y": 900
+    },
+    "p-1794081588660": {
+      "id": "p-1794081588660",
+      "firstName": "Миколай",
+      "lastName": "Кобилецький",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081528715",
+        "p-1794082932407"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 2151,
+      "y": 900
+    },
+    "p-1794082634751": {
+      "id": "p-1794082634751",
+      "firstName": "Іван",
+      "lastName": "Кобилецький",
+      "nickname": "де Годземба",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794082882550"
+      ],
+      "children": [
+        "p-1794081528715"
+      ],
+      "x": 1980,
+      "y": 516
+    },
+    "p-1794082882550": {
+      "id": "p-1794082882550",
+      "firstName": "Марія",
+      "lastName": "Ільницька",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794082634751"
+      ],
+      "children": [
+        "p-1794081528715"
+      ],
+      "x": 2094,
+      "y": 516
+    },
+    "p-1794082932407": {
+      "id": "p-1794082932407",
+      "firstName": "Евфрозима",
+      "lastName": "Дидинська",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#b8c9ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794082970776",
+        "p-1794083016553"
+      ],
+      "spouses": [
+        "p-1794081528715"
+      ],
+      "children": [
+        "p-1794080264577",
+        "p-1794081588660",
+        "p-1794150298934",
+        "p-1794166919139-w02hu"
+      ],
+      "x": 1600,
+      "y": 900
+    },
+    "p-1794082970776": {
+      "id": "p-1794082970776",
+      "firstName": "Теодор",
+      "lastName": "Дидинський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#b8c9ff",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794083016553"
+      ],
+      "children": [
+        "p-1794082932407"
+      ],
+      "x": 2070,
+      "y": 647
+    },
+    "p-1794083016553": {
+      "id": "p-1794083016553",
+      "firstName": "Марія",
+      "lastName": "Садовська",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794082970776"
+      ],
+      "children": [
+        "p-1794082932407"
+      ],
+      "x": 2184,
+      "y": 647
+    },
+    "p-1794083240319": {
+      "id": "p-1794083240319",
+      "firstName": "Юлія",
+      "lastName": "Даньків",
+      "nickname": "баба Юлька",
+      "gender": "female",
+      "yearsDisplay": "15.01.1912 — 1971",
+      "birthDate": "15.01.1912",
+      "birthDay": "15",
+      "birthMonth": "01",
+      "birthYear": "1912",
+      "deathDate": "1971",
+      "deathYear": "1971",
+      "isDeceased": true,
+      "houseNumber": "192",
+      "cardBgColor": "#d7c1d6",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794083289353",
+        "p-1794084304491"
+      ],
+      "spouses": [
+        "p-1794080264577"
+      ],
+      "children": [
+        "p-1794079867502",
+        "p-1794084762672",
+        "p-1794085131555",
+        "p-1794085180386"
+      ],
+      "x": 729,
+      "y": 1054,
+      "metricDocuments": [
+        {
+          "id": "doc-1794084557417-lm82f",
+          "type": "other",
+          "url": "/uploads/f928824428463194dd26.png",
+          "title": "Screenshot_14"
+        }
+      ]
+    },
+    "p-1794083289353": {
+      "id": "p-1794083289353",
+      "firstName": "Іван",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#d7c1d6",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794084216641",
+        "p-1794084240682"
+      ],
+      "spouses": [
+        "p-1794084304491"
+      ],
+      "children": [
+        "p-1794083240319"
+      ],
+      "x": 599,
+      "y": 859
+    },
+    "p-1794083692332": {
+      "id": "p-1794083692332",
+      "firstName": "Іван",
+      "lastName": "Багрій",
+      "gender": "unknown",
+      "parents": [
+        "p-1794080425534",
+        "p-1794080443470"
+      ],
+      "spouses": [
+        "p-1794080497535"
+      ],
+      "children": [
+        "p-1794080229200"
+      ],
+      "x": -897,
+      "y": 1331,
+      "isDeceased": false,
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": []
+    },
+    "p-1794084216641": {
+      "id": "p-1794084216641",
+      "firstName": "Павло",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#d7c1d6",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794084240682"
+      ],
+      "children": [
+        "p-1794083289353"
+      ],
+      "x": 918,
+      "y": 647
+    },
+    "p-1794084240682": {
+      "id": "p-1794084240682",
+      "firstName": "Анна",
+      "lastName": "Калапунь",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794084216641"
+      ],
+      "children": [
+        "p-1794083289353"
+      ],
+      "x": 1032,
+      "y": 647
+    },
+    "p-1794084304491": {
+      "id": "p-1794084304491",
+      "firstName": "Анна",
+      "lastName": "Калапунь",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794084359477",
+        "p-1794084389334"
+      ],
+      "spouses": [
+        "p-1794083289353"
+      ],
+      "children": [
+        "p-1794083240319"
+      ],
+      "x": 713,
+      "y": 859
+    },
+    "p-1794084359477": {
+      "id": "p-1794084359477",
+      "firstName": "Андрій",
+      "lastName": "Калапунь",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794084389334"
+      ],
+      "children": [
+        "p-1794084304491"
+      ],
+      "x": 918,
+      "y": 859
+    },
+    "p-1794084389334": {
+      "id": "p-1794084389334",
+      "firstName": "Євдокія",
+      "lastName": "Халавка",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794084359477"
+      ],
+      "children": [
+        "p-1794084304491"
+      ],
+      "x": 1032,
+      "y": 859
+    },
+    "p-1794084762672": {
+      "id": "p-1794084762672",
+      "firstName": "Марія",
+      "lastName": "Кобилецька",
+      "gender": "male",
+      "yearsDisplay": "09.10.1945",
+      "birthDate": "09.10.1945",
+      "birthYear": "1945",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080264577",
+        "p-1794083240319"
+      ],
+      "spouses": [
+        "p-1794084949044"
+      ],
+      "children": [
+        "p-1794084972581",
+        "p-1794085021078"
+      ],
+      "x": 437,
+      "y": 1331,
+      "birthDay": "09",
+      "birthMonth": "10",
+      "isFullyVerified": false,
+      "siblings": [
+        "p-1794079867502",
+        "p-1794085131555",
+        "p-1794085180386"
+      ],
+      "metricDocuments": [
+        {
+          "id": "doc-1794167491101-a4qv3",
+          "type": "birth",
+          "url": "/uploads/1794167493249_2222222222222222222222222222-47.jpg",
+          "title": "Свідоцтво про народження"
+        }
+      ]
+    },
+    "p-1794084949044": {
+      "id": "p-1794084949044",
+      "firstName": "Роман",
+      "lastName": "Смук",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794084762672"
+      ],
+      "children": [
+        "p-1794084972581",
+        "p-1794085021078"
+      ],
+      "x": 551,
+      "y": 1331
+    },
+    "p-1794084972581": {
+      "id": "p-1794084972581",
+      "firstName": "Степан",
+      "lastName": "Смук",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794084762672",
+        "p-1794084949044"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 684,
+      "y": 1610
+    },
+    "p-1794085021078": {
+      "id": "p-1794085021078",
+      "firstName": "Леся",
+      "lastName": "Смук",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794084949044",
+        "p-1794084762672"
+      ],
+      "spouses": [],
+      "children": [
+        "p-1794085050847"
+      ],
+      "x": 392,
+      "y": 1610
+    },
+    "p-1794085050847": {
+      "id": "p-1794085050847",
+      "firstName": "Марія",
+      "lastName": "Кіндратишин",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794085021078"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 392,
+      "y": 1779
+    },
+    "p-1794085131555": {
+      "id": "p-1794085131555",
+      "firstName": "Стефанія",
+      "lastName": "Кобилецька",
+      "gender": "male",
+      "yearsDisplay": "1943",
+      "birthDate": "1943",
+      "birthYear": "1943",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080264577",
+        "p-1794083240319"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 4,
+      "y": 1331
+    },
+    "p-1794085180386": {
+      "id": "p-1794085180386",
+      "firstName": "Ірина",
+      "lastName": "Кобилецька",
+      "gender": "male",
+      "yearsDisplay": "1937",
+      "birthDate": "1937",
+      "birthYear": "1937",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080264577",
+        "p-1794083240319"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 209,
+      "y": 1331
+    },
+    "p-1794085574405": {
+      "id": "p-1794085574405",
+      "firstName": "Кароль",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080184152",
+        "p-1794080229200"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -607,
+      "y": 1779
+    },
+    "p-1794085592469": {
+      "id": "p-1794085592469",
+      "firstName": "Богдан",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080184152",
+        "p-1794080229200"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -1063,
+      "y": 1779
+    },
+    "p-1794086506941": {
+      "id": "p-1794086506941",
+      "firstName": "Христина",
+      "lastName": "",
+      "gender": "female",
+      "yearsDisplay": "1814 —",
+      "birthDate": "1814",
+      "birthYear": "1814",
+      "isDeceased": true,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081207898",
+        "p-1794081237731"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794080787799",
+        "p-1794086652689"
+      ],
+      "x": -2679,
+      "y": 582
+    },
+    "p-1794086652689": {
+      "id": "p-1794086652689",
+      "firstName": "Іван",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "05.05.1833 —",
+      "birthDate": "05.05.1833",
+      "birthYear": "1833",
+      "isDeceased": true,
+      "houseNumber": "36",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081207898",
+        "p-1794081237731"
+      ],
+      "spouses": [],
+      "children": [
+        "p-1794086851455"
+      ],
+      "siblings": [
+        "p-1794080787799",
+        "p-1794086506941",
+        "p-1794086728404",
+        "p-1794086766564"
+      ],
+      "x": -2122,
+      "y": 586,
+      "birthDay": "05",
+      "birthMonth": "05",
+      "isFullyVerified": true,
+      "metricDocuments": [
+        {
+          "id": "doc-1794168122593-fixw4",
+          "type": "birth",
+          "url": "/uploads/1794168124735_33333333333333336.png",
+          "title": "Запис у метриці  \"Births (народження) 1814-1833 v. 201-4A/6145\""
+        }
+      ]
+    },
+    "p-1794086728404": {
+      "id": "p-1794086728404",
+      "firstName": "Стефан",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "1834 —",
+      "birthDate": "1834",
+      "birthYear": "1834",
+      "isDeceased": true,
+      "houseNumber": "36",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081207898",
+        "p-1794081237731"
+      ],
+      "spouses": [],
+      "children": [
+        "p-1794086931897"
+      ],
+      "siblings": [
+        "p-1794080787799",
+        "p-1794086506941",
+        "p-1794086652689",
+        "p-1794086766564"
+      ],
+      "x": -2316,
+      "y": 582
+    },
+    "p-1794086766564": {
+      "id": "p-1794086766564",
+      "firstName": "Василь",
+      "lastName": "",
+      "gender": "male",
+      "yearsDisplay": "1837 —",
+      "birthDate": "1837",
+      "birthYear": "1837",
+      "isDeceased": true,
+      "houseNumber": "36",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081207898",
+        "p-1794081237731"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794080787799",
+        "p-1794086506941",
+        "p-1794086652689",
+        "p-1794086728404"
+      ],
+      "x": -2515,
+      "y": 586
+    },
+    "p-1794086851455": {
+      "id": "p-1794086851455",
+      "firstName": "Михайлина",
+      "lastName": "",
+      "gender": "male",
+      "yearsDisplay": "1878",
+      "birthDate": "1878",
+      "birthYear": "1878",
+      "isDeceased": false,
+      "houseNumber": "44",
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794086652689"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -2316,
+      "y": 752
+    },
+    "p-1794086931897": {
+      "id": "p-1794086931897",
+      "firstName": "Дмитро",
+      "lastName": "Даньків",
+      "nickname": "Деметріус",
+      "gender": "male",
+      "yearsDisplay": "1862 —",
+      "birthDate": "1862",
+      "birthYear": "1862",
+      "isDeceased": true,
+      "houseNumber": "146",
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794086728404"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -2594,
+      "y": 752
+    },
+    "p-1794087033683": {
+      "id": "p-1794087033683",
+      "firstName": "Теодор",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "1860 —",
+      "birthDate": "1860",
+      "birthYear": "1860",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794080727421"
+      ],
+      "x": -1214,
+      "y": 790
+    },
+    "p-1794087141456": {
+      "id": "p-1794087141456",
+      "firstName": "Галина",
+      "lastName": "Даньків",
+      "nickname": "Хелена",
+      "gender": "male",
+      "yearsDisplay": "1861 —",
+      "birthDate": "1861",
+      "birthYear": "1861",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794080727421",
+        "p-1794087033683"
+      ],
+      "x": -1351,
+      "y": 790
+    },
+    "p-1794087180703": {
+      "id": "p-1794087180703",
+      "firstName": "Данило",
+      "lastName": "Даньків",
+      "nickname": "Даніель",
+      "gender": "male",
+      "yearsDisplay": "1864 —",
+      "birthDate": "1864",
+      "birthYear": "1864",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -1471,
+      "y": 790
+    },
+    "p-1794087206128": {
+      "id": "p-1794087206128",
+      "firstName": "Анна",
+      "lastName": "Даньків",
+      "gender": "female",
+      "yearsDisplay": "1866 —",
+      "birthDate": "1866",
+      "birthYear": "1866",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -1586,
+      "y": 790
+    },
+    "p-1794087235057": {
+      "id": "p-1794087235057",
+      "firstName": "Теодозія",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "1868 —",
+      "birthDate": "1868",
+      "birthYear": "1868",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -1712,
+      "y": 790
+    },
+    "p-1794087259345": {
+      "id": "p-1794087259345",
+      "firstName": "Микола",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "1869 —",
+      "birthDate": "1869",
+      "birthYear": "1869",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -1849,
+      "y": 790
+    },
+    "p-1794087336788": {
+      "id": "p-1794087336788",
+      "firstName": "Даніло",
+      "lastName": "Даньків",
+      "nickname": "Даніель",
+      "gender": "male",
+      "yearsDisplay": "1872 —",
+      "birthDate": "1872",
+      "birthYear": "1872",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -2007,
+      "y": 790
+    },
+    "p-1794087373717": {
+      "id": "p-1794087373717",
+      "firstName": "Михайло",
+      "lastName": "Даньків",
+      "nickname": "Міхаель",
+      "gender": "male",
+      "yearsDisplay": "1874 —",
+      "birthDate": "1874",
+      "birthYear": "1874",
+      "isDeceased": true,
+      "houseNumber": "4",
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794080787799",
+        "p-1794080805351"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -2158,
+      "y": 790
+    },
+    "p-1794150298934": {
+      "id": "p-1794150298934",
+      "firstName": "Спиридон",
+      "lastName": "Кобилецький",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081528715",
+        "p-1794082932407"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 1872,
+      "y": 900
+    },
+    "p-1794166919139-w02hu": {
+      "id": "p-1794166919139-w02hu",
+      "firstName": "Юліан",
+      "lastName": "Кобилецький",
+      "gender": "male",
+      "yearsDisplay": "1907",
+      "birthDate": "1907",
+      "birthYear": "1907",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794081528715",
+        "p-1794082932407",
+        "p-1794082932407"
+      ],
+      "spouses": [
+        "p-1794166970829-5qzi7"
+      ],
+      "children": [
+        "p-1794166990893-3t9dv"
+      ],
+      "siblings": [
+        "p-1794080264577",
+        "p-1794081588660",
+        "p-1794150298934"
+      ],
+      "x": 1195,
+      "y": 1054,
+      "isFullyVerified": false
+    },
+    "p-1794166970829-5qzi7": {
+      "id": "p-1794166970829-5qzi7",
+      "firstName": "Емілія",
+      "lastName": "Кобилецька",
+      "gender": "female",
+      "yearsDisplay": "1911",
+      "birthDate": "1911",
+      "birthYear": "1911",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794166919139-w02hu"
+      ],
+      "children": [
+        "p-1794166990893-3t9dv"
+      ],
+      "x": 1309,
+      "y": 1054,
+      "isFullyVerified": false
+    },
+    "p-1794166990893-3t9dv": {
+      "id": "p-1794166990893-3t9dv",
+      "firstName": "Микола",
+      "lastName": "Кобилецький",
+      "gender": "male",
+      "yearsDisplay": "02.05.1946",
+      "birthDate": "02.05.1946",
+      "birthDay": "02",
+      "birthMonth": "05",
+      "birthYear": "1946",
+      "isDeceased": false,
+      "cardBgColor": "#ff7575",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794166970829-5qzi7",
+        "p-1794166919139-w02hu"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 957,
+      "y": 1331,
+      "isFullyVerified": false,
+      "metricDocuments": [
+        {
+          "id": "doc-1794167314817-3zz8z",
+          "type": "birth",
+          "url": "/uploads/1794167316965_111111111111116.png",
+          "title": "Запис акта про народження",
+          "date": "1946"
+        }
+      ]
+    },
+    "p-1794170062778-zdwsw": {
+      "id": "p-1794170062778-zdwsw",
+      "firstName": "Стефан",
+      "lastName": "Даньків",
+      "gender": "unknown",
+      "parents": [
+        "p-1794170168794-wcw6f",
+        "p-1794170350691-t3gkq"
+      ],
+      "spouses": [
+        "p-1794170397655-calka"
+      ],
+      "children": [
+        "p-1794170148882-wuvc7"
+      ],
+      "x": -4600,
+      "y": 1067,
+      "isDeceased": false,
+      "isFullyVerified": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": []
+    },
+    "p-1794170148882-wuvc7": {
+      "id": "p-1794170148882-wuvc7",
+      "firstName": "Микола",
+      "lastName": "Даньків",
+      "gender": "male",
+      "yearsDisplay": "28.01.1908",
+      "birthDate": "28.01.1908",
+      "birthDay": "28",
+      "birthMonth": "01",
+      "birthYear": "1908",
+      "isDeceased": false,
+      "houseNumber": "239",
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794170062778-zdwsw",
+        "p-1794170397655-calka",
+        "p-1794170397655-calka"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -4792,
+      "y": 1331,
+      "isFullyVerified": true,
+      "metricDocuments": [
+        {
+          "id": "doc-1794170479803-46qgh",
+          "type": "birth",
+          "url": "/uploads/1794170481904_7777777777777716.png",
+          "title": "1"
+        }
+      ]
+    },
+    "p-1794170168794-wcw6f": {
+      "id": "p-1794170168794-wcw6f",
+      "firstName": "Стефан",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794170350691-t3gkq"
+      ],
+      "children": [
+        "p-1794170062778-zdwsw"
+      ],
+      "x": -4707,
+      "y": 863
+    },
+    "p-1794170350691-t3gkq": {
+      "id": "p-1794170350691-t3gkq",
+      "firstName": "Анна",
+      "lastName": "",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794170168794-wcw6f"
+      ],
+      "children": [
+        "p-1794170062778-zdwsw"
+      ],
+      "x": -4593,
+      "y": 863
+    },
+    "p-1794170397655-calka": {
+      "id": "p-1794170397655-calka",
+      "firstName": "Анастасія",
+      "lastName": "Футалаш",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794170414869-5jj2m",
+        "p-1794170431838-ec4ar"
+      ],
+      "spouses": [
+        "p-1794170062778-zdwsw"
+      ],
+      "children": [
+        "p-1794170148882-wuvc7"
+      ],
+      "x": -4476,
+      "y": 1067
+    },
+    "p-1794170414869-5jj2m": {
+      "id": "p-1794170414869-5jj2m",
+      "firstName": "Михайло",
+      "lastName": "Футалаш",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794170431838-ec4ar"
+      ],
+      "children": [
+        "p-1794170397655-calka"
+      ],
+      "x": -4414,
+      "y": 863
+    },
+    "p-1794170431838-ec4ar": {
+      "id": "p-1794170431838-ec4ar",
+      "firstName": "Марія",
+      "lastName": "Решетар",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794170414869-5jj2m"
+      ],
+      "children": [
+        "p-1794170397655-calka"
+      ],
+      "x": -4300,
+      "y": 863
+    },
+    "p-1794170854063-hifga": {
+      "id": "p-1794170854063-hifga",
+      "firstName": "Володимир",
+      "lastName": "Багрій",
+      "gender": "unknown",
+      "parents": [
+        "p-1794170896274-mfy77",
+        "p-1794170959730-4o2ov"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 4,
+      "y": -621,
+      "yearsDisplay": "06.03.1908",
+      "birthDate": "06.03.1908",
+      "birthDay": "06",
+      "birthMonth": "03",
+      "birthYear": "1908",
+      "isDeceased": false,
+      "houseNumber": "221",
+      "isFullyVerified": true,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "metricDocuments": [
+        {
+          "id": "doc-1794171052286-cvhim",
+          "type": "other",
+          "url": "/uploads/1794171054369_1231236.png",
+          "title": "1231236"
+        }
+      ]
+    },
+    "p-1794170896274-mfy77": {
+      "id": "p-1794170896274-mfy77",
+      "firstName": "Іван",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794170919770-6slfn",
+        "p-1794170937803-ndcws",
+        "p-1794170937803-ndcws"
+      ],
+      "spouses": [
+        "p-1794170959730-4o2ov"
+      ],
+      "children": [
+        "p-1794170854063-hifga"
+      ],
+      "x": -56,
+      "y": -867
+    },
+    "p-1794170919770-6slfn": {
+      "id": "p-1794170919770-6slfn",
+      "firstName": "Григорій",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794171939148-3y2lv"
+      ],
+      "spouses": [
+        "p-1794170937803-ndcws"
+      ],
+      "children": [
+        "p-1794170896274-mfy77",
+        "p-1794172910844-x2cwb"
+      ],
+      "x": -501,
+      "y": -867
+    },
+    "p-1794170937803-ndcws": {
+      "id": "p-1794170937803-ndcws",
+      "firstName": "Катерина",
+      "lastName": "Багрій",
+      "nickname": "Калапунь",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794170919770-6slfn"
+      ],
+      "children": [
+        "p-1794170896274-mfy77",
+        "p-1794172910844-x2cwb"
+      ],
+      "x": -377,
+      "y": -867
+    },
+    "p-1794170959730-4o2ov": {
+      "id": "p-1794170959730-4o2ov",
+      "firstName": "Анастасія",
+      "lastName": "Том'як",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794170975517-x7dzt",
+        "p-1794171008467-r0qbg"
+      ],
+      "spouses": [
+        "p-1794170896274-mfy77"
+      ],
+      "children": [
+        "p-1794170854063-hifga"
+      ],
+      "x": 58,
+      "y": -867
+    },
+    "p-1794170975517-x7dzt": {
+      "id": "p-1794170975517-x7dzt",
+      "firstName": "Іван",
+      "lastName": "Том'як",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171008467-r0qbg"
+      ],
+      "children": [
+        "p-1794170959730-4o2ov"
+      ],
+      "x": 4,
+      "y": -1081
+    },
+    "p-1794171008467-r0qbg": {
+      "id": "p-1794171008467-r0qbg",
+      "firstName": "Анна",
+      "lastName": "",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794170975517-x7dzt"
+      ],
+      "children": [
+        "p-1794170959730-4o2ov"
+      ],
+      "x": 118,
+      "y": -1081
+    },
+    "p-1794171105047-nep2e": {
+      "id": "p-1794171105047-nep2e",
+      "firstName": "Ольга",
+      "lastName": "Паращак",
+      "gender": "unknown",
+      "parents": [
+        "p-1794171164192-2xcza",
+        "p-1794171262258-qojre"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 805,
+      "y": -354,
+      "yearsDisplay": "19.03.1908",
+      "birthDate": "19.03.1908",
+      "birthDay": "19",
+      "birthMonth": "03",
+      "birthYear": "1908",
+      "isDeceased": false,
+      "houseNumber": "355",
+      "isFullyVerified": true,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "metricDocuments": [
+        {
+          "id": "doc-1794171379611-ey0dp",
+          "type": "other",
+          "url": "/uploads/1794171379556_1_6.png",
+          "title": "1ф6"
+        }
+      ]
+    },
+    "p-1794171164192-2xcza": {
+      "id": "p-1794171164192-2xcza",
+      "firstName": "Миколай",
+      "lastName": "Паращак",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794171213299-hpylr",
+        "p-1794171231419-t3qk7"
+      ],
+      "spouses": [
+        "p-1794171262258-qojre"
+      ],
+      "children": [
+        "p-1794171105047-nep2e"
+      ],
+      "x": 1147,
+      "y": -597
+    },
+    "p-1794171213299-hpylr": {
+      "id": "p-1794171213299-hpylr",
+      "firstName": "Гавриїл",
+      "lastName": "Паращак",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171231419-t3qk7"
+      ],
+      "children": [
+        "p-1794171164192-2xcza"
+      ],
+      "x": 801,
+      "y": -797
+    },
+    "p-1794171231419-t3qk7": {
+      "id": "p-1794171231419-t3qk7",
+      "firstName": "Євдокія",
+      "lastName": "Паращак",
+      "nickname": "Гацуляк",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171213299-hpylr"
+      ],
+      "children": [
+        "p-1794171164192-2xcza"
+      ],
+      "x": 1045,
+      "y": -797
+    },
+    "p-1794171262258-qojre": {
+      "id": "p-1794171262258-qojre",
+      "firstName": "Катарина",
+      "lastName": "Паращак",
+      "nickname": "Кунців",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794171277834-g1vqc",
+        "p-1794171322591-yhdg7"
+      ],
+      "spouses": [
+        "p-1794171164192-2xcza"
+      ],
+      "children": [
+        "p-1794171105047-nep2e"
+      ],
+      "x": 1261,
+      "y": -597
+    },
+    "p-1794171277834-g1vqc": {
+      "id": "p-1794171277834-g1vqc",
+      "firstName": "Теодор",
+      "lastName": "Кунців",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171322591-yhdg7"
+      ],
+      "children": [
+        "p-1794171262258-qojre"
+      ],
+      "x": 1198,
+      "y": -797
+    },
+    "p-1794171322591-yhdg7": {
+      "id": "p-1794171322591-yhdg7",
+      "firstName": "Теодозія",
+      "lastName": "",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171277834-g1vqc"
+      ],
+      "children": [
+        "p-1794171262258-qojre"
+      ],
+      "x": 1312,
+      "y": -797
+    },
+    "p-1794171485549-pacs6": {
+      "id": "p-1794171485549-pacs6",
+      "firstName": "Володимир",
+      "lastName": "Даньків",
+      "gender": "unknown",
+      "parents": [
+        "p-1794171528242-893nv",
+        "p-1794171575588-hjfsz"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -5165,
+      "y": 1331,
+      "yearsDisplay": "30.03.1908",
+      "birthDate": "30.03.1908",
+      "birthDay": "30",
+      "birthMonth": "03",
+      "birthYear": "1908",
+      "isDeceased": false,
+      "houseNumber": "43",
+      "isFullyVerified": true,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "metricDocuments": [
+        {
+          "id": "doc-1794171675404-8hwb7",
+          "type": "other",
+          "url": "/uploads/1794171675343_1_.png",
+          "title": "1в"
+        }
+      ]
+    },
+    "p-1794171528242-893nv": {
+      "id": "p-1794171528242-893nv",
+      "firstName": "Григорій",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794171539324-el5tb",
+        "p-1794171555772-8uwy0",
+        "p-1794171555772-8uwy0"
+      ],
+      "spouses": [
+        "p-1794171575588-hjfsz"
+      ],
+      "children": [
+        "p-1794171485549-pacs6"
+      ],
+      "x": -5227,
+      "y": 1067
+    },
+    "p-1794171539324-el5tb": {
+      "id": "p-1794171539324-el5tb",
+      "firstName": "Василь",
+      "lastName": "Даньків",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171555772-8uwy0"
+      ],
+      "children": [
+        "p-1794171528242-893nv"
+      ],
+      "x": -5406,
+      "y": 859
+    },
+    "p-1794171555772-8uwy0": {
+      "id": "p-1794171555772-8uwy0",
+      "firstName": "Марія",
+      "lastName": "Даньків",
+      "nickname": "Хом'як",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171539324-el5tb"
+      ],
+      "children": [
+        "p-1794171528242-893nv"
+      ],
+      "x": -5282,
+      "y": 859
+    },
+    "p-1794171575588-hjfsz": {
+      "id": "p-1794171575588-hjfsz",
+      "firstName": "Марія",
+      "lastName": "Даньків",
+      "nickname": "Голубінка",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794171592173-2qc4e",
+        "p-1794171624075-4nrjm"
+      ],
+      "spouses": [
+        "p-1794171528242-893nv"
+      ],
+      "children": [
+        "p-1794171485549-pacs6"
+      ],
+      "x": -5113,
+      "y": 1067
+    },
+    "p-1794171592173-2qc4e": {
+      "id": "p-1794171592173-2qc4e",
+      "firstName": "Симеон",
+      "lastName": "Голубінка",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171624075-4nrjm"
+      ],
+      "children": [
+        "p-1794171575588-hjfsz"
+      ],
+      "x": -5061,
+      "y": 859
+    },
+    "p-1794171624075-4nrjm": {
+      "id": "p-1794171624075-4nrjm",
+      "firstName": "Катерина",
+      "lastName": "",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171592173-2qc4e"
+      ],
+      "children": [
+        "p-1794171575588-hjfsz"
+      ],
+      "x": -4947,
+      "y": 859
+    },
+    "p-1794171825847-2zz81": {
+      "id": "p-1794171825847-2zz81",
+      "firstName": "Василь",
+      "lastName": "Халавка",
+      "gender": "unknown",
+      "parents": [
+        "p-1794171871259-8uj48",
+        "p-1794171939148-3y2lv"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -853,
+      "y": -621,
+      "yearsDisplay": "03.05.1908",
+      "birthDate": "03.05.1908",
+      "birthDay": "03",
+      "birthMonth": "05",
+      "birthYear": "1908",
+      "isDeceased": false,
+      "houseNumber": "226",
+      "isFullyVerified": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "siblings": [
+        "p-1794170919770-6slfn"
+      ],
+      "metricDocuments": [
+        {
+          "id": "doc-1794172144078-a1py1",
+          "type": "other",
+          "url": "/uploads/1794172144009___12png.png",
+          "title": "аі12png"
+        }
+      ]
+    },
+    "p-1794171871259-8uj48": {
+      "id": "p-1794171871259-8uj48",
+      "firstName": "Іван",
+      "lastName": "Халавка",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794171902626-kh7a1",
+        "p-1794171914498-zc4r5"
+      ],
+      "spouses": [
+        "p-1794171939148-3y2lv"
+      ],
+      "children": [
+        "p-1794171825847-2zz81"
+      ],
+      "x": -897,
+      "y": -867
+    },
+    "p-1794171902626-kh7a1": {
+      "id": "p-1794171902626-kh7a1",
+      "firstName": "Григорій",
+      "lastName": "Халавка",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171914498-zc4r5"
+      ],
+      "children": [
+        "p-1794171871259-8uj48"
+      ],
+      "x": -967,
+      "y": -1081
+    },
+    "p-1794171914498-zc4r5": {
+      "id": "p-1794171914498-zc4r5",
+      "firstName": "Марія",
+      "lastName": "Халавка",
+      "nickname": "Багрій",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171902626-kh7a1"
+      ],
+      "children": [
+        "p-1794171871259-8uj48"
+      ],
+      "x": -853,
+      "y": -1081
+    },
+    "p-1794171939148-3y2lv": {
+      "id": "p-1794171939148-3y2lv",
+      "firstName": "Параскевія",
+      "lastName": "Халавка",
+      "nickname": "Багрій",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794171871259-8uj48"
+      ],
+      "children": [
+        "p-1794171825847-2zz81",
+        "p-1794170919770-6slfn"
+      ],
+      "x": -783,
+      "y": -867
+    },
+    "p-1794172344477-saqie": {
+      "id": "p-1794172344477-saqie",
+      "firstName": "Євдокія",
+      "lastName": "Бавмкетнер",
+      "gender": "unknown",
+      "parents": [
+        "p-1794172383222-0lrho",
+        "p-1794172558452-sepm5"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 2776,
+      "y": 2423,
+      "yearsDisplay": "22.07.1908",
+      "birthDate": "22.07.1908",
+      "birthDay": "22",
+      "birthMonth": "07",
+      "birthYear": "1908",
+      "isDeceased": false,
+      "houseNumber": "306",
+      "isFullyVerified": true,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "siblings": [
+        "p-1794078310741"
+      ],
+      "metricDocuments": [
+        {
+          "id": "doc-1794172750772-ak4ig",
+          "type": "other",
+          "url": "/uploads/1794172750687_----------6.png",
+          "title": "----------6"
+        }
+      ]
+    },
+    "p-1794172383222-0lrho": {
+      "id": "p-1794172383222-0lrho",
+      "firstName": "Василь",
+      "lastName": "Бавмкетнер",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794172558452-sepm5"
+      ],
+      "children": [
+        "p-1794172344477-saqie",
+        "p-1794078310741"
+      ],
+      "x": 2762,
+      "y": 2141
+    },
+    "p-1794172558452-sepm5": {
+      "id": "p-1794172558452-sepm5",
+      "firstName": "Марія",
+      "lastName": "Бамвкетнер",
+      "nickname": "Дудяк",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794172589708-87x73",
+        "p-1794172605428-qwy65"
+      ],
+      "spouses": [
+        "p-1794172383222-0lrho"
+      ],
+      "children": [
+        "p-1794172344477-saqie",
+        "p-1794078310741"
+      ],
+      "x": 2876,
+      "y": 2141
+    },
+    "p-1794172589708-87x73": {
+      "id": "p-1794172589708-87x73",
+      "firstName": "Костянтин",
+      "lastName": "Дудяк",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794172605428-qwy65"
+      ],
+      "children": [
+        "p-1794172558452-sepm5"
+      ],
+      "x": 2916,
+      "y": 1933
+    },
+    "p-1794172605428-qwy65": {
+      "id": "p-1794172605428-qwy65",
+      "firstName": "Анастасія",
+      "lastName": "Дудяк",
+      "maidenName": "Чапля",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794172589708-87x73"
+      ],
+      "children": [
+        "p-1794172558452-sepm5"
+      ],
+      "x": 3030,
+      "y": 1933,
+      "isFullyVerified": false
+    },
+    "p-1794172910844-x2cwb": {
+      "id": "p-1794172910844-x2cwb",
+      "firstName": "Катерина",
+      "lastName": "Дмитрик",
+      "nickname": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794170937803-ndcws",
+        "p-1794170919770-6slfn"
+      ],
+      "spouses": [
+        "p-1794172997420-oz5zs"
+      ],
+      "children": [
+        "p-1794173065351-gi267"
+      ],
+      "x": -438,
+      "y": -621
+    },
+    "p-1794172997420-oz5zs": {
+      "id": "p-1794172997420-oz5zs",
+      "firstName": "Ілля(?)",
+      "lastName": "Дмитрик",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794172910844-x2cwb"
+      ],
+      "children": [
+        "p-1794173065351-gi267"
+      ],
+      "x": -324,
+      "y": -621
+    },
+    "p-1794173065351-gi267": {
+      "id": "p-1794173065351-gi267",
+      "firstName": "Пантелеймон",
+      "lastName": "Дмитрик",
+      "gender": "male",
+      "yearsDisplay": "06.08.1908",
+      "birthDate": "06.08.1908",
+      "birthDay": "06",
+      "birthMonth": "08",
+      "birthYear": "1908",
+      "isDeceased": false,
+      "houseNumber": "236",
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794172997420-oz5zs",
+        "p-1794172910844-x2cwb"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -377,
+      "y": -421,
+      "isFullyVerified": true,
+      "metricDocuments": [
+        {
+          "id": "doc-1794173121914-355pu",
+          "type": "other",
+          "url": "/uploads/1794173121829___________________.png",
+          "title": "чччччччччччччччччч"
+        }
+      ]
+    },
+    "p-1794174832051-fisib": {
+      "id": "p-1794174832051-fisib",
+      "firstName": "Григорій",
+      "lastName": "Багрій",
+      "gender": "unknown",
+      "parents": [
+        "p-1794174936363-4k954",
+        "p-1794175113943-fj6hr"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -3185,
+      "y": 859,
+      "yearsDisplay": "03.02.1851",
+      "birthDate": "03.02.1851",
+      "birthDay": "03",
+      "birthMonth": "02",
+      "birthYear": "1851",
+      "isDeceased": false,
+      "houseNumber": "282",
+      "isFullyVerified": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "metricDocuments": [
+        {
+          "id": "doc-1794175324755-2omq5",
+          "type": "other",
+          "url": "/uploads/1794175324622________________16.png",
+          "title": "чяяяяяяяяяяяяя_16"
+        }
+      ]
+    },
+    "p-1794174936363-4k954": {
+      "id": "p-1794174936363-4k954",
+      "firstName": "Роман",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794174964317-joj9q",
+        "p-1794175017060-87wnp",
+        "p-1794175017060-87wnp"
+      ],
+      "spouses": [
+        "p-1794175113943-fj6hr"
+      ],
+      "children": [
+        "p-1794174832051-fisib"
+      ],
+      "x": -3244,
+      "y": 586
+    },
+    "p-1794174964317-joj9q": {
+      "id": "p-1794174964317-joj9q",
+      "firstName": "Василь",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794175017060-87wnp"
+      ],
+      "children": [
+        "p-1794174936363-4k954"
+      ],
+      "x": -3309,
+      "y": 27
+    },
+    "p-1794175017060-87wnp": {
+      "id": "p-1794175017060-87wnp",
+      "firstName": "Пелагія",
+      "lastName": "Багрій",
+      "nickname": "Максимова",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794174964317-joj9q"
+      ],
+      "children": [
+        "p-1794174936363-4k954",
+        "p-1794081388798"
+      ],
+      "x": -3185,
+      "y": 27
+    },
+    "p-1794175113943-fj6hr": {
+      "id": "p-1794175113943-fj6hr",
+      "firstName": "Марія",
+      "lastName": "Багрій",
+      "nickname": "Одинак",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794175143433-5kzcv",
+        "p-1794175295717-pyk08"
+      ],
+      "spouses": [
+        "p-1794174936363-4k954"
+      ],
+      "children": [
+        "p-1794174832051-fisib"
+      ],
+      "x": -3130,
+      "y": 586
+    },
+    "p-1794175143433-5kzcv": {
+      "id": "p-1794175143433-5kzcv",
+      "firstName": "Григорій",
+      "lastName": "Одинак",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794175295717-pyk08"
+      ],
+      "children": [
+        "p-1794175113943-fj6hr"
+      ],
+      "x": -3127,
+      "y": 335
+    },
+    "p-1794175295717-pyk08": {
+      "id": "p-1794175295717-pyk08",
+      "firstName": "Марія",
+      "lastName": "Одинак",
+      "nickname": "Ізефурко",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794175143433-5kzcv"
+      ],
+      "children": [
+        "p-1794175113943-fj6hr"
+      ],
+      "x": -3013,
+      "y": 335
+    },
+    "p-1794176663134-961f3": {
+      "id": "p-1794176663134-961f3",
+      "firstName": "Михайло",
+      "lastName": "Паращак",
+      "gender": "unknown",
+      "parents": [
+        "p-1794176725989-8bwxd"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 2636,
+      "y": 1461,
+      "yearsDisplay": "16.11.1842",
+      "birthDate": "16.11.1842",
+      "birthDay": "16",
+      "birthMonth": "11",
+      "birthYear": "1842",
+      "isDeceased": false,
+      "houseNumber": "244",
+      "isFullyVerified": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "metricDocuments": [
+        {
+          "id": "doc-1794176824468-5pnr8",
+          "type": "other",
+          "url": "/uploads/1794176824323______________________6.png",
+          "title": "ццццццццццццццццццццц6"
+        }
+      ]
+    },
+    "p-1794176725989-8bwxd": {
+      "id": "p-1794176725989-8bwxd",
+      "firstName": "Теодор",
+      "lastName": "Паращак",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794176758814-8i2gh"
+      ],
+      "spouses": [],
+      "children": [
+        "p-1794176663134-961f3"
+      ],
+      "x": 2766,
+      "y": 1203
+    },
+    "p-1794176758814-8i2gh": {
+      "id": "p-1794176758814-8i2gh",
+      "firstName": "Михайло",
+      "lastName": "Паращак",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [],
+      "children": [
+        "p-1794176725989-8bwxd"
+      ],
+      "x": 3026,
+      "y": 998
+    },
+    "p-1794177483349-cga7g": {
+      "id": "p-1794177483349-cga7g",
+      "firstName": "Михайло",
+      "lastName": "Кобилецький",
+      "gender": "unknown",
+      "parents": [
+        "p-1794177690406-xziha",
+        "p-1794177702604-39fhs"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 1742,
+      "y": 257,
+      "nickname": "де Годземба",
+      "yearsDisplay": "16.08.1840",
+      "birthDate": "16.08.1840",
+      "birthDay": "16",
+      "birthMonth": "08",
+      "birthYear": "1840",
+      "isDeceased": false,
+      "houseNumber": "94",
+      "isFullyVerified": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "metricDocuments": [
+        {
+          "id": "doc-1794177813462-joq5a",
+          "type": "other",
+          "url": "/uploads/1794177813305_xxxxxxxxxng.png",
+          "title": "xxxxxxxxxng"
+        }
+      ]
+    },
+    "p-1794177690406-xziha": {
+      "id": "p-1794177690406-xziha",
+      "firstName": "Іван",
+      "lastName": "Кобилецький",
+      "nickname": "де Годземба",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794177714751-dwgw4"
+      ],
+      "spouses": [
+        "p-1794177702604-39fhs"
+      ],
+      "children": [
+        "p-1794177483349-cga7g"
+      ],
+      "x": 1742,
+      "y": 27,
+      "isFullyVerified": false
+    },
+    "p-1794177702604-39fhs": {
+      "id": "p-1794177702604-39fhs",
+      "firstName": "Марія",
+      "lastName": "Кобилецька",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794177690406-xziha"
+      ],
+      "children": [
+        "p-1794177483349-cga7g"
+      ],
+      "x": 1856,
+      "y": 27
+    },
+    "p-1794177714751-dwgw4": {
+      "id": "p-1794177714751-dwgw4",
+      "firstName": "Теодор",
+      "lastName": "Кобилецький",
+      "nickname": "де Годземба",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [],
+      "children": [
+        "p-1794177690406-xziha"
+      ],
+      "x": 1628,
+      "y": -178
+    },
+    "p-1794179214259-asdmh": {
+      "id": "p-1794179214259-asdmh",
+      "firstName": "Петро",
+      "lastName": "Паращак",
+      "gender": "male",
+      "yearsDisplay": "1809",
+      "birthDate": "1809",
+      "birthYear": "1809",
+      "isDeceased": false,
+      "houseNumber": "198",
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794183808910-5gmev"
+      ],
+      "spouses": [
+        "p-1794179253980-5il8d"
+      ],
+      "children": [
+        "p-1794078083047"
+      ],
+      "x": 2240,
+      "y": 1713,
+      "isFullyVerified": true,
+      "metricDocuments": [
+        {
+          "id": "doc-1794183870594-9fujx",
+          "type": "marriage",
+          "url": "/uploads/1794183870330__________________________16.png",
+          "title": "1"
+        }
+      ]
+    },
+    "p-1794179253980-5il8d": {
+      "id": "p-1794179253980-5il8d",
+      "firstName": "Марія",
+      "lastName": "Паращак",
+      "maidenName": "Бикова",
+      "gender": "female",
+      "yearsDisplay": "1798",
+      "birthDate": "1798",
+      "birthYear": "1798",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794184226395-dcxdc"
+      ],
+      "spouses": [
+        "p-1794179214259-asdmh"
+      ],
+      "children": [
+        "p-1794078083047"
+      ],
+      "x": 2354,
+      "y": 1713,
+      "isFullyVerified": false
+    },
+    "p-1794179300149-sbv03": {
+      "id": "p-1794179300149-sbv03",
+      "firstName": "Косма\\Кость\\Іван?",
+      "lastName": "Багрій",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#dffbe4",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794179348222-5ixbp"
+      ],
+      "children": [
+        "p-1794078114040"
+      ],
+      "x": 2526,
+      "y": 1713,
+      "isFullyVerified": false
+    },
+    "p-1794179348222-5ixbp": {
+      "id": "p-1794179348222-5ixbp",
+      "firstName": "Юліанна",
+      "lastName": "Багрій",
+      "nickname": "Калапунь",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794179300149-sbv03"
+      ],
+      "children": [
+        "p-1794078114040"
+      ],
+      "x": 2640,
+      "y": 1713
+    },
+    "p-1794183808910-5gmev": {
+      "id": "p-1794183808910-5gmev",
+      "firstName": "Михайло",
+      "lastName": "Паращак",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#ffbb5c",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [],
+      "children": [
+        "p-1794179214259-asdmh"
+      ],
+      "x": 1899,
+      "y": 1461
+    },
+    "p-1794184226395-dcxdc": {
+      "id": "p-1794184226395-dcxdc",
+      "firstName": "Івана",
+      "lastName": "Биків\\Решетар?",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [],
+      "children": [
+        "p-1794179253980-5il8d"
+      ],
+      "x": 2094,
+      "y": 1461,
+      "isFullyVerified": false
+    },
+    "p-1794264165377-h9se5": {
+      "id": "p-1794264165377-h9se5",
+      "firstName": "Назар",
+      "lastName": "Дидинський",
+      "gender": "male",
+      "yearsDisplay": "08.03.2008",
+      "birthDate": "08.03.2008",
+      "birthDay": "08",
+      "birthMonth": "03",
+      "birthYear": "2008",
+      "isDeceased": false,
+      "cardBgColor": "#b8c9ff",
+      "unverifiedRelations": [],
+      "avatarUrl": "/uploads/1794264774318________________-24.jpg",
+      "parents": [
+        "p-1794076602697",
+        "p-1794077002037"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794264202777-9v1t7"
+      ],
+      "x": 1147,
+      "y": 3349,
+      "isFullyVerified": false
+    },
+    "p-1794264202777-9v1t7": {
+      "id": "p-1794264202777-9v1t7",
+      "firstName": "Ігор",
+      "lastName": "Дидинський",
+      "gender": "male",
+      "yearsDisplay": "04.03.2004",
+      "birthDate": "04.03.2004",
+      "birthDay": "04",
+      "birthMonth": "03",
+      "birthYear": "2004",
+      "isDeceased": false,
+      "cardBgColor": "#b8c9ff",
+      "unverifiedRelations": [],
+      "avatarUrl": "/uploads/1794264682784__________________6.webp",
+      "parents": [
+        "p-1794076602697",
+        "p-1794077002037"
+      ],
+      "spouses": [
+        "p-1794264332534-182uq"
+      ],
+      "children": [],
+      "siblings": [
+        "p-1794264165377-h9se5"
+      ],
+      "x": 843,
+      "y": 3349,
+      "isFullyVerified": false,
+      "pets": [
+        {
+          "id": "pet-1794264351419-obxu",
+          "name": "Барні",
+          "type": "dog",
+          "isCouplePet": true
+        }
+      ],
+      "reactions": []
+    },
+    "p-1794264332534-182uq": {
+      "id": "p-1794264332534-182uq",
+      "firstName": "Марія",
+      "lastName": "Дидинська",
+      "maidenName": "Тимоць",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#b8c9ff",
+      "unverifiedRelations": [],
+      "avatarUrl": "/uploads/1794264863307_Photo-81.webp",
+      "parents": [],
+      "spouses": [
+        "p-1794264202777-9v1t7"
+      ],
+      "children": [],
+      "x": 957,
+      "y": 3349,
+      "isFullyVerified": false,
+      "reactions": [
+        {
+          "emoji": "❤️",
+          "userId": "guest-ba59d0l"
+        }
+      ]
+    },
+    "p-1794264918708-5i2mj": {
+      "id": "p-1794264918708-5i2mj",
+      "firstName": "Інна",
+      "lastName": "Ладиженська",
+      "gender": "female",
+      "yearsDisplay": "31.07.1986",
+      "birthDate": "31.07.1986",
+      "birthDay": "31",
+      "birthMonth": "07",
+      "birthYear": "1986",
+      "isDeceased": false,
+      "cardBgColor": "#f3e8ff",
+      "unverifiedRelations": [],
+      "avatarUrl": "/uploads/1794265119774______-01-56.webp",
+      "parents": [
+        "p-1794265150288-24883",
+        "p-1794265234475-g56lb"
+      ],
+      "spouses": [
+        "p-1794076499848"
+      ],
+      "children": [],
+      "x": 337,
+      "y": 3997,
+      "isFullyVerified": false
+    },
+    "p-1794264952973-2wwr1": {
+      "id": "p-1794264952973-2wwr1",
+      "firstName": "Коля",
+      "lastName": "",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794076602697"
+      ],
+      "children": [],
+      "x": 1312,
+      "y": 3030,
+      "reactions": [
+        {
+          "emoji": "😮",
+          "userId": "guest-ba59d0l"
+        }
+      ]
+    },
+    "p-1794265150288-24883": {
+      "id": "p-1794265150288-24883",
+      "firstName": "Борис",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#b67790",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267000565-19hv7",
+        "p-1794267106095-ci223"
+      ],
+      "spouses": [
+        "p-1794265234475-g56lb"
+      ],
+      "children": [
+        "p-1794264918708-5i2mj"
+      ],
+      "x": 437,
+      "y": 4259,
+      "yearsDisplay": "27.11.1963",
+      "birthDate": "27.11.1963",
+      "birthDay": "27",
+      "birthMonth": "11",
+      "birthYear": "1963",
+      "birthPlace": "с. Нестоїта",
+      "residencePlace": "с. Нестоїта",
+      "isFullyVerified": false,
+      "siblings": [
+        "p-1794267700493-7ryyl"
+      ]
+    },
+    "p-1794265234475-g56lb": {
+      "id": "p-1794265234475-g56lb",
+      "firstName": "Світлана",
+      "lastName": "Ладиженська",
+      "maidenName": "Сідоркіна",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267208769-6h68u",
+        "p-1794267208769-6h68u",
+        "p-1794267253404-17n7d"
+      ],
+      "spouses": [
+        "p-1794265150288-24883"
+      ],
+      "children": [
+        "p-1794264918708-5i2mj"
+      ],
+      "x": 337,
+      "y": 4259,
+      "yearsDisplay": "07.08.1964",
+      "birthDate": "07.08.1964",
+      "birthDay": "07",
+      "birthMonth": "08",
+      "birthYear": "1964",
+      "isFullyVerified": false
+    },
+    "p-1794267000565-19hv7": {
+      "id": "p-1794267000565-19hv7",
+      "firstName": "Микола",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "yearsDisplay": "09.09.1927",
+      "birthDate": "09.09.1927",
+      "birthDay": "09",
+      "birthMonth": "09",
+      "birthYear": "1927",
+      "isDeceased": false,
+      "cardBgColor": "#b67790",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267369750-6p1x1"
+      ],
+      "spouses": [
+        "p-1794267106095-ci223"
+      ],
+      "children": [
+        "p-1794265150288-24883",
+        "p-1794267700493-7ryyl"
+      ],
+      "x": 918,
+      "y": 4560
+    },
+    "p-1794267106095-ci223": {
+      "id": "p-1794267106095-ci223",
+      "firstName": "Лідія",
+      "lastName": "Ладиженська",
+      "maidenName": "Пляцко",
+      "gender": "female",
+      "birthDay": "01",
+      "birthMonth": "01",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794267000565-19hv7"
+      ],
+      "children": [
+        "p-1794265150288-24883",
+        "p-1794267700493-7ryyl"
+      ],
+      "x": 1032,
+      "y": 4560,
+      "biography": "приблизно 1932-34 р.н",
+      "isFullyVerified": false
+    },
+    "p-1794267208769-6h68u": {
+      "id": "p-1794267208769-6h68u",
+      "firstName": "Володимир",
+      "lastName": "Храпенко",
+      "gender": "male",
+      "yearsDisplay": "1932",
+      "birthDate": "1932",
+      "birthYear": "1932",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267297949-0kreb"
+      ],
+      "spouses": [
+        "p-1794267253404-17n7d"
+      ],
+      "children": [
+        "p-1794265234475-g56lb",
+        "p-1794268183441-rgkyk",
+        "p-1794268199515-i7b0p",
+        "p-1794268226522-10x63",
+        "p-1794268353597-dv0su",
+        "p-1794268373798-y1z3y",
+        "p-1794268387326-mq3jr"
+      ],
+      "x": 337,
+      "y": 4560
+    },
+    "p-1794267253404-17n7d": {
+      "id": "p-1794267253404-17n7d",
+      "firstName": "Феодосія",
+      "lastName": "Сідоркіна",
+      "gender": "female",
+      "yearsDisplay": "1938",
+      "birthDate": "1938",
+      "birthYear": "1938",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267276652-wmis2",
+        "p-1794267873553-6p1vd"
+      ],
+      "spouses": [
+        "p-1794267208769-6h68u"
+      ],
+      "children": [
+        "p-1794265234475-g56lb",
+        "p-1794268183441-rgkyk",
+        "p-1794268199515-i7b0p",
+        "p-1794268226522-10x63",
+        "p-1794268353597-dv0su",
+        "p-1794268373798-y1z3y",
+        "p-1794268387326-mq3jr"
+      ],
+      "x": 451,
+      "y": 4560,
+      "isFullyVerified": false
+    },
+    "p-1794267276652-wmis2": {
+      "id": "p-1794267276652-wmis2",
+      "firstName": "Анна",
+      "lastName": "Сідоркіна",
+      "maidenName": "Соколова",
+      "gender": "female",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794267873553-6p1vd"
+      ],
+      "children": [
+        "p-1794267253404-17n7d"
+      ],
+      "x": 528,
+      "y": 4836,
+      "isFullyVerified": false
+    },
+    "p-1794267297949-0kreb": {
+      "id": "p-1794267297949-0kreb",
+      "firstName": "Кіндрат",
+      "lastName": "Храпенко",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [],
+      "children": [
+        "p-1794267208769-6h68u"
+      ],
+      "x": 156,
+      "y": 4836
+    },
+    "p-1794267369750-6p1x1": {
+      "id": "p-1794267369750-6p1x1",
+      "firstName": "Ніканор",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#b67790",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267392998-jk3wu"
+      ],
+      "spouses": [],
+      "children": [
+        "p-1794267000565-19hv7",
+        "p-1794267443079-wb6tv",
+        "p-1794267457065-efisl",
+        "p-1794267475081-higc2",
+        "p-1794267503770-5gxxc"
+      ],
+      "x": 918,
+      "y": 4872
+    },
+    "p-1794267392998-jk3wu": {
+      "id": "p-1794267392998-jk3wu",
+      "firstName": "Полікарп",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#b67790",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [],
+      "children": [
+        "p-1794267369750-6p1x1"
+      ],
+      "x": 918,
+      "y": 5154
+    },
+    "p-1794267443079-wb6tv": {
+      "id": "p-1794267443079-wb6tv",
+      "firstName": "Арлампія",
+      "lastName": "Ладиженська",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267369750-6p1x1"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 1261,
+      "y": 4560
+    },
+    "p-1794267457065-efisl": {
+      "id": "p-1794267457065-efisl",
+      "firstName": "Онітка",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267369750-6p1x1"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 1486,
+      "y": 4560
+    },
+    "p-1794267475081-higc2": {
+      "id": "p-1794267475081-higc2",
+      "firstName": "Сергій",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#b67790",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267369750-6p1x1"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 1714,
+      "y": 4560
+    },
+    "p-1794267503770-5gxxc": {
+      "id": "p-1794267503770-5gxxc",
+      "firstName": "?",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267369750-6p1x1"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 1980,
+      "y": 4560
+    },
+    "p-1794267700493-7ryyl": {
+      "id": "p-1794267700493-7ryyl",
+      "firstName": "Андрій",
+      "lastName": "Ладиженський",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#b67790",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267000565-19hv7",
+        "p-1794267106095-ci223"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 684,
+      "y": 4259
+    },
+    "p-1794267873553-6p1vd": {
+      "id": "p-1794267873553-6p1vd",
+      "firstName": "Сергій",
+      "lastName": "Сідоркін",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [
+        "p-1794267276652-wmis2"
+      ],
+      "children": [
+        "p-1794267253404-17n7d"
+      ],
+      "x": 642,
+      "y": 4836
+    },
+    "p-1794268183441-rgkyk": {
+      "id": "p-1794268183441-rgkyk",
+      "firstName": "Ірина",
+      "lastName": "Сідоркіна",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267208769-6h68u",
+        "p-1794267208769-6h68u",
+        "p-1794267253404-17n7d"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": 118,
+      "y": 4259
+    },
+    "p-1794268199515-i7b0p": {
+      "id": "p-1794268199515-i7b0p",
+      "firstName": "Раїса",
+      "lastName": "Сідоркіна",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267208769-6h68u",
+        "p-1794267208769-6h68u",
+        "p-1794267253404-17n7d"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794265234475-g56lb",
+        "p-1794268183441-rgkyk",
+        "p-1794268226522-10x63",
+        "p-1794268353597-dv0su",
+        "p-1794268373798-y1z3y",
+        "p-1794268387326-mq3jr"
+      ],
+      "x": -56,
+      "y": 4259,
+      "isFullyVerified": false
+    },
+    "p-1794268226522-10x63": {
+      "id": "p-1794268226522-10x63",
+      "firstName": "Зінаїда",
+      "lastName": "Сідоркіна",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267208769-6h68u",
+        "p-1794267208769-6h68u",
+        "p-1794267253404-17n7d"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -438,
+      "y": 4259
+    },
+    "p-1794268353597-dv0su": {
+      "id": "p-1794268353597-dv0su",
+      "firstName": "Наталя",
+      "lastName": "Сідоркіна",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267208769-6h68u",
+        "p-1794267208769-6h68u",
+        "p-1794267253404-17n7d"
+      ],
+      "spouses": [],
+      "children": [],
+      "siblings": [
+        "p-1794265234475-g56lb",
+        "p-1794268183441-rgkyk",
+        "p-1794268199515-i7b0p",
+        "p-1794268226522-10x63",
+        "p-1794268373798-y1z3y",
+        "p-1794268387326-mq3jr"
+      ],
+      "x": -263,
+      "y": 4259,
+      "isFullyVerified": false
+    },
+    "p-1794268373798-y1z3y": {
+      "id": "p-1794268373798-y1z3y",
+      "firstName": "Анатолій",
+      "lastName": "Сідоркін",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267208769-6h68u",
+        "p-1794267208769-6h68u",
+        "p-1794267253404-17n7d"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -607,
+      "y": 4259
+    },
+    "p-1794268387326-mq3jr": {
+      "id": "p-1794268387326-mq3jr",
+      "firstName": "Сергій",
+      "lastName": "Сідоркін",
+      "gender": "male",
+      "isDeceased": false,
+      "cardBgColor": "#0f8a21",
+      "unverifiedRelations": [],
+      "parents": [
+        "p-1794267208769-6h68u",
+        "p-1794267208769-6h68u",
+        "p-1794267253404-17n7d"
+      ],
+      "spouses": [],
+      "children": [],
+      "x": -783,
+      "y": 4259
+    }
+  },
+  "connectionOverrides": {
+    "descent:p-1794060970679": {
+      "verified": true,
+      "color": "#15803d"
+    },
+    "marriage:p-1794060970679::p-1794061014327": {
+      "verified": true,
+      "eventType": "church",
+      "label": "Вінчання",
+      "eventDate": "2323",
+      "color": "#15803d"
+    },
+    "descent:p-1794060970679::p-1794061014327": {
+      "verified": false,
+      "color": "#9ca3af",
+      "hasNoEvent": true
+    },
+    "marriage:p-1794061014327::p-1794063502714": {
+      "verified": true,
+      "eventType": "marriage",
+      "color": "#15803d",
+      "isMainBranch": true
+    },
+    "descent:p-1794077912772::p-1794078206731": {
+      "verified": true,
+      "isMainBranch": false,
+      "color": "#15803d",
+      "hasNoEvent": true
+    },
+    "descent:p-1794084762672::p-1794084949044": {
+      "verified": true,
+      "confidenceLevel": "verified",
+      "lineStyle": "orthogonal",
+      "isMainBranch": false,
+      "color": "#15803d",
+      "hasNoEvent": true
+    },
+    "descent:p-1794086652689": {
+      "verified": false,
+      "isMainBranch": false,
+      "color": "#78716c",
+      "hasNoEvent": true
+    },
+    "descent:p-1794086728404": {
+      "verified": false,
+      "isMainBranch": false,
+      "color": "#78716c",
+      "hasNoEvent": true
+    },
+    "descent:child:p-1794077680309::p-1794078397129::p-1794078397129:p-1794077530306": {
+      "verified": true,
+      "isMainBranch": false,
+      "color": "#15803d",
+      "fromAnchor": "right",
+      "toAnchor": "left",
+      "hasNoEvent": true
+    },
+    "descent:p-1794077680309::p-1794078397129::p-1794078397129": {
+      "verified": true,
+      "isMainBranch": false,
+      "color": "#15803d",
+      "fromAnchor": "right",
+      "toAnchor": "bottom",
+      "hasNoEvent": true
+    },
+    "descent:p-1794077530306::p-1794077575074": {
+      "verified": true,
+      "isMainBranch": false,
+      "color": "#15803d",
+      "fromAnchor": "top",
+      "toAnchor": "top",
+      "hasNoEvent": true
+    },
+    "descent:child:p-1794166919139-w02hu::p-1794166970829-5qzi7:p-1794166990893-3t9dv": {
+      "verified": true,
+      "confidenceLevel": "verified",
+      "lineStyle": "orthogonal",
+      "isMainBranch": false,
+      "color": "#15803d",
+      "hasNoEvent": true
+    },
+    "descent:child:p-1794077912772::p-1794078206731::p-1794078206731:p-1794077810577": {
+      "verified": true,
+      "confidenceLevel": "verified",
+      "lineStyle": "orthogonal",
+      "isMainBranch": false,
+      "color": "#15803d",
+      "hasNoEvent": true
+    },
+    "descent:child:p-1794171939148-3y2lv:p-1794170919770-6slfn": {
+      "verified": true,
+      "confidenceLevel": "verified",
+      "isMainBranch": false,
+      "color": "#15803d"
+    },
+    "descent:child:p-1794172383222-0lrho:p-1794078310741": {
+      "verified": true,
+      "confidenceLevel": "verified",
+      "isMainBranch": false,
+      "color": "#15803d"
+    },
+    "descent:child:p-1794175017060-87wnp:p-1794081388798": {
+      "verified": true,
+      "confidenceLevel": "verified",
+      "isMainBranch": false,
+      "color": "#15803d"
+    },
+    "marriage:p-1794076602697::p-1794077002037": {
+      "verified": true,
+      "eventType": "divorce",
+      "label": "Розлучення",
+      "color": "#e11d48"
+    },
+    "marriage:p-1794264202777-9v1t7::p-1794264332534-182uq": {
+      "verified": true,
+      "eventType": "marriage",
+      "label": "Шлюб"
+    },
+    "marriage:p-1794076499848::p-1794264918708-5i2mj": {
+      "verified": true,
+      "eventType": "cohabitation",
+      "label": "Пара (без шлюбу)"
+    },
+    "marriage:p-1794076602697::p-1794264952973-2wwr1": {
+      "verified": true,
+      "eventType": "cohabitation",
+      "label": "Пара (без шлюбу)"
+    },
+    "marriage:p-1794265150288-24883::p-1794265234475-g56lb": {
+      "verified": true,
+      "eventType": "marriage",
+      "label": "Шлюб"
+    },
+    "marriage:p-1794267000565-19hv7::p-1794267106095-ci223": {
+      "verified": true,
+      "eventType": "marriage",
+      "label": "Шлюб"
+    },
+    "marriage:p-1794267208769-6h68u::p-1794267253404-17n7d": {
+      "verified": true,
+      "eventType": "marriage",
+      "label": "Шлюб"
+    },
+    "marriage:p-1794267276652-wmis2::p-1794267873553-6p1vd": {
+      "verified": true,
+      "eventType": "marriage",
+      "label": "Шлюб"
+    }
+  },
+  "clanCoatOfArms": {
+    "Кобилецький": {
+      "url": "/uploads/1794266966908_POL_COA_Godziemba_svg.webp",
+      "motto": "РІД КОБИЛЕЦЬКИЙ",
+      "description": "Завантажений герб роду Кобилецький"
+    }
+  }
+}

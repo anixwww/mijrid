@@ -1,0 +1,8 @@
+{
+  "name": "Родовід — Оформлення Родового Дерева",
+  "description": "Інтерактивний редактор генеалогічного дерева в класичному стилі зі збереженням локально на комп'ютері.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

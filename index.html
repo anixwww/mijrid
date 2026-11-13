@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Родовід — Оформлення Родового Дерева</title>
+    <meta name="description" content="Інтерактивний редактор генеалогічного дерева в класичному стилі зі збереженням локально на комп'ютері." />
+    <meta property="og:title" content="Родовід — Оформлення Родового Дерева" />
+    <meta property="og:description" content="Інтерактивний редактор генеалогічного дерева в класичному стилі зі збереженням локально на комп'ютері." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#292524" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Родовід" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('rodovid_theme');
+          if (t === 'dark') {
+            document.documentElement.classList.add('dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#111315');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: #e5ef96;
+      }
+      html.dark, html.dark body {
+        background-color: #111315;
+      }
+      @keyframes rodovidPreMountShimmer {
+        0% { transform: translateX(-110%); }
+        100% { transform: translateX(210%); }
+      }
+      @keyframes rodovidPreMountFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+      .rodovid-boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        user-select: none;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(145deg, #f7fad9 0%, #e5ef96 38%, #bfd452 74%, #95b530 100%);
+      }
+      .rodovid-boot-glow {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 40%, rgba(255, 253, 224, 0.72) 0%, rgba(255, 253, 224, 0) 65%);
+      }
+      .rodovid-boot-logo {
+        position: relative;
+        z-index: 1;
+        width: 176px;
+        height: 176px;
+        object-fit: contain;
+        margin-bottom: 20px;
+        filter: drop-shadow(0 6px 14px rgba(45, 59, 18, 0.16));
+        animation: rodovidPreMountFloat 3.2s ease-in-out infinite;
+      }
+      .rodovid-boot-title {
+        position: relative;
+        z-index: 1;
+        margin: 0 0 4px;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: #1f290e;
+      }
+      .rodovid-boot-sub {
+        position: relative;
+        z-index: 1;
+        margin: 0 0 24px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(49, 65, 20, 0.85);
+      }
+      .rodovid-boot-bar {
+        position: relative;
+        z-index: 1;
+        width: 192px;
+        height: 6px;
+        border-radius: 9999px;
+        background: rgba(38, 51, 16, 0.15);
+        overflow: hidden;
+      }
+      .rodovid-boot-bar-fill {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 55%;
+        border-radius: 9999px;
+        background: linear-gradient(90deg, #587816, #2e470c);
+        animation: rodovidPreMountShimmer 1.6s ease-in-out infinite;
+      }
+      .rodovid-boot-status {
+        position: relative;
+        z-index: 1;
+        margin: 12px 0 0;
+        font-size: 11px;
+        font-weight: 500;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: rgba(44, 58, 18, 0.75);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="rodovid-boot-splash" aria-label="Завантаження">
+        <div class="rodovid-boot-glow"></div>
+        <img class="rodovid-boot-logo" src="/assets/logo-tree-transparent.png" alt="Логотип родового дерева" />
+        <h1 class="rodovid-boot-title">МІЙ РІД</h1>
+        <p class="rodovid-boot-sub">Хронологічне родове дерево</p>
+        <div class="rodovid-boot-bar"><div class="rodovid-boot-bar-fill"></div></div>
+        <p class="rodovid-boot-status">Відкриття родинного архіву...</p>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function (err) {
+            console.debug('ServiceWorker registration error:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,269 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'andrijdankiv5@gmail.com' ||
+        request.auth.token.email == 'veleina888@gmail.com'
+      );
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['userId', 'email', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.userId is string && data.userId == userId && isValidId(data.userId)
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 200
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 1000))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTreeDocument(data, treeId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'isPublic', 'personCount', 'treeDataJson', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'ownerName', 'title', 'version', 'description', 'isPublic', 'isMain', 'personCount', 'treeDataJson', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id == treeId && isValidId(data.id)
+        && data.ownerId is string && isValidId(data.ownerId)
+        && (!('ownerName' in data) || (data.ownerName is string && data.ownerName.size() <= 100))
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 150
+        && (!('version' in data) || (data.version is string && data.version.size() <= 40))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && data.isPublic is bool
+        && (!('isMain' in data) || data.isMain is bool)
+        && data.personCount is int && data.personCount >= 0 && data.personCount <= 20000
+        && data.treeDataJson is string && data.treeDataJson.size() >= 2 && data.treeDataJson.size() <= 950000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidGlobalSettings(data) {
+      return data.keys().hasAll(['version', 'updatedAt'])
+        && data.keys().hasOnly(['version', 'updatedBy', 'updatedAt'])
+        && data.version is string && data.version.size() >= 1 && data.version.size() <= 40
+        && (!('updatedBy' in data) || (data.updatedBy is string && data.updatedBy.size() <= 128))
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMediaManifest(data, mediaId) {
+      return data.keys().hasAll(['id', 'filename', 'mimeType', 'ownerId', 'isPublic', 'chunkCount', 'totalBytes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'filename', 'mimeType', 'ownerId', 'isPublic', 'chunkCount', 'totalBytes', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id == mediaId && isValidId(data.id)
+        && data.filename is string && data.filename.size() >= 3 && data.filename.size() <= 160
+        && data.mimeType is string && data.mimeType.size() >= 6 && data.mimeType.size() <= 80
+        && data.mimeType.matches('^image/(png|jpeg|pjpeg|webp|gif|bmp|avif|tiff|x-icon|heic|heif)$')
+        && data.ownerId is string && isValidId(data.ownerId)
+        && data.isPublic is bool
+        && data.chunkCount is int && data.chunkCount >= 1 && data.chunkCount <= 60
+        && data.totalBytes is int && data.totalBytes >= 1 && data.totalBytes <= 25000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMediaChunk(data, chunkId) {
+      return data.keys().hasAll(['id', 'index', 'data', 'createdAt'])
+        && data.keys().hasOnly(['id', 'index', 'data', 'createdAt'])
+        && data.id is string && data.id == chunkId && isValidId(data.id)
+        && data.index is int && data.index >= 0 && data.index < 60
+        && data.data is string && data.data.size() >= 1 && data.data.size() <= 550000
+        && data.createdAt is timestamp;
+    }
+
+    // --- User Profiles (/users/{userId}) ---
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && (isOwner(userId) || isAdmin())
+        && incoming().userId == existing().userId
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+      allow delete: if isValidId(userId) && (isAdmin() || (isVerifiedUser() && isOwner(userId)));
+    }
+
+    // --- Family Trees (/trees/{treeId}) ---
+    match /trees/{treeId} {
+      allow get: if isValidId(treeId) && (
+        resource == null ||
+        existing().isPublic == true ||
+        isOwner(existing().ownerId) ||
+        isAdmin()
+      );
+      allow list: if existing().isPublic == true
+        || (isSignedIn() && existing().ownerId == request.auth.uid)
+        || isAdmin();
+      allow create: if isVerifiedUser()
+        && isValidId(treeId)
+        && isValidTreeDocument(incoming(), treeId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(treeId)
+        && isValidTreeDocument(incoming(), treeId)
+        && (isOwner(existing().ownerId) || isAdmin())
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'ownerName',
+          'title',
+          'version',
+          'description',
+          'isPublic',
+          'isMain',
+          'personCount',
+          'treeDataJson',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(treeId)
+        && treeId != 'my-family-tree'
+        && isVerifiedUser()
+        && (isOwner(existing().ownerId) || isAdmin());
+    }
+
+    // --- Global Settings (/settings/{settingId}) ---
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if false;
+      allow create, update: if isAdmin()
+        && isValidId(settingId)
+        && isValidGlobalSettings(incoming())
+        && incoming().updatedBy == request.auth.uid
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // --- Admins registry (/admins/{uid}) ---
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && (isOwner(uid) || isAdmin());
+      allow list, write: if false;
+    }
+
+    // --- Synced Media (/media/{mediaId} & /media/{mediaId}/chunks/{chunkId}) ---
+    match /media/{mediaId} {
+      allow get: if isValidId(mediaId) && (
+        resource == null ||
+        existing().isPublic == true ||
+        isOwner(existing().ownerId) ||
+        isAdmin()
+      );
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isValidId(mediaId)
+        && isValidMediaManifest(incoming(), mediaId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(mediaId)
+        && isValidMediaManifest(incoming(), mediaId)
+        && (isOwner(existing().ownerId) || isAdmin())
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'filename',
+          'mimeType',
+          'isPublic',
+          'chunkCount',
+          'totalBytes',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(mediaId)
+        && isVerifiedUser()
+        && (isOwner(existing().ownerId) || isAdmin());
+
+      match /chunks/{chunkId} {
+        allow get: if isValidId(mediaId)
+          && isValidId(chunkId)
+          && exists(/databases/$(database)/documents/media/$(mediaId))
+          && (
+            get(/databases/$(database)/documents/media/$(mediaId)).data.isPublic == true ||
+            isOwner(get(/databases/$(database)/documents/media/$(mediaId)).data.ownerId) ||
+            isAdmin()
+          );
+        allow list: if false;
+        allow create: if isVerifiedUser()
+          && isValidId(mediaId)
+          && isValidId(chunkId)
+          && isValidMediaChunk(incoming(), chunkId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/media/$(mediaId))
+          && (
+            isOwner(get(/databases/$(database)/documents/media/$(mediaId)).data.ownerId) ||
+            isAdmin()
+          );
+        allow update: if isVerifiedUser()
+          && isValidId(mediaId)
+          && isValidId(chunkId)
+          && isValidMediaChunk(incoming(), chunkId)
+          && incoming().id == existing().id
+          && incoming().index == existing().index
+          && incoming().createdAt == existing().createdAt
+          && exists(/databases/$(database)/documents/media/$(mediaId))
+          && (
+            isOwner(get(/databases/$(database)/documents/media/$(mediaId)).data.ownerId) ||
+            isAdmin()
+          );
+        allow delete: if isValidId(mediaId)
+          && isValidId(chunkId)
+          && isVerifiedUser()
+          && exists(/databases/$(database)/documents/media/$(mediaId))
+          && (
+            isOwner(get(/databases/$(database)/documents/media/$(mediaId)).data.ownerId) ||
+            isAdmin()
+          );
+      }
+    }
+  }
+}

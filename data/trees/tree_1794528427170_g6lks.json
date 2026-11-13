@@ -1,0 +1,32 @@
+{
+  "id": "tree_1794528427170_g6lks",
+  "title": "івфів",
+  "version": "v0.2",
+  "createdAt": "2026-11-13T00:07:07.170Z",
+  "updatedAt": "2026-11-13T00:33:53.931Z",
+  "persons": {
+    "p-1794528455285-8d8u3": {
+      "id": "p-1794528455285-8d8u3",
+      "firstName": "іфв",
+      "lastName": "",
+      "gender": "male",
+      "isBirthDateApproximate": false,
+      "birthDateType": "exact",
+      "isDeceased": false,
+      "cardBgColor": "#e8efe9",
+      "unverifiedRelations": [],
+      "parents": [],
+      "spouses": [],
+      "children": [],
+      "x": 400,
+      "y": 1460,
+      "cardId": "1",
+      "houseNumber": "22",
+      "isFullyVerified": false,
+      "isChronologicallyPinned": false
+    }
+  },
+  "clanCoatOfArms": {},
+  "connectionOverrides": {},
+  "selectedPersonId": "p-1794528455285-8d8u3"
+}

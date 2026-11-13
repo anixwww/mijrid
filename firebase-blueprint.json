@@ -1,0 +1,235 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile details",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "User UID from Firebase Authentication"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 200,
+          "description": "Email address of the user"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Display name of the user"
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Avatar photo URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Server timestamp of account creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Server timestamp of last profile update"
+        }
+      },
+      "required": ["userId", "email", "createdAt", "updatedAt"]
+    },
+    "TreeDocument": {
+      "title": "TreeDocument",
+      "description": "A family tree owned by a user or publicly shared",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique tree ID"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the user who owns this tree"
+        },
+        "ownerName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name of the owner displayed on public trees"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150,
+          "description": "Title of the family tree"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Global or canvas version tag"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Optional description of the family tree"
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Whether anyone can view this tree"
+        },
+        "isMain": {
+          "type": "boolean",
+          "description": "Whether this is the main root tree canvas"
+        },
+        "personCount": {
+          "type": "number",
+          "description": "Count of persons in the tree"
+        },
+        "treeDataJson": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 950000,
+          "description": "Serialized JSON string of FamilyTreeData"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation server timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update server timestamp"
+        }
+      },
+      "required": ["id", "ownerId", "title", "isPublic", "personCount", "treeDataJson", "createdAt", "updatedAt"]
+    },
+    "GlobalSettings": {
+      "title": "GlobalSettings",
+      "description": "Global family tree version and shared settings",
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Global tree version string"
+        },
+        "updatedBy": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "UID of admin who updated the version"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update server timestamp"
+        }
+      },
+      "required": ["version", "updatedAt"]
+    },
+    "MediaManifest": {
+      "title": "MediaManifest",
+      "description": "Content-addressed image metadata synced to Firestore for life photos, avatars, and documents",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Deterministic media ID derived from SHA-256 filename"
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160,
+          "pattern": "^[a-zA-Z0-9_.\\-]+$",
+          "description": "Original content-hashed filename under /uploads/"
+        },
+        "mimeType": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 80,
+          "description": "Image MIME type (e.g. image/png)"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the user who synced this media"
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Whether anyone viewing a public tree can read this photo"
+        },
+        "chunkCount": {
+          "type": "number",
+          "description": "Number of base64 chunks stored in the chunks subcollection"
+        },
+        "totalBytes": {
+          "type": "number",
+          "description": "Original binary size in bytes"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation server timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update server timestamp"
+        }
+      },
+      "required": ["id", "filename", "mimeType", "ownerId", "isPublic", "chunkCount", "totalBytes", "createdAt", "updatedAt"]
+    },
+    "MediaChunk": {
+      "title": "MediaChunk",
+      "description": "Base64 chunk of an uploaded image stored below Firestore 1MB document limit",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Chunk document ID matching index"
+        },
+        "index": {
+          "type": "number",
+          "description": "Zero-based chunk order index"
+        },
+        "data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 550000,
+          "description": "Base64 slice of the image bytes"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation server timestamp"
+        }
+      },
+      "required": ["id", "index", "data", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profiles with owner-only and admin access"
+    },
+    "/trees/{treeId}": {
+      "schema": "TreeDocument",
+      "description": "Stores family trees with verified owner/admin writes and public or owner reads"
+    },
+    "/settings/{settingId}": {
+      "schema": "GlobalSettings",
+      "description": "Stores global tree settings such as global version"
+    },
+    "/media/{mediaId}": {
+      "schema": "MediaManifest",
+      "description": "Stores metadata for synced family tree photos and documents"
+    },
+    "/media/{mediaId}/chunks/{chunkId}": {
+      "schema": "MediaChunk",
+      "description": "Stores chunked base64 payloads for synced media files"
+    }
+  }
+}
