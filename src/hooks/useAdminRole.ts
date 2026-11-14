@@ -15,11 +15,24 @@ interface UseAdminRoleOptions {
   onGuestCleanup?: () => void;
 }
 
+function detectGuestLinkSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return Boolean(params.get('share')?.trim() || params.get('guest') === '1');
+  } catch {
+    return false;
+  }
+}
+
 export function useAdminRole({
   showToast,
   onGuestCleanup,
 }: UseAdminRoleOptions) {
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => Boolean(getAuthToken()));
+  const [isGuestLinkSession] = useState<boolean>(() => detectGuestLinkSession());
+  const [isAdmin, setIsAdmin] = useState<boolean>(() =>
+    detectGuestLinkSession() ? false : Boolean(getAuthToken())
+  );
 
   const isAdminRef = useRef(isAdmin);
   isAdminRef.current = isAdmin;
@@ -29,6 +42,11 @@ export function useAdminRole({
       localStorage.removeItem('rodovid_admin_role');
     } catch {
       /* ignore */
+    }
+
+    if (isGuestLinkSession) {
+      setIsAdmin(false);
+      return;
     }
 
     let cancelled = false;
@@ -65,7 +83,7 @@ export function useAdminRole({
       cancelled = true;
       window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
     };
-  }, []);
+  }, [isGuestLinkSession]);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -77,6 +95,7 @@ export function useAdminRole({
 
   const handleLoginAsAdmin = useCallback(
     async (password = '', method: 'mouse_click' | 'auto' = 'mouse_click'): Promise<boolean> => {
+      if (isGuestLinkSession) return false;
       if (loginInFlightRef.current) return false;
       loginInFlightRef.current = true;
       try {
@@ -98,12 +117,12 @@ export function useAdminRole({
         loginInFlightRef.current = false;
       }
     },
-    [showToast]
+    [isGuestLinkSession, showToast]
   );
 
-  // Secret admin entry strictly via 5 rapid mouse clicks
+  // Secret admin entry strictly via 5 rapid mouse clicks (disabled on guest share links)
   useEffect(() => {
-    if (isAdmin) return;
+    if (isAdmin || isGuestLinkSession) return;
 
     let clickCount = 0;
     let lastClickTime = 0;
@@ -148,7 +167,7 @@ export function useAdminRole({
     return () => {
       window.removeEventListener('click', handleClick, true);
     };
-  }, [isAdmin, handleLoginAsAdmin]);
+  }, [isAdmin, isGuestLinkSession, handleLoginAsAdmin]);
 
   const handleSwitchToGuest = useCallback(() => {
     clearAuthToken();
@@ -167,9 +186,24 @@ export function useAdminRole({
     }
   }, [isAdmin, handleSwitchToGuest]);
 
+  const canExitGuestPreview = isGuestLinkSession && Boolean(getAuthToken());
+
+  const handleExitGuestPreview = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete('share');
+    nextUrl.searchParams.delete('guest');
+    nextUrl.searchParams.delete('person');
+    nextUrl.searchParams.delete('tree');
+    window.location.assign(nextUrl.toString());
+  }, []);
+
   return {
     isAdmin,
     isAdminRef,
+    isGuestLinkSession,
+    canExitGuestPreview,
+    handleExitGuestPreview,
     handleLoginAsAdmin,
     handleSwitchToGuest,
     handleToggleAdminRole,

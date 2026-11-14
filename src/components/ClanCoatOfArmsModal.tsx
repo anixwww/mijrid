@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Upload, X, Trash2, RefreshCw } from 'lucide-react';
 import { ClanInfo } from '../utils/lineageUtils';
 import { uploadFileToServer } from '../utils/fileStorage';
-import { handleUploadImageError } from '../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../utils/mediaSync';
+import { FirebasePhotoAuthBanner } from './FirebasePhotoAuthBanner';
 
 interface ClanCoatOfArmsModalProps {
   isOpen: boolean;
@@ -47,15 +48,15 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
     try {
       setIsUploading(true);
       setErrorMsg(null);
-      const url = await uploadFileToServer(file);
+      const url = await uploadFileToServer(file, { kind: 'crest' });
       setPreviewUrl(url);
       onSaveCoatOfArms(clan.name, {
         url,
         motto: motto.trim() || undefined,
         description: `Завантажений герб роду ${clan.name}`,
       });
-    } catch {
-      setErrorMsg('Помилка завантаження файлу зображення');
+    } catch (err) {
+      setErrorMsg((err as Error)?.message || 'Помилка завантаження файлу зображення');
     } finally {
       setIsUploading(false);
     }
@@ -148,7 +149,7 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
             {previewUrl ? (
               <div className="relative group">
                 <img
-                  src={previewUrl}
+                  src={getResolvedMediaSrc(previewUrl)}
                   alt={`Герб роду ${clan.name}`}
                   onError={(e) => handleUploadImageError(e, previewUrl)}
                   className="w-40 h-48 object-contain drop-shadow-md rounded-lg transition-transform group-hover:scale-105"
@@ -188,6 +189,8 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
               {errorMsg}
             </div>
           )}
+
+          {isAdmin && <FirebasePhotoAuthBanner compact />}
 
           {isAdmin ? (
             <div className="space-y-4">

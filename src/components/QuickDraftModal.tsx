@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Person, BRANCH_LINK_COLOR_PRESETS } from '../types/tree';
+import { Person, BRANCH_LINK_COLOR_PRESETS, NOTE_PROBABLE_RELATION_PRESETS } from '../types/tree';
 import { CreateGhostCardInput, CreateBlankScreenshotCardInput } from '../utils/treeMutations';
 import { uploadFileToServerDetailed } from '../utils/fileStorage';
+import { getResolvedMediaSrc, handleUploadImageError } from '../utils/mediaSync';
 import { formatCardId, getPersonIdMatchScore } from '../utils/cardIdUtils';
 import { buildBranchOptions, getClanName } from '../utils/lineageUtils';
 import { CARD_WIDTH, CARD_HEIGHT } from '../utils/treeLayout';
+import { FirebasePhotoAuthBanner } from './FirebasePhotoAuthBanner';
 import {
   X,
   ImagePlus,
@@ -79,6 +81,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
   const [hintSearch, setHintSearch] = useState('');
   const [hintTargetId, setHintTargetId] = useState('');
   const [hintLabel, setHintLabel] = useState('');
+  const [hintProbableRelation, setHintProbableRelation] = useState('');
   const [hintColor] = useState<string>(BRANCH_LINK_COLOR_PRESETS[0].hex);
 
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +104,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
       setHintSearch('');
       setHintTargetId('');
       setHintLabel('');
+      setHintProbableRelation('');
       setError(null);
     }
   }, [isOpen, initialMode, branchOptions]);
@@ -111,6 +115,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
     setUploadProgress(5);
     try {
       const res = await uploadFileToServerDetailed(file, {
+        kind: 'screenshot',
         onProgress: (pct) => setUploadProgress(pct),
       });
       setScreenshotUrl(res.url);
@@ -197,6 +202,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
         y: initialCoords?.y,
         hintTargetPersonId: hintTargetId || undefined,
         hintLabel: hintLabel.trim() || undefined,
+        hintProbableRelation: hintProbableRelation.trim() || undefined,
         hintColor,
       });
       onClose();
@@ -220,6 +226,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
       y: initialCoords?.y,
       hintTargetPersonId: hintTargetId || undefined,
       hintLabel: hintLabel.trim() || undefined,
+      hintProbableRelation: hintProbableRelation.trim() || undefined,
       hintColor: mode === 'ghost' ? '#d97706' : hintColor,
     });
     onClose();
@@ -325,7 +332,9 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
 
           {/* Screenshot upload & preview */}
           {mode === 'screenshot' && (
-            <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-center">
+            <>
+              <FirebasePhotoAuthBanner compact />
+              <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 items-center">
               <div className="flex flex-col items-center gap-1.5">
                 <div
                   style={{ width: `${CARD_WIDTH}px`, height: `${CARD_HEIGHT}px` }}
@@ -337,8 +346,9 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                 >
                   {screenshotUrl ? (
                     <img
-                      src={screenshotUrl}
+                      src={getResolvedMediaSrc(screenshotUrl)}
                       alt="Попередній перегляд фото"
+                      onError={(e) => handleUploadImageError(e, screenshotUrl)}
                       className={`w-full h-full ${screenshotFit === 'contain' ? 'object-contain' : 'object-cover'}`}
                     />
                   ) : (
@@ -436,6 +446,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                 )}
               </div>
             </div>
+            </>
           )}
 
           {/* Identity / Sticker Title & Period Fields */}
@@ -592,6 +603,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                     onClick={() => {
                       setHintTargetId('');
                       setHintLabel('');
+                      setHintProbableRelation('');
                     }}
                     className="text-[10.5px] font-semibold text-indigo-700 dark:text-indigo-300 hover:underline cursor-pointer"
                   >
@@ -669,10 +681,57 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                   value={hintLabel}
                   onChange={(e) => setHintLabel(e.target.value)}
                   disabled={!hintTargetId}
-                  placeholder={mode === 'screenshot' ? 'Напр.: Можливий запис' : 'Напр.: Можливий брат?'}
+                  placeholder={mode === 'screenshot' ? 'Підпис на лінії (необовʼязково)' : 'Підпис на лінії (необовʼязково)'}
                   className="w-full h-9 text-xs px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 disabled:opacity-50"
                 />
               </div>
+
+              {hintTargetId && (
+                <div className="pt-1.5 border-t border-amber-200/70 dark:border-amber-900/50 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10.5px] font-semibold text-amber-950 dark:text-amber-200">
+                      Ймовірний родинний зв&apos;язок (напр. Батьки, Подружжя):
+                    </span>
+                    {hintProbableRelation && (
+                      <button
+                        type="button"
+                        onClick={() => setHintProbableRelation('')}
+                        className="text-[10px] font-semibold text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
+                      >
+                        Очистити
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {NOTE_PROBABLE_RELATION_PRESETS.map((preset) => {
+                      const active =
+                        hintProbableRelation.trim().toLowerCase() === preset.label.toLowerCase();
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setHintProbableRelation(active ? '' : preset.label)}
+                          className={`px-2 py-0.5 rounded-md border text-[10.5px] font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer ${
+                            active
+                              ? 'border-amber-600 bg-amber-600 text-white'
+                              : 'border-amber-200 dark:border-amber-800 bg-white dark:bg-zinc-900 text-amber-950 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                          }`}
+                        >
+                          <span>{preset.icon}</span>
+                          <span>{preset.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <input
+                    type="text"
+                    value={hintProbableRelation}
+                    onChange={(e) => setHintProbableRelation(e.target.value)}
+                    placeholder="Або вкажіть свій варіант ймовірного зв'язку..."
+                    className="w-full h-8 text-xs px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800/80 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100"
+                  />
+                </div>
+              )}
             </div>
           )}
 

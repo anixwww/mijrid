@@ -432,6 +432,11 @@ export const RelationsTab: React.FC<RelationsTabProps> = ({
                               → {tName}
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              {bl.probableRelation && (
+                                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/70 dark:border-amber-800 text-[10px] font-bold">
+                                  {bl.probableRelation}
+                                </span>
+                              )}
                               {bl.label && (
                                 <span className="text-[10.5px] text-indigo-700 dark:text-indigo-300 truncate">
                                   {bl.label}
@@ -483,6 +488,15 @@ export const RelationsTab: React.FC<RelationsTabProps> = ({
                             onChangeLabel={(val) =>
                               onUpdateBranchLink(bl.id, { label: val || undefined })
                             }
+                            {...((draft.isGhost || draft.isBlankScreenshot || target?.isGhost || target?.isBlankScreenshot)
+                              ? {
+                                  probableRelation: bl.probableRelation || '',
+                                  onChangeProbableRelation: (val: string) =>
+                                    onUpdateBranchLink(bl.id, {
+                                      probableRelation: val.trim() || undefined,
+                                    }),
+                                }
+                              : {})}
                             color={bl.color || (bl.linkKind === 'godparent' ? '#d97706' : '#4f46e5')}
                             onChangeColor={(c) => onUpdateBranchLink(bl.id, { color: c })}
                             strokeWidth={bl.strokeWidth ?? 2}
@@ -516,9 +530,18 @@ export const RelationsTab: React.FC<RelationsTabProps> = ({
                           <div className="text-xs font-medium text-stone-800 dark:text-zinc-200 truncate">
                             ← Посилання від: {sName}
                           </div>
-                          {sLink?.label && (
-                            <div className="text-[10.5px] text-stone-500 dark:text-zinc-400 truncate">
-                              {sLink.label}
+                          {(sLink?.probableRelation || sLink?.label) && (
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              {sLink?.probableRelation && (
+                                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/70 dark:border-amber-800 text-[10px] font-bold">
+                                  {sLink.probableRelation}
+                                </span>
+                              )}
+                              {sLink?.label && (
+                                <span className="text-[10.5px] text-stone-500 dark:text-zinc-400 truncate">
+                                  {sLink.label}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

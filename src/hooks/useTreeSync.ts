@@ -48,6 +48,17 @@ import { normalizeCoupleCoordinates } from '../utils/lineageUtils';
 import { ensureTreeCardIds } from '../utils/cardIdUtils';
 import { logDatabase, logTree, logUser } from '../utils/logger';
 import { ToastMessage } from '../components/Toast';
+import {
+  getGuestShareById,
+  GuestShareLink,
+  GuestShareResolveResult,
+} from '../utils/guestShareService';
+
+export interface GuestShareSessionState {
+  status: 'none' | 'loading' | GuestShareResolveResult['status'];
+  share: GuestShareLink | null;
+  errorMessage?: string;
+}
 
 export interface ConfirmDialogRequest {
   title: string;
@@ -135,7 +146,12 @@ export function useTreeSync({
   const hasCachedLocalTree = (() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const sharedTreeId = params.get('tree');
+      const shareId = params.get('share')?.trim();
+      const sharedTreeId = params.get('tree')?.trim();
+      const guestFlag = params.get('guest') === '1';
+      if (shareId || guestFlag) {
+        return false;
+      }
       if (sharedTreeId && sharedTreeId !== MAIN_TREE_ID && sharedTreeId !== 'main-tree' && sharedTreeId !== 'default-tree') {
         return false;
       }
@@ -144,6 +160,31 @@ export function useTreeSync({
       return false;
     }
   })();
+
+  const initialShareParam = (() => {
+    try {
+      return new URLSearchParams(window.location.search).get('share')?.trim() || null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const isGuestLinkRouteRef = useRef<boolean>((() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return Boolean(params.get('share')?.trim() || params.get('guest') === '1');
+    } catch {
+      return false;
+    }
+  })());
+
+  const [guestShareState, setGuestShareState] = useState<GuestShareSessionState>(() =>
+    initialShareParam
+      ? { status: 'loading', share: null }
+      : { status: 'none', share: null }
+  );
+  const guestShareStateRef = useRef<GuestShareSessionState>(guestShareState);
+  guestShareStateRef.current = guestShareState;
 
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!hasCachedLocalTree);
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(new Date());
@@ -169,35 +210,67 @@ export function useTreeSync({
     setUnsyncedFirebaseChangesStorage(unsynced);
   }, []);
 
-  // Initial persistent tree fetch (parallel Express + optional Firestore fallback; never blocks cached entry)
+  // Initial persistent tree fetch (resolves ?share= token first when present)
   useEffect(() => {
     let isCancelled = false;
     const params = new URLSearchParams(window.location.search);
-    const sharedTreeId = params.get('tree');
+    const shareParam = params.get('share')?.trim() || null;
+    const sharedTreeIdParam = params.get('tree')?.trim() || null;
+    const personParam = params.get('person')?.trim() || null;
+    const isGuestParam = params.get('guest') === '1' || Boolean(shareParam);
 
     // Hard safety cap so slow networks can never trap the user on the splash screen
     const maxSplashTimer = window.setTimeout(() => {
       if (!isCancelled) {
         setIsInitialLoading(false);
       }
-    }, 2200);
+    }, shareParam ? 4500 : 2200);
 
     const loadInitialTree = async () => {
       try {
-        const targetPromise = sharedTreeId
-          ? loadTreeById(sharedTreeId, {
+        let resolvedTreeId = sharedTreeIdParam;
+        let resolvedFocusPersonId = personParam;
+
+        if (shareParam) {
+          const shareRes = await getGuestShareById(shareParam);
+          if (isCancelled) return;
+          if (shareRes.status !== 'active' || !shareRes.share) {
+            setGuestShareState({
+              status: shareRes.status,
+              share: shareRes.share || null,
+              errorMessage: shareRes.errorMessage,
+            });
+            return;
+          }
+          setGuestShareState({
+            status: 'active',
+            share: shareRes.share,
+          });
+          resolvedTreeId = shareRes.share.treeId;
+          if (!resolvedFocusPersonId && shareRes.share.focusPersonId) {
+            resolvedFocusPersonId = shareRes.share.focusPersonId;
+          }
+        }
+
+        const skipLocalCache = isGuestParam;
+        const targetPromise = resolvedTreeId
+          ? loadTreeById(resolvedTreeId, {
               allowEmpty: true,
-              pushLocalIfNewer: true,
+              pushLocalIfNewer: !isGuestParam,
+              preferServer: isGuestParam,
+              forceRemote: isGuestParam,
               includeCloud: true,
+              skipLocalRead: skipLocalCache,
+              skipLocalWrite: skipLocalCache,
             }).then(async (found) => {
-              if (found) return found;
+              if (found || shareParam) return found;
               return loadTreeFromServerOrStorage({
-                pushLocalIfNewer: true,
+                pushLocalIfNewer: !isGuestParam,
                 includeCloud: true,
               });
             })
           : loadTreeFromServerOrStorage({
-              pushLocalIfNewer: true,
+              pushLocalIfNewer: !isGuestParam,
               includeCloud: true,
             });
 
@@ -208,22 +281,29 @@ export function useTreeSync({
         ]);
 
         // Pre-warm & hydrate all cloud canvases (including cross-canvas links) in background
-        void fetchAllTreesSearchIndex({ includeCloud: true }).then(() => {
-          notifyTreesChanged();
-        });
+        if (!isGuestParam) {
+          void fetchAllTreesSearchIndex({ includeCloud: true }).then(() => {
+            notifyTreesChanged();
+          });
+        }
 
         if (isCancelled) return;
         hasLoadedFromServer.current = true;
 
-        const effectiveVersion = hasDirtyGlobalVersion()
-          ? getLocalGlobalVersion() || targetTree?.version || 'v0.1'
-          : serverGlobalVersion || getLocalGlobalVersion() || targetTree?.version || 'v0.1';
-        if (!hasDirtyGlobalVersion() && serverGlobalVersion) {
+        const effectiveVersion =
+          !isGuestParam && hasDirtyGlobalVersion()
+            ? getLocalGlobalVersion() || targetTree?.version || 'v0.1'
+            : serverGlobalVersion || (!isGuestParam ? getLocalGlobalVersion() : null) || targetTree?.version || 'v0.1';
+        if (!isGuestParam && !hasDirtyGlobalVersion() && serverGlobalVersion) {
           setLocalGlobalVersion(serverGlobalVersion, false);
         }
 
         if (targetTree && targetTree.persons && Object.keys(targetTree.persons).length > 0) {
           const syncedTree = syncCrossCanvasLinkTitles(targetTree, serverTrees);
+          if (resolvedFocusPersonId && syncedTree.persons[resolvedFocusPersonId]) {
+            pendingFocusPersonIdRef.current = resolvedFocusPersonId;
+            setSelectedPersonId(resolvedFocusPersonId);
+          }
           skipNextAutoSaveRef.current = true;
           isUndoActionRef.current = true;
           setTree({
@@ -233,7 +313,7 @@ export function useTreeSync({
           });
           logTree(
             `Завантажено полотно «${syncedTree.title}» (${Object.keys(syncedTree.persons).length} осіб, ${effectiveVersion})`,
-            { treeId: syncedTree.id, canvasCount: serverTrees.length },
+            { treeId: syncedTree.id, canvasCount: serverTrees.length, viaGuestShare: Boolean(shareParam) },
             'info'
           );
         } else if (targetTree) {
@@ -243,6 +323,13 @@ export function useTreeSync({
             ...targetTree,
             version: effectiveVersion,
             persons: normalizeCoupleCoordinates(targetTree.persons || {}, targetTree.connectionOverrides),
+          });
+        } else if (shareParam) {
+          setGuestShareState({
+            status: 'error',
+            share: guestShareStateRef.current.share,
+            errorMessage:
+              'Обране дерево ще не опубліковане в хмару Firebase або було видалене. Попросіть адміністратора натиснути «Синхронізувати».',
           });
         } else if (effectiveVersion) {
           skipNextAutoSaveRef.current = true;
@@ -272,6 +359,7 @@ export function useTreeSync({
   const lastReconciledAuthKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!authReady) return;
+    if (isGuestLinkRouteRef.current) return;
     const authKey = `${currentUser?.uid || 'anon'}:${isCloudAuthenticated ? '1' : '0'}:${isAdmin ? 'admin' : 'guest'}`;
     if (lastReconciledAuthKeyRef.current === authKey) return;
     lastReconciledAuthKeyRef.current = authKey;
@@ -488,15 +576,22 @@ export function useTreeSync({
       if (isAdmin && !isGuestMode) return;
       if (isGuestMode && document.visibilityState === 'hidden') return;
       if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      const shareStatus = guestShareStateRef.current.status;
+      if (shareStatus !== 'none' && shareStatus !== 'active') return;
 
       try {
         const currentId = treeRef.current.id || MAIN_TREE_ID;
         const currentVersion = treeRef.current.version || 'v0.1';
         const localTime = parseTimestamp(treeRef.current.updatedAt || treeRef.current.createdAt);
         const localCount = Object.keys(treeRef.current.persons || {}).length;
+        const skipLocalCache = isGuestLinkRouteRef.current;
 
         const [remoteTree, cloudVersion] = await Promise.all([
-          loadTreeById(currentId, { includeCloud: true }),
+          loadTreeById(currentId, {
+            includeCloud: true,
+            skipLocalRead: skipLocalCache,
+            skipLocalWrite: skipLocalCache,
+          }),
           fetchGlobalVersionFromServer({ includeCloud: true }),
         ]);
 
@@ -511,7 +606,9 @@ export function useTreeSync({
             const serverTreesList = await fetchServerTrees({ includeCloud: true });
             const syncedTree = syncCrossCanvasLinkTitles(remoteTree, serverTreesList);
 
-            setLocalGlobalVersion(resolvedVersion, false);
+            if (!skipLocalCache) {
+              setLocalGlobalVersion(resolvedVersion, false);
+            }
             const normalized = {
               ...syncedTree,
               version: resolvedVersion,
@@ -542,6 +639,7 @@ export function useTreeSync({
   // Guest polling against Firebase Firestore (no Express tree API)
   useEffect(() => {
     if (isAdmin) return;
+    if (guestShareState.status !== 'none' && guestShareState.status !== 'active') return;
     void syncLatestTreeFromCloud(true);
 
     const intervalTimer = setInterval(() => {
@@ -1005,6 +1103,7 @@ export function useTreeSync({
         await syncTreeToServer(treeRef.current);
       }
 
+      const skipLocalCache = isGuestLinkRouteRef.current;
       const [serverTrees, serverGlobalVersion] = await Promise.all([
         fetchServerTrees({ includeCloud: true }),
         fetchGlobalVersionFromServer({ includeCloud: true }),
@@ -1013,7 +1112,10 @@ export function useTreeSync({
         allowEmpty: true,
         pushLocalIfNewer: isAdmin,
         preferServer: !isAdmin,
+        forceRemote: skipLocalCache,
         includeCloud: true,
+        skipLocalRead: skipLocalCache,
+        skipLocalWrite: skipLocalCache,
       });
 
       if (targetTree) {
@@ -1336,6 +1438,56 @@ export function useTreeSync({
     [isUndoActionRef, markFirebaseUnsynced, onAfterImportFit, setSelectedPersonId, showToast]
   );
 
+  const ensureCloudPublishedForShare = useCallback(async (): Promise<{
+    ok: boolean;
+    error?: string;
+  }> => {
+    if (!isCloudWriteAuthenticated() || !currentUser) {
+      return {
+        ok: false,
+        error: 'Увійдіть через Google, щоб опублікувати дерево у Firebase для гостей.',
+      };
+    }
+
+    setIsFirebaseSyncing(true);
+    setFirebaseSyncMode('push');
+    try {
+      const snapshot: FamilyTreeData = {
+        ...treeRef.current,
+        updatedAt: treeRef.current.updatedAt || new Date().toISOString(),
+      };
+      saveTreeLocally(snapshot, false);
+      const activeVer = getLocalGlobalVersion() || snapshot.version || 'v0.1';
+      const result = await pushAllTreesToFirestoreManual(
+        snapshot,
+        activeVer,
+        currentUser.uid,
+        currentUser.displayName || undefined
+      );
+      if (result.ok) {
+        const now = new Date();
+        setLastFirebaseSyncTime(now);
+        setLastFirebaseSyncTimeStorage(now);
+        markFirebaseUnsynced(false);
+        setIsServerConnected(true);
+        setSyncStatus('synced');
+        return { ok: true };
+      }
+      return {
+        ok: false,
+        error: result.error || 'Не вдалося опублікувати полотна у Firebase Firestore.',
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    } finally {
+      setIsFirebaseSyncing(false);
+      setFirebaseSyncMode(null);
+    }
+  }, [currentUser, markFirebaseUnsynced]);
+
   return {
     tree,
     setTree,
@@ -1351,6 +1503,8 @@ export function useTreeSync({
     hasUnsyncedFirebaseChanges,
     hasCenteredTreeIdRef,
     pendingFocusPersonIdRef,
+    guestShareState,
+    ensureCloudPublishedForShare,
     handleUpdateVersion,
     handleUnifiedSync,
     handleRestoreFromCloud,

@@ -106,6 +106,24 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
+    function isValidGuestShare(data, shareId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'treeId', 'allowAllCanvases', 'readOnly', 'isActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'ownerName', 'title', 'treeId', 'treeTitle', 'focusPersonId', 'allowAllCanvases', 'readOnly', 'isActive', 'expiresAtIso', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id == shareId && isValidId(data.id)
+        && data.ownerId is string && isValidId(data.ownerId)
+        && (!('ownerName' in data) || (data.ownerName is string && data.ownerName.size() <= 100))
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 150
+        && data.treeId is string && isValidId(data.treeId)
+        && (!('treeTitle' in data) || (data.treeTitle is string && data.treeTitle.size() <= 150))
+        && (!('focusPersonId' in data) || (data.focusPersonId is string && data.focusPersonId.size() <= 128))
+        && data.allowAllCanvases is bool
+        && data.readOnly is bool
+        && data.isActive is bool
+        && (!('expiresAtIso' in data) || (data.expiresAtIso is string && data.expiresAtIso.size() <= 40))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     // --- User Profiles (/users/{userId}) ---
     match /users/{userId} {
       allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
@@ -264,6 +282,41 @@ service cloud.firestore {
             isAdmin()
           );
       }
+    }
+
+    // --- Guest Share Links (/guestShares/{shareId}) ---
+    match /guestShares/{shareId} {
+      allow get: if isValidId(shareId);
+      allow list: if isAdmin() || (isSignedIn() && existing().ownerId == request.auth.uid);
+      allow create: if isVerifiedUser()
+        && isValidId(shareId)
+        && isValidGuestShare(incoming(), shareId)
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(shareId)
+        && isValidGuestShare(incoming(), shareId)
+        && (isOwner(existing().ownerId) || isAdmin())
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'ownerName',
+          'title',
+          'treeId',
+          'treeTitle',
+          'focusPersonId',
+          'allowAllCanvases',
+          'readOnly',
+          'isActive',
+          'expiresAtIso',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(shareId)
+        && isVerifiedUser()
+        && (isOwner(existing().ownerId) || isAdmin());
     }
   }
 }

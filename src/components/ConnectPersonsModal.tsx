@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Person, RelativeType, ConfidenceLevel, BRANCH_LINK_COLOR_PRESETS, BranchLinkCurveStyle, BranchLinkKind } from '../types/tree';
+import { Person, RelativeType, ConfidenceLevel, BRANCH_LINK_COLOR_PRESETS, BranchLinkCurveStyle, BranchLinkKind, NOTE_PROBABLE_RELATION_PRESETS } from '../types/tree';
 import { buildWavyPath } from '../utils/branchLinkGeometry';
 import { formatCardId, getPersonIdMatchScore } from '../utils/cardIdUtils';
 import { buildBranchOptions, getClanName } from '../utils/lineageUtils';
@@ -20,6 +20,7 @@ export interface ConnectOptions {
 export interface BranchLinkConnectOptions {
   linkKind?: BranchLinkKind;
   label?: string;
+  probableRelation?: string;
   color?: string;
   strokeWidth?: number;
   lineShape?: BranchLinkCurveStyle;
@@ -121,6 +122,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
   // Cross-branch / Godparent link options
   const [branchLabel, setBranchLabel] = useState('');
+  const [probableRelation, setProbableRelation] = useState('');
   const [branchColor, setBranchColor] = useState<string>(BRANCH_LINK_COLOR_PRESETS[0].hex);
   const [branchStrokeWidth, setBranchStrokeWidth] = useState<number>(2);
   const [branchLineShape, setBranchLineShape] = useState<BranchLinkCurveStyle>('curved');
@@ -146,6 +148,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
   const selectGodparentMode = () => {
     setConnectionKind('godparent');
     setBranchLabel(defaultGodparentLabel);
+    setProbableRelation('');
     setBranchColor('#d97706');
     setBranchStrokeWidth(2);
     setBranchLineShape('wavy');
@@ -158,6 +161,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
   const selectBranchLinkMode = () => {
     setConnectionKind('branch-link');
     setBranchLabel('');
+    setProbableRelation('');
     setBranchColor(BRANCH_LINK_COLOR_PRESETS[0].hex);
     setBranchStrokeWidth(2);
     setBranchLineShape('curved');
@@ -177,6 +181,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
     setConnectionKind('note-link');
     setSelectedTargetCanvasId('__CURRENT__');
     setBranchLabel('');
+    setProbableRelation('');
     setBranchColor('#d97706');
     setBranchStrokeWidth(2);
     setBranchLineShape('curved');
@@ -204,7 +209,12 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       const initialTarget = initialTargetId ? allPersons[initialTargetId] : null;
-      const involvesNoteOnOpen = Boolean(sourcePerson.isGhost || initialTarget?.isGhost);
+      const involvesNoteOnOpen = Boolean(
+        sourcePerson.isGhost ||
+          sourcePerson.isBlankScreenshot ||
+          initialTarget?.isGhost ||
+          initialTarget?.isBlankScreenshot
+      );
       const nextKind =
         initialMode === 'relation' && involvesNoteOnOpen ? 'note-link' : initialMode;
 
@@ -213,6 +223,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
       setSearchQuery('');
       setCrossCanvasColor('#047857');
       setCrossCanvasBidirectional(true);
+      setProbableRelation('');
       if (initialTarget) {
         setSelectedBranch(getClanName(initialTarget));
         setSelectedTargetCanvasId('__CURRENT__');
@@ -245,7 +256,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
         setBranchBidirectional(false);
       }
     }
-  }, [isOpen, initialMode, initialTargetId, sourcePerson.id, sourcePerson.isGhost, defaultGodparentLabel, allPersons, branchOptions]);
+  }, [isOpen, initialMode, initialTargetId, sourcePerson.id, sourcePerson.isGhost, sourcePerson.isBlankScreenshot, defaultGodparentLabel, allPersons, branchOptions]);
 
   const effectiveTargetCanvasId =
     selectedTargetCanvasId || (otherCanvasTrees.length === 1 && !initialTargetId ? otherCanvasTrees[0].treeId : '');
@@ -317,7 +328,12 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
     : '';
 
   const involvesNote = Boolean(
-    sourcePerson.isGhost || targetPerson?.isGhost || selectedCrossCanvasEntry?.person.isGhost
+    sourcePerson.isGhost ||
+      sourcePerson.isBlankScreenshot ||
+      targetPerson?.isGhost ||
+      targetPerson?.isBlankScreenshot ||
+      selectedCrossCanvasEntry?.person.isGhost ||
+      selectedCrossCanvasEntry?.person.isBlankScreenshot
   );
 
   // Cycle and validity check
@@ -410,6 +426,10 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
     if (connectionKind === 'branch-link' || connectionKind === 'godparent' || connectionKind === 'note-link') {
       const cleanLabel = branchLabel.trim() || (connectionKind === 'godparent' ? defaultGodparentLabel : undefined);
+      const cleanProbableRelation =
+        connectionKind === 'note-link' || (connectionKind === 'branch-link' && involvesNote)
+          ? probableRelation.trim() || undefined
+          : undefined;
       const reverseGodparentLabel =
         cleanLabel === 'Кум / Кума'
           ? 'Кум / Кума'
@@ -422,6 +442,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
       onConnectBranchLink?.(selectedTargetId, {
         linkKind: connectionKind === 'godparent' ? 'godparent' : 'branch',
         label: cleanLabel,
+        probableRelation: cleanProbableRelation,
         color: branchColor,
         strokeWidth: branchStrokeWidth,
         lineShape:
@@ -1090,6 +1111,53 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                 </div>
               )}
 
+              {(connectionKind === 'note-link' || (connectionKind === 'branch-link' && involvesNote)) && (
+                <div className="space-y-2 pb-1 border-b border-amber-200/70">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="block text-[11px] font-bold text-amber-950 uppercase tracking-wider">
+                      Вид ймовірного родинного зв&apos;язку
+                    </span>
+                    {probableRelation && (
+                      <button
+                        type="button"
+                        onClick={() => setProbableRelation('')}
+                        className="text-[10.5px] font-semibold text-amber-800 hover:underline cursor-pointer"
+                      >
+                        Очистити
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {NOTE_PROBABLE_RELATION_PRESETS.map((preset) => {
+                      const active =
+                        probableRelation.trim().toLowerCase() === preset.label.toLowerCase();
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setProbableRelation(active ? '' : preset.label)}
+                          className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer ${
+                            active
+                              ? 'border-amber-600 bg-amber-600 text-white shadow-2xs'
+                              : 'border-amber-200 bg-white text-amber-950 hover:bg-amber-50'
+                          }`}
+                        >
+                          <span>{preset.icon}</span>
+                          <span>{preset.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <input
+                    type="text"
+                    value={probableRelation}
+                    onChange={(e) => setProbableRelation(e.target.value)}
+                    placeholder="Або введіть свій варіант: напр. Батьки, Подружжя, Брат..."
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-600 bg-white"
+                  />
+                </div>
+              )}
+
               <div>
                 <label
                   className={`block text-[11px] font-bold uppercase tracking-wider mb-1 ${
@@ -1099,7 +1167,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   {connectionKind === 'godparent'
                     ? 'Підпис на хвилястій лінії'
                     : connectionKind === 'note-link'
-                    ? "Підпис на пунктирній лінії (необов'язково)"
+                    ? "Додатковий підпис на лінії (необов'язково)"
                     : "Підпис на стрілці (необов'язково)"}
                 </label>
                 <input
@@ -1110,7 +1178,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     connectionKind === 'godparent'
                       ? 'напр. Хресний / Хресна / Кум'
                       : connectionKind === 'note-link'
-                      ? 'напр. Згадка з метрики / Ймовірний зв’язок'
+                      ? 'напр. Згадка з метрики 1908 р.'
                       : 'напр. Споріднена гілка / Куми / Перехід до роду'
                   }
                   className={`w-full text-xs px-2.5 py-1.5 rounded-lg border focus:outline-none focus:ring-1 bg-white ${
@@ -1331,7 +1399,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       </svg>
                       <span
                         style={{ borderColor: branchColor }}
-                        className={`absolute px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 border shadow-xs text-[10px] font-bold text-stone-800 dark:text-zinc-100 inline-flex items-center gap-1 max-w-[175px] ${
+                        className={`absolute px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 border shadow-xs text-[10px] font-bold text-stone-800 dark:text-zinc-100 inline-flex items-center gap-1 max-w-[235px] ${
                           branchLineShape === 'curved' ? 'top-1.5' : 'top-1/2 -translate-y-1/2'
                         }`}
                       >
@@ -1342,6 +1410,18 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                         ) : (
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: branchColor }} />
                         )}
+                        {(connectionKind === 'note-link' || (connectionKind === 'branch-link' && involvesNote)) &&
+                          probableRelation.trim() && (
+                            <span
+                              style={{
+                                backgroundColor: `${branchColor}1a`,
+                                color: branchColor,
+                              }}
+                              className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold shrink-0"
+                            >
+                              {probableRelation.trim()}
+                            </span>
+                          )}
                         <span className="truncate">{previewText}</span>
                         <ArrowUpRight size={10} className="shrink-0" style={{ color: branchColor }} />
                       </span>

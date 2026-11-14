@@ -3,6 +3,7 @@ import {
   BranchLink,
   BranchLinkCurveStyle,
   BRANCH_LINK_COLOR_PRESETS,
+  NOTE_PROBABLE_RELATION_PRESETS,
   Person,
 } from '../types/tree';
 import { buildWavyPath, normalizeBranchLineShape } from '../utils/branchLinkGeometry';
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export interface BranchLinkStyleSavePayload {
+  probableRelation?: string;
   label?: string;
   color: string;
   strokeWidth: number;
@@ -57,6 +59,7 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
   onSave,
   onDelete,
 }) => {
+  const [probableRelation, setProbableRelation] = useState('');
   const [label, setLabel] = useState('');
   const [color, setColor] = useState<string>(BRANCH_LINK_COLOR_PRESETS[0].hex);
   const [strokeWidth, setStrokeWidth] = useState<number>(2);
@@ -67,6 +70,7 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     if (mode === 'single' && link) {
+      setProbableRelation(link.probableRelation || '');
       setLabel(link.label || '');
       setColor(link.color || defaultStyle?.color || BRANCH_LINK_COLOR_PRESETS[0].hex);
       setStrokeWidth(
@@ -78,6 +82,7 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
       setUpdateReciprocal(true);
       setApplyToAll(false);
     } else {
+      setProbableRelation('');
       setLabel('');
       setColor(defaultStyle?.color || BRANCH_LINK_COLOR_PRESETS[0].hex);
       setStrokeWidth(defaultStyle?.strokeWidth ?? 2);
@@ -109,6 +114,9 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
     : '';
 
   const involvesNote = Boolean(sourcePerson?.isGhost || targetPerson?.isGhost);
+  const involvesNoteOrDraft = Boolean(
+    involvesNote || sourcePerson?.isBlankScreenshot || targetPerson?.isBlankScreenshot
+  );
 
   const previewLabel =
     mode === 'single'
@@ -118,6 +126,8 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
+      probableRelation:
+        mode === 'single' && involvesNoteOrDraft ? probableRelation.trim() : undefined,
       label: mode === 'single' ? label.trim() || undefined : undefined,
       color: color || '#4f46e5',
       strokeWidth: Math.max(1, Math.min(10, Math.round(strokeWidth))),
@@ -152,6 +162,8 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
               <h3 className="text-sm font-bold text-stone-900 dark:text-zinc-100 leading-tight truncate">
                 {mode === 'batch'
                   ? 'Стиль міжгілкових стрілок'
+                  : involvesNoteOrDraft
+                  ? 'Налаштування зв’язку «Нотатка — Картка»'
                   : link?.linkKind === 'godparent'
                   ? 'Налаштування лінії «Хресний / Хресна»'
                   : 'Налаштування міжгілкового зв’язку'}
@@ -175,6 +187,60 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto">
+          {/* Probable Family Relation Selector (for Note <-> Card links) */}
+          {mode === 'single' && involvesNoteOrDraft && (
+            <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/25 border border-amber-200/90 dark:border-amber-800/60 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-amber-950 dark:text-amber-200 uppercase tracking-wider">
+                  Вид ймовірного родинного зв&apos;язку
+                </span>
+                {probableRelation.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setProbableRelation('')}
+                    className="text-[10.5px] font-semibold text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
+                  >
+                    Скинути
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {NOTE_PROBABLE_RELATION_PRESETS.map((item) => {
+                  const isActive =
+                    probableRelation.trim().toLowerCase() === item.label.toLowerCase();
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() =>
+                        setProbableRelation((prev) =>
+                          prev.trim().toLowerCase() === item.label.toLowerCase()
+                            ? ''
+                            : item.label
+                        )
+                      }
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1 ${
+                        isActive
+                          ? 'border-amber-600 bg-amber-600 text-white shadow-2xs'
+                          : 'border-amber-200/90 dark:border-amber-800/60 bg-white dark:bg-zinc-900 text-amber-950 dark:text-amber-200 hover:bg-amber-100/60 dark:hover:bg-amber-950/40'
+                      }`}
+                    >
+                      <span className="text-[11px] leading-none">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                value={probableRelation}
+                onChange={(e) => setProbableRelation(e.target.value)}
+                placeholder="Або вкажіть свій варіант (напр. Тесть, Сват, Двоюрідний брат...)"
+                className="w-full text-xs px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800/70 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/35 focus:border-amber-500"
+              />
+            </div>
+          )}
+
           {/* Label (Single Link Mode) */}
           {mode === 'single' && (
             <div>
@@ -185,7 +251,11 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
                 type="text"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder="напр. Куми, Споріднена гілка, Гілка Івана"
+                placeholder={
+                  involvesNoteOrDraft
+                    ? 'напр. Згадка у метриці 1908 р.'
+                    : 'напр. Куми, Споріднена гілка, Гілка Івана'
+                }
                 className="w-full text-xs px-3 py-2 rounded-xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/35 focus:border-indigo-500"
               />
             </div>
@@ -441,7 +511,9 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
               </svg>
               <span
                 style={{ borderColor: color }}
-                className={`absolute px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 border shadow-xs text-[10px] font-bold text-stone-800 dark:text-zinc-100 inline-flex items-center gap-1 max-w-[180px] ${
+                className={`absolute px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 border shadow-xs text-[10px] font-bold text-stone-800 dark:text-zinc-100 inline-flex items-center gap-1 ${
+                  probableRelation.trim() ? 'max-w-[260px]' : 'max-w-[180px]'
+                } ${
                   lineShape === 'straight' || lineShape === 'wavy' ? 'top-1/2 -translate-y-1/2' : 'top-2.5'
                 }`}
               >
@@ -451,6 +523,14 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
                   </span>
                 ) : (
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                )}
+                {mode === 'single' && involvesNoteOrDraft && probableRelation.trim() && (
+                  <span
+                    style={{ backgroundColor: `${color}1f`, color }}
+                    className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold shrink-0 leading-tight"
+                  >
+                    {probableRelation.trim()}
+                  </span>
                 )}
                 <span className="truncate">{previewLabel}</span>
                 <ArrowUpRight size={10} className="shrink-0" style={{ color }} />

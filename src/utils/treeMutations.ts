@@ -914,6 +914,7 @@ export interface CreateGhostCardInput {
   x?: number;
   y?: number;
   hintTargetPersonId?: string;
+  hintProbableRelation?: string;
   hintLabel?: string;
   hintColor?: string;
 }
@@ -961,7 +962,8 @@ export function applyCreateGhostCard(
           {
             id: `bl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             targetPersonId: data.hintTargetPersonId,
-            label: data.hintLabel?.trim() || 'Нотатка',
+            probableRelation: data.hintProbableRelation?.trim() || undefined,
+            label: data.hintLabel?.trim() || undefined,
             color: data.hintColor || '#d97706',
             lineShape: 'curved',
             strokeWidth: 2,
@@ -1034,6 +1036,7 @@ export interface CreateBlankScreenshotCardInput {
   x?: number;
   y?: number;
   hintTargetPersonId?: string;
+  hintProbableRelation?: string;
   hintLabel?: string;
   hintColor?: string;
 }
@@ -1070,6 +1073,7 @@ export function applyCreateBlankScreenshotCard(
           {
             id: `bl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             targetPersonId: data.hintTargetPersonId,
+            probableRelation: data.hintProbableRelation?.trim() || undefined,
             label: data.hintLabel?.trim() || 'Нерозшифрований зв’язок',
             color: data.hintColor || '#64748b',
             lineShape: 'curved',
@@ -1181,6 +1185,7 @@ export function applyToggleRelationVerification(
 
 export interface AddBranchLinkOptions {
   linkKind?: BranchLinkKind;
+  probableRelation?: string;
   label?: string;
   color?: string;
   strokeWidth?: number;
@@ -1191,6 +1196,7 @@ export interface AddBranchLinkOptions {
 
 export interface UpdateBranchLinkOptions {
   linkKind?: BranchLinkKind;
+  probableRelation?: string;
   label?: string;
   color?: string;
   strokeWidth?: number;
@@ -1210,6 +1216,32 @@ function normalizeBranchStrokeWidth(value?: number): number | undefined {
   return Math.max(1, Math.min(10, Math.round(value)));
 }
 
+function getReciprocalProbableRelation(relation?: string): string | undefined {
+  const clean = relation?.trim();
+  if (!clean) return undefined;
+  switch (clean) {
+    case 'Батьки':
+    case 'Батько':
+    case 'Мати':
+      return 'Дитина';
+    case 'Дитина':
+      return 'Батьки';
+    case 'Дідусь / Бабуся':
+      return 'Онук / Онука';
+    case 'Онук / Онука':
+      return 'Дідусь / Бабуся';
+    case 'Дядько / Тітка':
+      return 'Племінник / Племінниця';
+    case 'Племінник / Племінниця':
+      return 'Дядько / Тітка';
+    case 'Хресний / Хресна':
+    case 'Хресні':
+      return 'Хрещеник / Хрещениця';
+    default:
+      return clean;
+  }
+}
+
 export function applyAddBranchLink(
   prev: FamilyTreeData,
   sourceId: string,
@@ -1223,6 +1255,7 @@ export function applyAddBranchLink(
 
   const cleanKind: BranchLinkKind = options.linkKind === 'godparent' ? 'godparent' : 'branch';
   const cleanLabel = options.label?.trim() || undefined;
+  const cleanProbableRelation = options.probableRelation?.trim() || undefined;
   const defaultColor = cleanKind === 'godparent' ? '#d97706' : '#4f46e5';
   const cleanColor = options.color?.trim() || defaultColor;
   const cleanWidth = normalizeBranchStrokeWidth(options.strokeWidth) ?? 2;
@@ -1230,7 +1263,12 @@ export function applyAddBranchLink(
     options.lineShape ?? (cleanKind === 'godparent' ? 'wavy' : 'curved')
   );
 
-  const upsertLink = (existing: BranchLink[] | undefined, toId: string, label?: string): BranchLink[] => {
+  const upsertLink = (
+    existing: BranchLink[] | undefined,
+    toId: string,
+    label?: string,
+    probableRel?: string
+  ): BranchLink[] => {
     const list = [...(existing || [])];
     const idx = list.findIndex(
       (l) => l.targetPersonId === toId && (l.linkKind || 'branch') === cleanKind
@@ -1239,6 +1277,8 @@ export function applyAddBranchLink(
       list[idx] = {
         ...list[idx],
         ...(cleanKind === 'godparent' ? { linkKind: 'godparent' as const } : {}),
+        probableRelation:
+          options.probableRelation !== undefined ? probableRel : list[idx].probableRelation,
         label: label !== undefined ? label : list[idx].label,
         color: cleanColor,
         strokeWidth: cleanWidth,
@@ -1252,6 +1292,7 @@ export function applyAddBranchLink(
         id: `bl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         targetPersonId: toId,
         ...(cleanKind === 'godparent' ? { linkKind: 'godparent' as const } : {}),
+        probableRelation: probableRel,
         label,
         color: cleanColor,
         strokeWidth: cleanWidth,
@@ -1263,14 +1304,15 @@ export function applyAddBranchLink(
   const persons = { ...prev.persons };
   persons[sourceId] = {
     ...source,
-    branchLinks: upsertLink(source.branchLinks, targetId, cleanLabel),
+    branchLinks: upsertLink(source.branchLinks, targetId, cleanLabel, cleanProbableRelation),
   };
 
   if (options.bidirectional) {
     const revLabel = options.reverseLabel?.trim() || cleanLabel;
+    const revProbableRel = getReciprocalProbableRelation(cleanProbableRelation);
     persons[targetId] = {
       ...target,
-      branchLinks: upsertLink(target.branchLinks, sourceId, revLabel),
+      branchLinks: upsertLink(target.branchLinks, sourceId, revLabel, revProbableRel),
     };
   }
 
@@ -1304,10 +1346,15 @@ export function applyUpdateBranchLink(
     options.lineShape !== undefined ? normalizeBranchLineShape(options.lineShape) : current.lineShape;
   const cleanLabel =
     options.label !== undefined ? options.label.trim() || undefined : current.label;
+  const cleanProbableRelation =
+    options.probableRelation !== undefined
+      ? options.probableRelation.trim() || undefined
+      : current.probableRelation;
 
   const updatedLink: BranchLink = {
     ...current,
     linkKind: nextKind === 'godparent' ? 'godparent' : undefined,
+    probableRelation: cleanProbableRelation,
     label: cleanLabel,
     color: cleanColor,
     strokeWidth: cleanWidth,
@@ -1326,6 +1373,10 @@ export function applyUpdateBranchLink(
     const target = persons[current.targetPersonId];
     if (target.branchLinks && target.branchLinks.length > 0) {
       let changed = false;
+      const revProbableRel =
+        options.probableRelation !== undefined
+          ? getReciprocalProbableRelation(cleanProbableRelation)
+          : undefined;
       const nextTargetLinks = target.branchLinks.map((tl) => {
         if (
           tl.targetPersonId === sourceId &&
@@ -1334,6 +1385,7 @@ export function applyUpdateBranchLink(
           changed = true;
           return {
             ...tl,
+            ...(options.probableRelation !== undefined ? { probableRelation: revProbableRel } : {}),
             color: cleanColor,
             strokeWidth: cleanWidth,
             lineShape: cleanShape,

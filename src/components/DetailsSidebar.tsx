@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Person, RelativeType, ConnectionMeta } from '../types/tree';
 import { SilhouetteAvatar } from './SilhouetteAvatar';
 import { formatPersonLifeDates, formatSingleDate, calculateAge } from '../utils/dateUtils';
-import { handleUploadImageError } from '../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../utils/mediaSync';
 import { getPrimaryMetricExternalLink, getMetricLinkDomainLabel, isExternalMetricLink } from '../utils/metricLinks';
 import {
   X,
@@ -593,7 +593,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 title="Відкрити у збільшеному перегляді з фільтрами для розшифровки"
               >
                 <img
-                  src={person.screenshotUrl}
+                  src={getResolvedMediaSrc(person.screenshotUrl)}
                   alt={fullName}
                   onError={(e) => handleUploadImageError(e, person.screenshotUrl)}
                   className="w-full max-h-64 object-contain mx-auto"
@@ -1165,7 +1165,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
               <div className="flex items-center gap-2.5 min-w-0">
                 {personClanInfo?.coatOfArmsUrl ? (
                   <img
-                    src={personClanInfo.coatOfArmsUrl}
+                    src={getResolvedMediaSrc(personClanInfo.coatOfArmsUrl)}
                     alt={`Герб ${personClanInfo.name}`}
                     onError={(e) => handleUploadImageError(e, personClanInfo.coatOfArmsUrl)}
                     className="w-8 h-8 object-contain rounded-lg border border-stone-200/80 bg-stone-50 p-0.5 shrink-0 cursor-pointer"
@@ -1269,7 +1269,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   <div className="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-700/70 text-amber-900 dark:text-amber-200 flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden">
                     {pet.avatarUrl ? (
                       <img
-                        src={pet.avatarUrl}
+                        src={getResolvedMediaSrc(pet.avatarUrl)}
                         alt={pet.name}
                         onError={(e) => handleUploadImageError(e, pet.avatarUrl)}
                         className="w-full h-full object-cover"
@@ -1812,6 +1812,11 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                               <span className="truncate">→ {tName}</span>
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              {bl.probableRelation && (
+                                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 text-[9.5px] font-bold">
+                                  {bl.probableRelation}
+                                </span>
+                              )}
                               {bl.label && (
                                 <span className="text-[10px] text-indigo-700 truncate">
                                   {bl.label}
@@ -1885,9 +1890,18 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                               </span>
                               <span className="truncate">← Від: {sName}</span>
                             </div>
-                            {sLink?.label && (
-                              <div className="text-[10px] text-stone-500 truncate">
-                                {sLink.label}
+                            {(sLink?.probableRelation || sLink?.label) && (
+                              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                {sLink?.probableRelation && (
+                                  <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 text-[9.5px] font-bold">
+                                    {sLink.probableRelation}
+                                  </span>
+                                )}
+                                {sLink?.label && (
+                                  <span className="text-[10px] text-stone-500 truncate">
+                                    {sLink.label}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1922,7 +1936,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     title={captionText ? `${captionText}${photo.date ? ` (${photo.date})` : ''}` : 'Натисніть для перегляду'}
                   >
                     <img
-                      src={photo.url}
+                      src={getResolvedMediaSrc(photo.url)}
                       alt={captionText || 'Фото з життя'}
                       onError={(e) => handleUploadImageError(e, photo.url)}
                       className="w-full h-full object-cover"
@@ -2081,7 +2095,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                       onClick={() => setLightboxIndex(idx)}
                     >
                       <img
-                        src={doc.url}
+                        src={getResolvedMediaSrc(doc.url)}
                         alt={doc.title}
                         onError={(e) => handleUploadImageError(e, doc.url)}
                         className="w-full h-full object-cover"

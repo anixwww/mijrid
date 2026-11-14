@@ -23,6 +23,7 @@ import {
 import { getDeletedTreesForFirebase } from '../utils/localTreeStorage';
 import { FamilyTreeData } from '../types/tree';
 import { ConfirmDialog } from './ConfirmDialog';
+import { buildDirectGuestUrl } from '../utils/guestShareService';
 
 interface MyTreesModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ interface MyTreesModalProps {
   isAdmin?: boolean;
   onRenameTree?: (treeId: string, newTitle: string) => Promise<boolean>;
   onDeleteTree?: (treeId: string, title?: string) => Promise<boolean>;
+  onOpenGuestShare?: (treeId: string) => void;
 }
 
 export const MyTreesModal: React.FC<MyTreesModalProps> = ({
@@ -48,6 +50,7 @@ export const MyTreesModal: React.FC<MyTreesModalProps> = ({
   isAdmin = false,
   onRenameTree,
   onDeleteTree,
+  onOpenGuestShare,
 }) => {
   const [trees, setTrees] = useState<TreeMetaItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,7 +68,12 @@ export const MyTreesModal: React.FC<MyTreesModalProps> = ({
     currentTreeId === 'default-tree';
 
   const handleShareLink = async (t: TreeMetaItem) => {
-    const url = `${window.location.origin}?tree=${t.id}`;
+    if (isAdmin && onOpenGuestShare) {
+      onClose();
+      onOpenGuestShare(t.id);
+      return;
+    }
+    const url = buildDirectGuestUrl(t.id);
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);

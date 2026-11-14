@@ -23,6 +23,7 @@ import {
   fetchAllTreesSearchIndex,
   CrossCanvasSearchTree,
 } from './utils/fileStorage';
+import { getResolvedMediaSrc, handleUploadImageError } from './utils/mediaSync';
 import {
   createReciprocalCrossCanvasLinkOnTargetTree,
   isSameCanvasId,
@@ -139,9 +140,10 @@ const ReactionsModal = lazy(() => import('./components/ReactionsModal').then((m)
 const SystemLogsModal = lazy(() => import('./components/SystemLogsModal').then((m) => ({ default: m.SystemLogsModal })));
 const ShortcutsHelpModal = lazy(() => import('./components/ShortcutsHelpModal').then((m) => ({ default: m.ShortcutsHelpModal })));
 const DocumentLightboxModal = lazy(() => import('./components/DocumentLightboxModal').then((m) => ({ default: m.DocumentLightboxModal })));
+const GuestShareModal = lazy(() => import('./components/GuestShareModal').then((m) => ({ default: m.GuestShareModal })));
 import { AlignmentGuidesOverlay } from './components/AlignmentGuidesOverlay';
 import { useAuth } from './context/AuthContext';
-import { Cake, Flame, X as CloseIcon, FolderTree, Upload, ArrowUpRight, ArrowLeft, Settings, StickyNote, Image as ImageIcon, ChevronDown, ZoomIn } from 'lucide-react';
+import { Cake, Flame, X as CloseIcon, FolderTree, Upload, ArrowUpRight, ArrowLeft, Settings, StickyNote, Image as ImageIcon, ChevronDown, ZoomIn, Link2, LogOut } from 'lucide-react';
 
 interface ConnectingMode {
   sourceId: string;
@@ -205,6 +207,9 @@ export default function App() {
   const {
     isAdmin,
     isAdminRef,
+    isGuestLinkSession,
+    canExitGuestPreview,
+    handleExitGuestPreview,
     handleToggleAdminRole,
   } = useAdminRole({
     showToast,
@@ -254,6 +259,8 @@ export default function App() {
     hasUnsyncedFirebaseChanges,
     hasCenteredTreeIdRef,
     pendingFocusPersonIdRef,
+    guestShareState,
+    ensureCloudPublishedForShare,
     handleUpdateVersion,
     handleUnifiedSync,
     handleRestoreFromCloud,
@@ -449,6 +456,21 @@ export default function App() {
   const [guestSuggestionTarget, setGuestSuggestionTarget] = useState<Person | null>(null);
   const [proposeRelativeTarget, setProposeRelativeTarget] = useState<Person | null>(null);
   const [customizePersonTarget, setCustomizePersonTarget] = useState<Person | null>(null);
+  const [isGuestShareModalOpen, setIsGuestShareModalOpen] = useState(false);
+  const [guestShareInitialTreeId, setGuestShareInitialTreeId] = useState<string | undefined>(undefined);
+
+  const isGuestShareActive =
+    !isAdmin && (isGuestLinkSession || guestShareState.status === 'active');
+  const isStrictReadOnlyGuest =
+    !isAdmin && guestShareState.status === 'active' && Boolean(guestShareState.share?.readOnly);
+  const isCanvasLockedGuest =
+    !isAdmin && guestShareState.status === 'active' && !guestShareState.share?.allowAllCanvases;
+  const isGuestShareBlocked =
+    !isAdmin &&
+    (guestShareState.status === 'not_found' ||
+      guestShareState.status === 'disabled' ||
+      guestShareState.status === 'expired' ||
+      guestShareState.status === 'error');
 
   // Cross-branch & Cross-canvas links state
   const [crossCanvasTrees, setCrossCanvasTrees] = useState<CrossCanvasSearchTree[]>([]);
@@ -1574,7 +1596,7 @@ export default function App() {
     async (personId: string, file: File) => {
       if (!isAdmin) return;
       try {
-        const res = await uploadFileToServerDetailed(file);
+        const res = await uploadFileToServerDetailed(file, { kind: 'screenshot' });
         pushHistorySnapshot(tree);
         setTree((prev) => applyUpdateBlankScreenshot(prev, personId, res.url, true));
         logTree('Завантажено скріншот у картку', { personId, fileName: file.name }, 'success');
@@ -1605,7 +1627,7 @@ export default function App() {
     async (file: File, coords?: { x: number; y: number } | null) => {
       if (!isAdmin) return;
       try {
-        const res = await uploadFileToServerDetailed(file);
+        const res = await uploadFileToServerDetailed(file, { kind: 'screenshot' });
         const currentTree = treeRef.current;
         const baseName = file.name
           .replace(/\.[^.]+$/, '')
@@ -1694,6 +1716,7 @@ export default function App() {
       guestSuggestionTarget ||
       proposeRelativeTarget ||
       customizePersonTarget ||
+      isGuestShareModalOpen ||
       confirmDialog ||
       canvasPhotoLightboxPerson
   );
@@ -2242,6 +2265,14 @@ export default function App() {
   // Jump to a specific card on another canvas (or same canvas) via cross-canvas link
   const handleJumpToCrossCanvasLink = useCallback(
     (targetCanvasId: string, targetPersonId?: string, sourcePersonId?: string) => {
+      if (isCanvasLockedGuest && !isSameCanvasId(targetCanvasId, tree.id)) {
+        showToast({
+          type: 'info',
+          title: 'Обмеження гостьового посилання',
+          message: 'Це гостьове посилання відкриває лише поточне полотно.',
+        });
+        return;
+      }
       const srcId = sourcePersonId || selectedPersonId || '';
       const srcP = srcId ? tree.persons[srcId] : undefined;
       const fromName = srcP
@@ -2280,7 +2311,7 @@ export default function App() {
       }
       void handleSelectTree(targetCanvasId, targetPersonId);
     },
-    [tree.id, tree.title, tree.persons, selectedPersonId, centerOnPerson, handleSelectTree]
+    [isCanvasLockedGuest, tree.id, tree.title, tree.persons, selectedPersonId, centerOnPerson, handleSelectTree, showToast]
   );
 
   // Create a cross-canvas link between current card and a card on another canvas
@@ -2631,10 +2662,13 @@ export default function App() {
         onSelectNotificationPerson={handleSelectNotificationPerson}
         onClearNotifications={handleClearNotifications}
         onOpenShortcutsModal={() => setIsShortcutsModalOpen(true)}
-        userPersonName={userPersonName}
-        onOpenUserIdentity={() => setIsUserIdentityModalOpen(true)}
+        userPersonName={isStrictReadOnlyGuest ? null : userPersonName}
+        onOpenUserIdentity={isStrictReadOnlyGuest ? undefined : () => setIsUserIdentityModalOpen(true)}
         onOpenGuestCustomize={
-          userPersonId && tree.persons[userPersonId] && !tree.persons[userPersonId].isBlankScreenshot
+          !isStrictReadOnlyGuest &&
+          userPersonId &&
+          tree.persons[userPersonId] &&
+          !tree.persons[userPersonId].isBlankScreenshot
             ? () => setCustomizePersonTarget(tree.persons[userPersonId])
             : undefined
         }
@@ -2658,6 +2692,19 @@ export default function App() {
             : undefined
         }
         pendingGuestFeedbackCount={isAdmin ? pendingGuestFeedbackCount : 0}
+        onOpenGuestShare={
+          isAdmin
+            ? () => {
+                setGuestShareInitialTreeId(tree.id || 'my-family-tree');
+                setIsGuestShareModalOpen(true);
+              }
+            : undefined
+        }
+        isGuestShareActive={isGuestShareActive}
+        guestShareReadOnly={isStrictReadOnlyGuest}
+        lockedSingleCanvas={isCanvasLockedGuest}
+        canExitGuestPreview={canExitGuestPreview}
+        onExitGuestPreview={handleExitGuestPreview}
       />
 
       {/* 2. Interactive Canvas Container */}
@@ -2864,7 +2911,7 @@ export default function App() {
                 onToggleFullyVerified={isAdmin ? handleToggleFullyVerified : undefined}
                 onDragStart={isAdmin && !isLayoutLocked ? handleCardDragStart : undefined}
                 onLongPress={isAdmin ? handleCardLongPress : undefined}
-                onToggleReaction={handleToggleReaction}
+                onToggleReaction={isStrictReadOnlyGuest ? undefined : handleToggleReaction}
                 guestUserId={guestUserId}
                 onHoverPerson={setHoveredPersonId}
                 isCurrentUser1={userPersonId === p1.id}
@@ -2935,7 +2982,7 @@ export default function App() {
                 onToggleFullyVerified={isAdmin ? handleToggleFullyVerified : undefined}
                 onDragStart={isAdmin && !isLayoutLocked ? handleCardDragStart : undefined}
                 onLongPress={isAdmin ? handleCardLongPress : undefined}
-                onToggleReaction={handleToggleReaction}
+                onToggleReaction={isStrictReadOnlyGuest ? undefined : handleToggleReaction}
                 guestUserId={guestUserId}
                 onHoverPerson={setHoveredPersonId}
                 isCurrentUser={userPersonId === person.id}
@@ -3377,8 +3424,9 @@ export default function App() {
                               <div className="w-10 h-10 rounded-lg border border-stone-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex items-center justify-center shrink-0">
                                 {bp.screenshotUrl ? (
                                   <img
-                                    src={bp.screenshotUrl}
+                                    src={getResolvedMediaSrc(bp.screenshotUrl)}
                                     alt={bName}
+                                    onError={(e) => handleUploadImageError(e, bp.screenshotUrl)}
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
@@ -3610,7 +3658,7 @@ export default function App() {
           onToggleGrid={handleToggleCanvasGrid}
           persons={tree.persons}
           onSelectAndCenter={centerOnPerson}
-          onOpenMyTrees={() => setIsMyTreesModalOpen(true)}
+          onOpenMyTrees={isCanvasLockedGuest ? undefined : () => setIsMyTreesModalOpen(true)}
           onUndo={handleUndo}
           canUndo={historyStack.length > 0}
           selectedClanFilter={selectedClanFilter}
@@ -3626,6 +3674,14 @@ export default function App() {
           currentTreeId={tree.id}
           currentTreeTitle={tree.title}
           onSelectTreeAndPerson={(treeId, personId) => {
+            if (isCanvasLockedGuest && !isSameCanvasId(treeId, tree.id)) {
+              showToast({
+                type: 'info',
+                title: 'Обмеження гостьового посилання',
+                message: 'Це гостьове посилання відкриває лише поточне полотно.',
+              });
+              return;
+            }
             void handleSelectTree(treeId, personId);
           }}
           onOpenQuickDraft={isAdmin ? () => handleOpenQuickDraftAtViewportCenter('ghost') : undefined}
@@ -3635,6 +3691,40 @@ export default function App() {
           isChronologyOpen={isAdmin && overviewModalTab === 'chronology'}
           onOpenChronology={isAdmin ? () => setOverviewModalTab('chronology') : undefined}
         />
+
+        {/* Blocked / Invalid / Disabled / Expired Guest Share Link Overlay */}
+        {isGuestShareBlocked && (
+          <div className="absolute inset-0 z-40 bg-[#f8faf8]/95 dark:bg-[#111315]/95 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-2xl border border-stone-200 dark:border-zinc-800 shadow-2xl p-6 text-center space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center mx-auto">
+                <Link2 size={24} />
+              </div>
+              <div className="space-y-1.5">
+                <h2 className="text-base font-bold text-stone-900 dark:text-zinc-100">
+                  {guestShareState.status === 'disabled'
+                    ? 'Гостьове посилання призупинено'
+                    : guestShareState.status === 'expired'
+                    ? 'Термін дії посилання вичерпано'
+                    : 'Гостьове посилання недоступне'}
+                </h2>
+                <p className="text-xs text-stone-600 dark:text-zinc-400 leading-relaxed">
+                  {guestShareState.errorMessage ||
+                    'Зверніться до адміністратора родового дерева, щоб отримати актуальне гостьове посилання.'}
+                </p>
+              </div>
+              {canExitGuestPreview && (
+                <button
+                  type="button"
+                  onClick={handleExitGuestPreview}
+                  className="px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <LogOut size={14} />
+                  <span>Повернутися до режиму адміністратора</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. Inspector Sidebar */}
@@ -3643,8 +3733,8 @@ export default function App() {
         allPersons={tree.persons}
         isOpen={isSidebarOpen && !!selectedPerson}
         isAdmin={isAdmin}
-        userPersonId={userPersonId}
-        onSetUserPersonId={(id) => handleSaveUserIdentity(id)}
+        userPersonId={isStrictReadOnlyGuest ? null : userPersonId}
+        onSetUserPersonId={isStrictReadOnlyGuest ? undefined : (id) => handleSaveUserIdentity(id)}
         onClose={() => setIsSidebarOpen(false)}
         onEdit={(p) => setEditingPerson(p)}
         onDelete={handleDeletePerson}
@@ -3679,8 +3769,12 @@ export default function App() {
         onDeleteReaction={handleDeleteReaction}
         onOpenReactionsModal={() => setIsReactionsModalOpen(true)}
         onToggleGhostStatus={isAdmin ? handleToggleGhostStatus : undefined}
-        onOpenGuestSuggestion={!isAdmin ? (p) => setGuestSuggestionTarget(p) : undefined}
-        onOpenProposeRelative={!isAdmin ? (p) => setProposeRelativeTarget(p) : undefined}
+        onOpenGuestSuggestion={
+          !isAdmin && !isStrictReadOnlyGuest ? (p) => setGuestSuggestionTarget(p) : undefined
+        }
+        onOpenProposeRelative={
+          !isAdmin && !isStrictReadOnlyGuest ? (p) => setProposeRelativeTarget(p) : undefined
+        }
         onResolveGuestSuggestion={isAdmin ? handleResolveGuestSuggestion : undefined}
         onApproveProposal={isAdmin ? handleApproveProposalCard : undefined}
         onDeleteProposal={isAdmin ? handleDeleteProposalCard : undefined}
@@ -3688,7 +3782,9 @@ export default function App() {
         crossCanvasTrees={crossCanvasTrees}
         onSelectTree={handleJumpToCrossCanvasLink}
         onRemoveCrossCanvasLink={isAdmin ? handleRemoveCrossCanvasLink : undefined}
-        onOpenGuestCustomize={(p) => setCustomizePersonTarget(p)}
+        onOpenGuestCustomize={
+          isStrictReadOnlyGuest ? undefined : (p) => setCustomizePersonTarget(p)
+        }
       />
 
       <Suspense fallback={null}>
@@ -3869,6 +3965,7 @@ export default function App() {
                 } else if (sourceP && linkObj) {
                   setTree((prev) => {
                     let next = applyUpdateBranchLink(prev, sourceP.id, linkObj.id, {
+                      probableRelation: payload.probableRelation,
                       label: payload.label,
                       color: payload.color,
                       strokeWidth: payload.strokeWidth,
@@ -4131,6 +4228,28 @@ export default function App() {
             isAdmin={isAdmin}
             onRenameTree={handleRenameTree}
             onDeleteTree={handleDeleteTree}
+            onOpenGuestShare={
+              isAdmin
+                ? (targetTreeId) => {
+                    setGuestShareInitialTreeId(targetTreeId);
+                    setIsGuestShareModalOpen(true);
+                  }
+                : undefined
+            }
+          />
+        )}
+
+        {/* 11.2 Guest Share Link Generator Modal (Admin only) */}
+        {isAdmin && isGuestShareModalOpen && (
+          <GuestShareModal
+            isOpen={isGuestShareModalOpen}
+            onClose={() => setIsGuestShareModalOpen(false)}
+            currentTree={tree}
+            initialTreeId={guestShareInitialTreeId}
+            hasUnsyncedFirebaseChanges={hasUnsyncedFirebaseChanges}
+            isFirebaseSyncing={isFirebaseSyncing}
+            onPublishToCloud={ensureCloudPublishedForShare}
+            showToast={showToast}
           />
         )}
 

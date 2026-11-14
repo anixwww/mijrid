@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MetricDocument } from '../../types/tree';
 import { uploadFileToServerDetailed } from '../../utils/fileStorage';
-import { handleUploadImageError } from '../../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../../utils/mediaSync';
 import {
   isExternalMetricLink,
   normalizeExternalMetricUrl,
@@ -66,6 +66,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
           continue;
         }
         const res = await uploadFileToServerDetailed(file, {
+          kind: 'metric',
           isDocument: true,
           onProgress: (pct) => setUploadPercent(Math.round(((i + pct / 100) / files.length) * 100)),
         });
@@ -168,7 +169,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
           {isUploading ? `Завантаження файлів... ${uploadPercent}%` : 'Або завантажити скан / скріншот документа'}
         </span>
         <span className="text-[11px] text-emerald-800/80 dark:text-emerald-400/80 mt-0.5">
-          Підтримуються JPG, PNG, WebP (без втрати якості, до 50 MB)
+          Підтримуються JPG, PNG, WebP (оригінальна якість · збереження у Firebase)
         </span>
         <input
           type="file"
@@ -222,7 +223,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                     title="Відкрити у збільшеному вигляді"
                   >
                     <img
-                      src={doc.url}
+                      src={getResolvedMediaSrc(doc.url)}
                       alt={doc.title}
                       onError={(e) => handleUploadImageError(e, doc.url)}
                       className="w-full h-full object-cover"

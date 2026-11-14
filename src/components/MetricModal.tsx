@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Person, MetricDocument } from '../types/tree';
 import { uploadFileToServerDetailed } from '../utils/fileStorage';
-import { handleUploadImageError } from '../utils/mediaSync';
+import {
+  getResolvedMediaSrc,
+  handleUploadImageError,
+  resolveMediaFallbackFromFirestore,
+  uploadUrlToMediaId,
+} from '../utils/mediaSync';
 import {
   getDefaultMetricLinkTitle,
   getMetricLinkDomainLabel,
@@ -9,6 +14,7 @@ import {
   normalizeExternalMetricUrl,
 } from '../utils/metricLinks';
 import { DocumentLightboxModal, LightboxDocumentItem } from './DocumentLightboxModal';
+import { FirebasePhotoAuthBanner } from './FirebasePhotoAuthBanner';
 import {
   X,
   Upload,
@@ -112,6 +118,8 @@ export const MetricModal: React.FC<MetricModalProps> = ({
   const [showAddLinkBox, setShowAddLinkBox] = useState(false);
   const [previewImgError, setPreviewImgError] = useState(false);
   const [previewReloadNonce, setPreviewReloadNonce] = useState(0);
+  const [resolvedPreviewOverride, setResolvedPreviewOverride] = useState<string | null>(null);
+  const previewFallbackUrlRef = useRef<string>('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -169,10 +177,14 @@ export const MetricModal: React.FC<MetricModalProps> = ({
       setEditingDate(selectedDoc.date || '');
       setEditingUrl(selectedDoc.url || '');
       setPreviewImgError(false);
+      setResolvedPreviewOverride(null);
+      previewFallbackUrlRef.current = '';
     } else {
       setEditingTitle('');
       setEditingDate('');
       setEditingUrl('');
+      setResolvedPreviewOverride(null);
+      previewFallbackUrlRef.current = '';
     }
   }, [selectedDoc?.id, selectedDoc?.title, selectedDoc?.date, selectedDoc?.url]);
 
@@ -193,85 +205,88 @@ export const MetricModal: React.FC<MetricModalProps> = ({
       let lastError = '';
       let hadLocalFallback = false;
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const label = files.length > 1 ? `(${i + 1}/${files.length}) ${file.name || 'Фото'}` : file.name || 'Фото';
-        setUploadStatusText(`Завантаження: ${label}`);
-        try {
-          const res = await uploadFileToServerDetailed(file, {
-            isDocument: true,
-            onProgress: (pct) => {
-              const overall = Math.round(((i + pct / 100) / files.length) * 100);
-              setUploadProgress(overall);
-            },
-          });
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const label = files.length > 1 ? `(${i + 1}/${files.length}) ${file.name || 'Фото'}` : file.name || 'Фото';
+          setUploadStatusText(`Завантаження: ${label}`);
+          try {
+            const res = await uploadFileToServerDetailed(file, {
+              kind: 'metric',
+              isDocument: true,
+              onProgress: (pct) => {
+                const overall = Math.round(((i + pct / 100) / files.length) * 100);
+                setUploadProgress(overall);
+              },
+            });
 
-          if (res.storage === 'local') {
-            hadLocalFallback = true;
+            if (res.storage === 'local') {
+              hadLocalFallback = true;
+            }
+
+            const docType: MetricDocument['type'] = activeTab === 'other' ? 'other' : activeTab;
+            const defaultDate =
+              activeTab === 'birth'
+                ? person.birthDate || person.birthYear
+                : activeTab === 'death'
+                ? person.deathDate || person.deathYear
+                : undefined;
+
+            uploadedDocs.push({
+              id: `metric_${docType}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              type: docType,
+              url: res.url,
+              title:
+                files.length === 1 && activeTab !== 'other'
+                  ? defaultDocTitle(activeTab)
+                  : file.name
+                  ? file.name.replace(/\.[^/.]+$/, '') || defaultDocTitle(activeTab)
+                  : defaultDocTitle(activeTab),
+              date: defaultDate,
+            });
+          } catch (err: any) {
+            failed.push(file);
+            lastError = err?.message || 'Не вдалося завантажити фотографію метрики';
           }
+        }
 
-          const docType: MetricDocument['type'] = activeTab === 'other' ? 'other' : activeTab;
-          const defaultDate =
-            activeTab === 'birth'
-              ? person.birthDate || person.birthYear
-              : activeTab === 'death'
-              ? person.deathDate || person.deathYear
-              : undefined;
-
-          uploadedDocs.push({
-            id: `metric_${docType}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            type: docType,
-            url: res.url,
-            title:
-              files.length === 1 && activeTab !== 'other'
-                ? defaultDocTitle(activeTab)
-                : file.name
-                ? file.name.replace(/\.[^/.]+$/, '') || defaultDocTitle(activeTab)
-                : defaultDocTitle(activeTab),
-            date: defaultDate,
+        if (uploadedDocs.length > 0) {
+          const nextDocs = [...currentAllDocs, ...uploadedDocs];
+          const updatedPerson = buildUpdatedPersonWithDocs(person, nextDocs);
+          setSelectedDocId(uploadedDocs[uploadedDocs.length - 1].id);
+          onSave(updatedPerson, {
+            action: 'upload',
+            message:
+              uploadedDocs.length === 1
+                ? 'Фото метрики додано та збережено'
+                : `Додано фото метрики (${uploadedDocs.length} шт.)`,
           });
-        } catch (err: any) {
-          failed.push(file);
-          lastError = err?.message || 'Не вдалося завантажити фотографію метрики';
+          if (hadLocalFallback) {
+            setWarningMsg(
+              'Сервер недоступний: фото тимчасово збережено в пам’яті браузера і буде відправлено у хмару при синхронізації.'
+            );
+          } else {
+            setSuccessMsg(
+              uploadedDocs.length === 1
+                ? 'Фото метрики завантажено та збережено у Firebase в оригінальній якості.'
+                : `Завантажено та збережено у Firebase: ${uploadedDocs.length} фото.`
+            );
+          }
         }
-      }
 
-      if (uploadedDocs.length > 0) {
-        const nextDocs = [...currentAllDocs, ...uploadedDocs];
-        const updatedPerson = buildUpdatedPersonWithDocs(person, nextDocs);
-        setSelectedDocId(uploadedDocs[uploadedDocs.length - 1].id);
-        onSave(updatedPerson, {
-          action: 'upload',
-          message:
-            uploadedDocs.length === 1
-              ? 'Фото метрики додано та збережено'
-              : `Додано фото метрики (${uploadedDocs.length} шт.)`,
-        });
-        if (hadLocalFallback) {
-          setWarningMsg(
-            'Сервер недоступний: фото тимчасово збережено в пам’яті браузера і буде відправлено на сервер при відновленні зв’язку.'
-          );
-        } else {
-          setSuccessMsg(
-            uploadedDocs.length === 1
-              ? 'Фото метрики надійно збережено на сервері в оригінальній якості.'
-              : `Завантажено та збережено на сервері: ${uploadedDocs.length} фото.`
+        if (failed.length > 0) {
+          setFailedFiles(failed);
+          setErrorMsg(
+            failed.length === files.length
+              ? lastError || 'Не вдалося завантажити фотографію.'
+              : `Не вдалося завантажити ${failed.length} з ${files.length} файлів: ${lastError}`
           );
         }
+      } finally {
+        setIsUploading(false);
+        setUploadProgress(0);
+        setUploadStatusText('');
       }
-
-      if (failed.length > 0) {
-        setFailedFiles(failed);
-        setErrorMsg(
-          failed.length === files.length
-            ? lastError || 'Не вдалося завантажити фотографію.'
-            : `Не вдалося завантажити ${failed.length} з ${files.length} файлів: ${lastError}`
-        );
-      }
-
-      setIsUploading(false);
-      setUploadProgress(0);
-      setUploadStatusText('');
     },
     [person, isAdmin, isUploading, activeTab, onSave]
   );
@@ -459,11 +474,15 @@ export const MetricModal: React.FC<MetricModalProps> = ({
     ((activeTab === 'birth' && birthDocs[0]?.id === selectedDoc.id) ||
       (activeTab === 'death' && deathDocs[0]?.id === selectedDoc.id));
 
-  const selectedIsDataUrl = Boolean(selectedDoc?.url.startsWith('data:'));
+  const rawSelectedUrl = selectedDoc?.url || '';
+  const cachedOrDirectSelectedUrl =
+    resolvedPreviewOverride || getResolvedMediaSrc(rawSelectedUrl) || rawSelectedUrl;
+  const selectedIsInline =
+    cachedOrDirectSelectedUrl.startsWith('data:') || cachedOrDirectSelectedUrl.startsWith('blob:');
   const selectedPreviewSrc =
-    selectedDoc && previewReloadNonce > 0 && !selectedIsDataUrl
-      ? `${selectedDoc.url}${selectedDoc.url.includes('?') ? '&' : '?'}v=${previewReloadNonce}`
-      : selectedDoc?.url || '';
+    selectedDoc && previewReloadNonce > 0 && !selectedIsInline
+      ? `${cachedOrDirectSelectedUrl}${cachedOrDirectSelectedUrl.includes('?') ? '&' : '?'}v=${previewReloadNonce}`
+      : cachedOrDirectSelectedUrl;
 
   return (
     <>
@@ -587,6 +606,8 @@ export const MetricModal: React.FC<MetricModalProps> = ({
 
           {/* Content Body */}
           <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-3.5">
+            {isAdmin && <FirebasePhotoAuthBanner compact />}
+
             {/* Upload Progress Bar */}
             {isUploading && (
               <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2">
@@ -765,7 +786,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
                             <span>Повторити</span>
                           </button>
                           <a
-                            href={selectedDoc.url}
+                            href={cachedOrDirectSelectedUrl}
                             download
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
                           >
@@ -780,11 +801,23 @@ export const MetricModal: React.FC<MetricModalProps> = ({
                           src={selectedPreviewSrc}
                           alt={selectedDoc.title || 'Фото метрики'}
                           onClick={openLightboxForSelected}
-                          onError={(e) => {
-                            handleUploadImageError(e, selectedDoc.url);
-                            if (!selectedDoc.url.startsWith('/uploads/')) {
-                              setPreviewImgError(true);
+                          onError={() => {
+                            if (
+                              !resolvedPreviewOverride &&
+                              uploadUrlToMediaId(selectedDoc.url) &&
+                              previewFallbackUrlRef.current !== selectedDoc.url
+                            ) {
+                              previewFallbackUrlRef.current = selectedDoc.url;
+                              void resolveMediaFallbackFromFirestore(selectedDoc.url).then((resolved) => {
+                                if (resolved) {
+                                  setResolvedPreviewOverride(resolved);
+                                } else {
+                                  setPreviewImgError(true);
+                                }
+                              });
+                              return;
                             }
+                            setPreviewImgError(true);
                           }}
                           className="max-h-[45vh] w-auto object-contain cursor-zoom-in transition-transform duration-150 group-hover:scale-[1.01]"
                         />
@@ -800,7 +833,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
                             <span>На весь екран (лупа / поворот / контраст)</span>
                           </button>
                           <a
-                            href={selectedDoc.url}
+                            href={cachedOrDirectSelectedUrl}
                             download
                             onClick={(e) => e.stopPropagation()}
                             className="p-2 rounded-xl bg-black/75 hover:bg-black/90 text-white shadow-lg border border-white/15 backdrop-blur-xs transition-transform active:scale-95"
@@ -843,7 +876,7 @@ export const MetricModal: React.FC<MetricModalProps> = ({
                             </div>
                           ) : (
                             <img
-                              src={doc.url}
+                              src={getResolvedMediaSrc(doc.url)}
                               alt=""
                               onError={(e) => handleUploadImageError(e, doc.url)}
                               className="w-full h-full object-cover"

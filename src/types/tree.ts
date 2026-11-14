@@ -203,11 +203,25 @@ export interface BranchLink {
   id: string;
   targetPersonId: string;
   linkKind?: BranchLinkKind; // 'branch' (міжгілковий) | 'godparent' (хресний/хресна)
+  probableRelation?: string; // Вид ймовірного родинного зв'язку для нотатки (Батьки, Подружжя, Дитина тощо)
   label?: string;
   color?: string;
   strokeWidth?: number; // Товщина лінії (1..10 px)
   lineShape?: BranchLinkCurveStyle; // 'curved' (вигнута) | 'straight' (пряма) | 'wavy' (хвиляста)
 }
+
+export const NOTE_PROBABLE_RELATION_PRESETS = [
+  { label: 'Батьки', icon: '⬆️' },
+  { label: 'Подружжя', icon: '💍' },
+  { label: 'Дитина', icon: '⬇️' },
+  { label: 'Брат / Сестра', icon: '🤝' },
+  { label: 'Батько', icon: '👨' },
+  { label: 'Мати', icon: '👩' },
+  { label: 'Дідусь / Бабуся', icon: '👴' },
+  { label: 'Дядько / Тітка', icon: '🧩' },
+  { label: 'Хресні', icon: '✝️' },
+  { label: 'Родич', icon: '🌿' },
+] as const;
 
 export const BRANCH_LINK_COLOR_PRESETS = [
   { name: 'Індиго', hex: '#4f46e5' },

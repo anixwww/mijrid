@@ -4,7 +4,7 @@ import { CARD_WIDTH, CARD_HEIGHT, COUPLE_TOTAL_WIDTH } from '../utils/treeLayout
 import { ClanInfo, doPersonsShareColor } from '../utils/lineageUtils';
 import { ArrowLeftRight, HeartCrack, Heart, PawPrint } from 'lucide-react';
 import { PersonCardSurface } from './PersonCardSurface';
-import { handleUploadImageError } from '../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../utils/mediaSync';
 
 interface CoupleCardProps {
   person1: Person; // Left spouse
@@ -531,7 +531,7 @@ const CoupleCardComponent: React.FC<CoupleCardProps> = ({
                       <div className="w-10 h-10 rounded-lg bg-amber-100/90 dark:bg-amber-900/50 border border-amber-300/80 dark:border-amber-600/70 flex items-center justify-center text-lg shrink-0 overflow-hidden">
                         {pet.avatarUrl ? (
                           <img
-                            src={pet.avatarUrl}
+                            src={getResolvedMediaSrc(pet.avatarUrl)}
                             alt={pet.name}
                             onError={(e) => handleUploadImageError(e, pet.avatarUrl)}
                             className="w-full h-full object-cover"
@@ -584,7 +584,7 @@ const CoupleCardComponent: React.FC<CoupleCardProps> = ({
                       <div className="w-9 h-9 rounded-lg bg-amber-100/90 dark:bg-amber-900/50 border border-amber-300/80 dark:border-amber-600/70 flex items-center justify-center text-base shrink-0 overflow-hidden">
                         {pet.avatarUrl ? (
                           <img
-                            src={pet.avatarUrl}
+                            src={getResolvedMediaSrc(pet.avatarUrl)}
                             alt={pet.name}
                             onError={(e) => handleUploadImageError(e, pet.avatarUrl)}
                             className="w-full h-full object-cover"
@@ -637,7 +637,7 @@ const CoupleCardComponent: React.FC<CoupleCardProps> = ({
                       <div className="w-9 h-9 rounded-lg bg-amber-100/90 dark:bg-amber-900/50 border border-amber-300/80 dark:border-amber-600/70 flex items-center justify-center text-base shrink-0 overflow-hidden">
                         {pet.avatarUrl ? (
                           <img
-                            src={pet.avatarUrl}
+                            src={getResolvedMediaSrc(pet.avatarUrl)}
                             alt={pet.name}
                             onError={(e) => handleUploadImageError(e, pet.avatarUrl)}
                             className="w-full h-full object-cover"

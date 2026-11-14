@@ -4,7 +4,7 @@ import { CARD_WIDTH, CARD_HEIGHT } from '../utils/treeLayout';
 import { ClanInfo } from '../utils/lineageUtils';
 import { PawPrint } from 'lucide-react';
 import { PersonCardSurface } from './PersonCardSurface';
-import { handleUploadImageError } from '../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../utils/mediaSync';
 
 interface FamilyCardProps {
   person: Person;
@@ -222,7 +222,7 @@ const FamilyCardComponent: React.FC<FamilyCardProps> = ({
                   <div className="w-9 h-9 rounded-lg bg-amber-100/90 dark:bg-amber-900/50 border border-amber-300/80 dark:border-amber-600/70 flex items-center justify-center text-base shrink-0 overflow-hidden">
                     {pet.avatarUrl ? (
                       <img
-                        src={pet.avatarUrl}
+                        src={getResolvedMediaSrc(pet.avatarUrl)}
                         alt={pet.name}
                         onError={(e) => handleUploadImageError(e, pet.avatarUrl)}
                         className="w-full h-full object-cover"

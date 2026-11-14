@@ -2,12 +2,15 @@ import React from 'react';
 import {
   BRANCH_LINK_COLOR_PRESETS,
   BranchLinkCurveStyle,
+  NOTE_PROBABLE_RELATION_PRESETS,
 } from '../../types/tree';
 import { Check, Palette } from 'lucide-react';
 
 interface BranchLinkStyleEditorProps {
   label?: string;
   onChangeLabel?: (value: string) => void;
+  probableRelation?: string;
+  onChangeProbableRelation?: (value: string) => void;
   color: string;
   onChangeColor: (color: string) => void;
   strokeWidth: number;
@@ -21,6 +24,8 @@ const WIDTH_PRESETS = [1, 2, 3, 4, 6, 8, 10] as const;
 export const BranchLinkStyleEditor: React.FC<BranchLinkStyleEditorProps> = ({
   label,
   onChangeLabel,
+  probableRelation,
+  onChangeProbableRelation,
   color,
   onChangeColor,
   strokeWidth,
@@ -30,6 +35,53 @@ export const BranchLinkStyleEditor: React.FC<BranchLinkStyleEditorProps> = ({
 }) => {
   return (
     <div className="space-y-2.5 pt-2">
+      {onChangeProbableRelation && (
+        <div className="space-y-1.5 pb-1 border-b border-amber-200/70 dark:border-amber-900/40">
+          <div className="flex items-center justify-between gap-2">
+            <label className="block text-[10.5px] font-semibold text-amber-900 dark:text-amber-300">
+              Ймовірний родинний зв&apos;язок
+            </label>
+            {probableRelation?.trim() && (
+              <button
+                type="button"
+                onClick={() => onChangeProbableRelation('')}
+                className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+              >
+                Очистити
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {NOTE_PROBABLE_RELATION_PRESETS.map((preset) => {
+              const active =
+                (probableRelation || '').trim().toLowerCase() === preset.label.toLowerCase();
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => onChangeProbableRelation(active ? '' : preset.label)}
+                  className={`px-2 py-0.5 rounded-md border text-[10.5px] font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer ${
+                    active
+                      ? 'border-amber-600 bg-amber-600 text-white'
+                      : 'border-amber-200 dark:border-amber-800 bg-white dark:bg-zinc-900 text-amber-950 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                  }`}
+                >
+                  <span>{preset.icon}</span>
+                  <span>{preset.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <input
+            type="text"
+            value={probableRelation ?? ''}
+            onChange={(e) => onChangeProbableRelation(e.target.value)}
+            placeholder="напр. Батьки, Подружжя, Дитина..."
+            className="w-full min-w-0 text-xs px-2.5 py-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/35 focus:border-amber-500"
+          />
+        </div>
+      )}
+
       {onChangeLabel && (
         <div>
           <label className="block text-[10.5px] font-medium text-stone-600 dark:text-zinc-400 mb-1">

@@ -7,7 +7,7 @@ import { formatCardId, getPersonIdMatchScore } from '../../utils/cardIdUtils';
 import { buildBranchOptions, getClanName } from '../../utils/lineageUtils';
 import { CrossCanvasSearchTree } from '../../utils/fileStorage';
 import { isSameCanvasId, upsertCrossCanvasLinkList } from '../../utils/crossCanvasLinks';
-import { handleUploadImageError } from '../../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../../utils/mediaSync';
 import {
   CARD_COLOR_PRESETS,
   EditPersonDraft,
@@ -90,6 +90,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
   const [newBranchTargetId, setNewBranchTargetId] = useState('');
   const [newBranchKind, setNewBranchKind] = useState<BranchLinkKind>('branch');
   const [newBranchLabel, setNewBranchLabel] = useState('');
+  const [newBranchProbableRelation, setNewBranchProbableRelation] = useState('');
   const [newBranchColor, setNewBranchColor] = useState<string>(BRANCH_LINK_COLOR_PRESETS[0].hex);
   const [newBranchStrokeWidth, setNewBranchStrokeWidth] = useState<number>(2);
   const [newBranchLineShape, setNewBranchLineShape] = useState<BranchLinkCurveStyle>('curved');
@@ -273,6 +274,13 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
     if (!newBranchTargetId || newBranchTargetId === personId) return;
     const trimmedLabel =
       newBranchLabel.trim() || (newBranchKind === 'godparent' ? 'Хресний / Хресна' : undefined);
+    const targetObj = allPersons[newBranchTargetId];
+    const involvesNoteOrDraft = Boolean(
+      draft.isGhost || draft.isBlankScreenshot || targetObj?.isGhost || targetObj?.isBlankScreenshot
+    );
+    const trimmedProbableRelation = involvesNoteOrDraft
+      ? newBranchProbableRelation.trim() || undefined
+      : undefined;
     const existingIdx = draft.branchLinks.findIndex(
       (bl) => bl.targetPersonId === newBranchTargetId && (bl.linkKind || 'branch') === newBranchKind
     );
@@ -282,6 +290,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
         ...next[existingIdx],
         ...(newBranchKind === 'godparent' ? { linkKind: 'godparent' as const } : {}),
         label: trimmedLabel !== undefined ? trimmedLabel : next[existingIdx].label,
+        ...(trimmedProbableRelation !== undefined ? { probableRelation: trimmedProbableRelation } : {}),
         color: newBranchColor,
         strokeWidth: newBranchStrokeWidth,
         lineShape: newBranchLineShape,
@@ -295,6 +304,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
           targetPersonId: newBranchTargetId,
           ...(newBranchKind === 'godparent' ? { linkKind: 'godparent' as const } : {}),
           label: trimmedLabel,
+          ...(trimmedProbableRelation ? { probableRelation: trimmedProbableRelation } : {}),
           color: newBranchColor,
           strokeWidth: newBranchStrokeWidth,
           lineShape: newBranchLineShape,
@@ -303,6 +313,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
     }
     setNewBranchTargetId('');
     setNewBranchLabel(newBranchKind === 'godparent' ? 'Хресний / Хресна' : '');
+    setNewBranchProbableRelation('');
   };
 
   const handleUpdateBranchLinkItem = (linkId: string, patch: Partial<BranchLink>) => {
@@ -543,7 +554,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               <div className="flex items-center gap-3 flex-wrap">
                 {draft.screenshotUrl && (
                   <img
-                    src={draft.screenshotUrl}
+                    src={getResolvedMediaSrc(draft.screenshotUrl)}
                     alt="Скріншот запису"
                     onError={(e) => handleUploadImageError(e, draft.screenshotUrl)}
                     className={`w-16 h-16 rounded-lg border border-amber-300 dark:border-amber-700 shrink-0 bg-zinc-900 ${
@@ -1336,6 +1347,11 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                               )}
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              {bl.probableRelation && (
+                                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/70 dark:border-amber-800 text-[10px] font-bold">
+                                  {bl.probableRelation}
+                                </span>
+                              )}
                               {bl.label && (
                                 <span className="text-[10.5px] text-indigo-700 dark:text-indigo-300 truncate">
                                   {bl.label}
@@ -1380,6 +1396,15 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                             onChangeLabel={(val) =>
                               handleUpdateBranchLinkItem(bl.id, { label: val || undefined })
                             }
+                            {...((draft.isGhost || draft.isBlankScreenshot || target?.isGhost || target?.isBlankScreenshot)
+                              ? {
+                                  probableRelation: bl.probableRelation || '',
+                                  onChangeProbableRelation: (val: string) =>
+                                    handleUpdateBranchLinkItem(bl.id, {
+                                      probableRelation: val.trim() || undefined,
+                                    }),
+                                }
+                              : {})}
                             color={bl.color || (bl.linkKind === 'godparent' ? '#d97706' : '#4f46e5')}
                             onChangeColor={(c) => handleUpdateBranchLinkItem(bl.id, { color: c })}
                             strokeWidth={bl.strokeWidth ?? 2}
@@ -1530,6 +1555,15 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               </div>
 
               <BranchLinkStyleEditor
+                {...((draft.isGhost ||
+                  draft.isBlankScreenshot ||
+                  allPersons[newBranchTargetId]?.isGhost ||
+                  allPersons[newBranchTargetId]?.isBlankScreenshot)
+                  ? {
+                      probableRelation: newBranchProbableRelation,
+                      onChangeProbableRelation: setNewBranchProbableRelation,
+                    }
+                  : {})}
                 color={newBranchColor}
                 onChangeColor={setNewBranchColor}
                 strokeWidth={newBranchStrokeWidth}

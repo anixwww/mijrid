@@ -19,6 +19,7 @@ import { RelationsTab } from './edit-person/RelationsTab';
 import { DocumentsTab } from './edit-person/DocumentsTab';
 import { PhotosTab } from './edit-person/PhotosTab';
 import { PetsTab } from './edit-person/PetsTab';
+import { FirebasePhotoAuthBanner } from './FirebasePhotoAuthBanner';
 import {
   X,
   Users,
@@ -139,7 +140,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
     try {
       setModalError(null);
       setIsUploadingAvatar(true);
-      const url = await uploadFileToServer(file);
+      const url = await uploadFileToServer(file, { kind: 'avatar' });
       setDraft((prev) => ({ ...prev, avatarUrl: url }));
     } catch (err) {
       setModalError((err as Error).message);
@@ -152,7 +153,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
     try {
       setModalError(null);
       setIsUploadingScreenshot(true);
-      const url = await uploadFileToServer(file);
+      const url = await uploadFileToServer(file, { kind: 'screenshot' });
       setDraft((prev) => ({ ...prev, screenshotUrl: url, isBlankScreenshot: true }));
     } catch (err) {
       setModalError((err as Error).message);
@@ -410,6 +411,8 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
                   </label>
                 </div>
               )}
+
+              <FirebasePhotoAuthBanner compact />
 
               {modalError && (
                 <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 rounded-xl text-xs text-rose-800 dark:text-rose-200 flex items-center justify-between gap-2">

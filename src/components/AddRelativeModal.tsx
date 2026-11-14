@@ -4,6 +4,7 @@ import { uploadFileToServer } from '../utils/fileStorage';
 import { formatSingleDate, UKRAINIAN_MONTHS, padZero } from '../utils/dateUtils';
 import { checkGenderMismatch } from '../utils/genderValidation';
 import { SilhouetteAvatar } from './SilhouetteAvatar';
+import { FirebasePhotoAuthBanner } from './FirebasePhotoAuthBanner';
 import {
   X,
   Upload,
@@ -153,6 +154,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
   const [notes, setNotes] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -175,12 +177,16 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
     if (file) {
       try {
         setErrorMessage(null);
-        const url = await uploadFileToServer(file);
+        setIsUploadingAvatar(true);
+        const url = await uploadFileToServer(file, { kind: 'avatar' });
         setAvatarUrl(url);
       } catch (err) {
         setErrorMessage((err as Error).message);
+      } finally {
+        setIsUploadingAvatar(false);
       }
     }
+    e.target.value = '';
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -317,6 +323,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1">
+          <FirebasePhotoAuthBanner compact />
+
           {errorMessage && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center justify-between animate-in fade-in">
               <span>{errorMessage}</span>
@@ -611,10 +619,11 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
                 <label className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-stone-300 bg-white hover:bg-stone-50 text-[11px] text-stone-700 font-medium transition-colors shadow-2xs">
                   <Upload size={12} className="text-emerald-800" />
-                  <span>{avatarUrl ? 'Змінити' : 'Завантажити фото'}</span>
+                  <span>{isUploadingAvatar ? 'Завантаження...' : avatarUrl ? 'Змінити' : 'Завантажити фото'}</span>
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isUploadingAvatar}
                     onChange={handleFileUpload}
                     className="hidden"
                   />

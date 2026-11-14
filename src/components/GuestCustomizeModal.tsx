@@ -20,6 +20,7 @@ import {
 } from '../constants/cardFrames';
 import { uploadFileToServerDetailed } from '../utils/fileStorage';
 import { getAuthToken } from '../utils/auth';
+import { isCloudWriteAuthenticated } from '../utils/firestoreTreeService';
 import { CARD_HEIGHT, CARD_WIDTH } from '../utils/treeLayout';
 import { PersonCardSurface } from './PersonCardSurface';
 import { CardFrameOverlay } from './CardFrameOverlay';
@@ -153,8 +154,9 @@ export const GuestCustomizeModal: React.FC<GuestCustomizeModalProps> = ({
     setIsUploading(true);
     setUploadProgress(15);
     try {
-      if (getAuthToken()) {
+      if (isCloudWriteAuthenticated() || getAuthToken()) {
         const res = await uploadFileToServerDetailed(file, {
+          kind: 'avatar',
           onProgress: (pct) => setUploadProgress(pct),
         });
         setAvatarUrl(res.url);

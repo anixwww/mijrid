@@ -7,7 +7,7 @@ import { formatCardId } from '../utils/cardIdUtils';
 import { ClanInfo } from '../utils/lineageUtils';
 import { getPersonCrossCanvasLinks } from '../utils/crossCanvasLinks';
 import { CardFrameOverlay } from './CardFrameOverlay';
-import { handleUploadImageError } from '../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../utils/mediaSync';
 import { getPrimaryMetricExternalLink } from '../utils/metricLinks';
 import { Pin, Link2, Check, Home, Camera, ExternalLink, ArrowUpRight, StickyNote, UserPlus, MessageSquareDot, ImagePlus, ZoomIn, Image as ImageIcon } from 'lucide-react';
 
@@ -549,7 +549,7 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
           title={`Герб роду ${clanInfo.name}${clanInfo.coatOfArmsMotto ? ` («${clanInfo.coatOfArmsMotto}»)` : ''}`}
         >
           <img
-            src={clanInfo.coatOfArmsUrl}
+            src={getResolvedMediaSrc(clanInfo.coatOfArmsUrl)}
             alt={`Герб роду ${clanInfo.name}`}
             onError={(e) => handleUploadImageError(e, clanInfo.coatOfArmsUrl)}
             className="w-full h-full object-contain"
@@ -573,10 +573,14 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
           : 'Картка';
         const pillColor = firstLink.color || '#4f46e5';
         const hasPets = Boolean(person.pets && person.pets.length > 0);
+        const firstRel = firstLink.probableRelation?.trim();
+        const singleBadgeLabel = firstRel
+          ? firstLink.label?.trim()
+            ? `${firstRel} · ${firstLink.label.trim()}`
+            : `${firstRel} · ${firstTargetName}`
+          : firstLink.label?.trim() || firstTargetName;
         const pillText =
-          validLinks.length === 1
-            ? firstLink.label?.trim() || firstTargetName
-            : `${validLinks.length} зв.`;
+          validLinks.length === 1 ? singleBadgeLabel : `${validLinks.length} зв.`;
 
         return (
           <div className="absolute -bottom-2.5 right-1 z-35">
@@ -601,12 +605,18 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
               className="px-1.5 py-0.5 text-white rounded-full text-[9px] font-bold shadow-md flex items-center gap-0.5 transition-transform hover:scale-105 cursor-pointer border border-white/70"
               title={
                 validLinks.length === 1
-                  ? `Перейти до картки: ${firstTargetName}${firstLink.label ? ` (${firstLink.label})` : ''}`
+                  ? `Перейти до картки: ${firstTargetName}${
+                      firstRel ? ` (ймовірний звʼязок: ${firstRel})` : ''
+                    }${firstLink.label ? ` — ${firstLink.label}` : ''}`
                   : `Міжгілкові посилання (${validLinks.length}) — натисніть для вибору`
               }
             >
               <ArrowUpRight size={9.5} className="shrink-0" />
-              <span className={`${hasPets ? 'max-w-[44px]' : 'max-w-[74px]'} truncate leading-tight`}>
+              <span
+                className={`${
+                  hasPets ? (firstRel ? 'max-w-[64px]' : 'max-w-[44px]') : firstRel ? 'max-w-[106px]' : 'max-w-[74px]'
+                } truncate leading-tight`}
+              >
                 {pillText}
               </span>
             </button>
@@ -645,9 +655,9 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold truncate">{tgtName}</div>
-                        {bl.label && (
+                        {(bl.probableRelation || bl.label) && (
                           <div className="text-[9.5px] text-indigo-600 dark:text-indigo-400 truncate">
-                            {bl.label}
+                            {[bl.probableRelation, bl.label].filter(Boolean).join(' · ')}
                           </div>
                         )}
                       </div>
@@ -667,7 +677,7 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
           {person.screenshotUrl ? (
             <>
               <img
-                src={person.screenshotUrl}
+                src={getResolvedMediaSrc(person.screenshotUrl)}
                 alt={fullName}
                 onError={(e) => handleUploadImageError(e, person.screenshotUrl)}
                 className={`absolute inset-0 w-full h-full select-none pointer-events-none ${

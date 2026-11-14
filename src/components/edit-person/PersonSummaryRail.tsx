@@ -5,7 +5,7 @@ import { CardFrameOverlay } from '../CardFrameOverlay';
 import { SilhouetteAvatar } from '../SilhouetteAvatar';
 import { getCardDates } from '../../utils/dateUtils';
 import { formatCardId } from '../../utils/cardIdUtils';
-import { handleUploadImageError } from '../../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../../utils/mediaSync';
 import {
   CARD_COLOR_PRESETS,
   EditPersonDraft,
@@ -193,7 +193,7 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
             {draft.isBlankScreenshot && draft.screenshotUrl ? (
               <div className="relative w-full h-[185px] rounded-xl overflow-hidden">
                 <img
-                  src={draft.screenshotUrl}
+                  src={getResolvedMediaSrc(draft.screenshotUrl)}
                   alt={fullName}
                   onError={(e) => handleUploadImageError(e, draft.screenshotUrl)}
                   className={`w-full h-full ${

@@ -189,8 +189,14 @@ export function generateFullTreeSvg(
         godparentMarkers.set(markerKey, { id: markerId, color, strokeWidth: sw });
       }
 
-      const labelText = bl.label?.trim() || reverseLink?.label?.trim() || 'Хресний / Хресна';
-      const badgeW = Math.min(130, Math.max(54, labelText.length * 5.6 + 18));
+      const probableRelText =
+        bl.probableRelation?.trim() || reverseLink?.probableRelation?.trim() || '';
+      const rawCustomLabel = bl.label?.trim() || reverseLink?.label?.trim() || '';
+      const labelText = involvesNote
+        ? [probableRelText, rawCustomLabel].filter(Boolean).join(' · ') || 'Нотатка →'
+        : rawCustomLabel || 'Хресний / Хресна';
+      const maxChars = probableRelText ? 26 : 20;
+      const badgeW = Math.min(165, Math.max(54, Math.min(labelText.length, maxChars) * 5.4 + 18));
       const dotR = Math.max(2.5, Math.min(5.2, sw * 0.7 + 1.1));
       godparentSvgParts.push(
         `<g>
@@ -211,7 +217,7 @@ export function generateFullTreeSvg(
           <text x="${midX.toFixed(1)}" y="${(midY + 3).toFixed(
           1
         )}" font-family="Plus Jakarta Sans, sans-serif" font-size="8" font-weight="bold" fill="#292524" text-anchor="middle">${escapeXml(
-          truncateLabel(labelText, 20)
+          truncateLabel(labelText, maxChars)
         )}</text>
         </g>`
       );
@@ -289,7 +295,12 @@ export function generateFullTreeSvg(
         validBranchLinks.length > 1
           ? `↗ ${validBranchLinks.length} зв.`
           : firstBranchLink && firstTarget
-          ? `↗ ${truncateLabel(firstBranchLink.label || [firstTarget.firstName, firstTarget.lastName].filter(Boolean).join(' '), 14)}`
+          ? `↗ ${truncateLabel(
+              firstBranchLink.probableRelation ||
+                firstBranchLink.label ||
+                [firstTarget.firstName, firstTarget.lastName].filter(Boolean).join(' '),
+              14
+            )}`
           : '';
       const branchBadgeColor = firstBranchLink?.color || '#4f46e5';
       const branchBadgeSvg = branchLabel

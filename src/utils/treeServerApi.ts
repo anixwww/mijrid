@@ -195,11 +195,15 @@ export async function loadTreeById(
     preferServer?: boolean;
     forceRemote?: boolean;
     includeCloud?: boolean;
+    skipLocalRead?: boolean;
+    skipLocalWrite?: boolean;
   }
 ): Promise<FamilyTreeData | null> {
   const { targetId, isMainTree } = normalizeTreeId(treeId);
 
-  const localTree = readLocalTreeCandidate(targetId, isMainTree, Boolean(options?.allowEmpty));
+  const localTree = options?.skipLocalRead
+    ? null
+    : readLocalTreeCandidate(targetId, isMainTree, Boolean(options?.allowEmpty));
 
   const firestoreTree =
     options?.includeCloud !== false
@@ -222,7 +226,7 @@ export async function loadTreeById(
         )
       : null;
 
-  const isLocalDirty = getDirtyTreeIds().has(targetId);
+  const isLocalDirty = options?.skipLocalRead ? false : getDirtyTreeIds().has(targetId);
 
   let winner: FamilyTreeData | null = null;
   if (options?.forceRemote && firestoreTree) {
@@ -244,16 +248,17 @@ export async function loadTreeById(
   }
   if (!winner) return null;
 
-  const effectiveGlobalVersion = hasDirtyGlobalVersion()
-    ? getLocalGlobalVersion()
-    : winner === localTree
-    ? localTree?.version || getLocalGlobalVersion() || firestoreTree?.version
-    : firestoreTree?.version || getLocalGlobalVersion();
+  const effectiveGlobalVersion =
+    !options?.skipLocalRead && hasDirtyGlobalVersion()
+      ? getLocalGlobalVersion()
+      : winner === localTree
+      ? localTree?.version || getLocalGlobalVersion() || firestoreTree?.version
+      : firestoreTree?.version || getLocalGlobalVersion();
   if (effectiveGlobalVersion && winner.version !== effectiveGlobalVersion) {
     winner = { ...winner, version: effectiveGlobalVersion };
   }
 
-  if (winner === firestoreTree || (options?.forceRemote && firestoreTree)) {
+  if (!options?.skipLocalWrite && (winner === firestoreTree || (options?.forceRemote && firestoreTree))) {
     saveTreeLocally(winner, false);
     if (isLocalDirty) {
       markTreeDirty(targetId, false);

@@ -26,6 +26,9 @@ import {
   Moon,
   MessageSquareHeart,
   Paintbrush,
+  Link2,
+  Eye,
+  LogOut,
 } from 'lucide-react';
 import { ServerStatusIndicator } from './ServerStatusIndicator';
 import {
@@ -85,6 +88,12 @@ interface TopNavbarProps {
   onOpenGuestFeedback?: () => void;
   pendingGuestFeedbackCount?: number;
   onOpenGuestCustomize?: () => void;
+  onOpenGuestShare?: () => void;
+  isGuestShareActive?: boolean;
+  guestShareReadOnly?: boolean;
+  lockedSingleCanvas?: boolean;
+  canExitGuestPreview?: boolean;
+  onExitGuestPreview?: () => void;
 }
 
 export interface CanvasItem {
@@ -142,6 +151,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onOpenGuestFeedback,
   pendingGuestFeedbackCount = 0,
   onOpenGuestCustomize,
+  onOpenGuestShare,
+  isGuestShareActive = false,
+  guestShareReadOnly = false,
+  lockedSingleCanvas = false,
+  canExitGuestPreview = false,
+  onExitGuestPreview,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -533,7 +548,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             onWheel={handleTabsWheel}
             className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1 min-w-0 py-1.5 scroll-smooth"
           >
-            {canvasList.map((tab) => {
+            {canvasList
+              .filter((tab) => {
+                if (!lockedSingleCanvas) return true;
+                const isMain = tab.isMain || tab.id === MAIN_TREE_ID;
+                return isMain ? isMainTree : tab.id === currentTreeId;
+              })
+              .map((tab) => {
               const isMain = tab.isMain || tab.id === MAIN_TREE_ID;
               const isSelected = isMain ? isMainTree : tab.id === currentTreeId;
               const isBeingDragged = draggedTabId === tab.id;
@@ -713,6 +734,32 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         {/* RIGHT CONTROLS: Role, Server Status & Master Menu                */}
         {/* ================================================================ */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Guest Link Viewing Indicator & Optional Admin Preview Exit */}
+          {!isAdmin && isGuestShareActive && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div
+                className="h-8.5 px-2.5 rounded-lg border border-stone-200/90 dark:border-zinc-800 bg-stone-50/90 dark:bg-zinc-900 text-stone-700 dark:text-zinc-300 flex items-center gap-1.5 text-xs font-medium shrink-0 whitespace-nowrap"
+                title="Ви переглядаєте дерево за гостьовим посиланням"
+              >
+                <Eye size={13.5} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
+                <span className="hidden sm:inline">
+                  {guestShareReadOnly ? 'Гостьовий перегляд' : 'Гість'}
+                </span>
+              </div>
+              {canExitGuestPreview && onExitGuestPreview && (
+                <button
+                  type="button"
+                  onClick={onExitGuestPreview}
+                  className="h-8.5 px-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800/70 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                  title="Повернутися до режиму адміністратора"
+                >
+                  <LogOut size={13} className="shrink-0" />
+                  <span className="hidden md:inline">Вийти з перегляду</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Admin Role Status Button (Hidden for Guest) */}
           {isAdmin && (
             <button
@@ -723,6 +770,19 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             >
               <ShieldCheck size={14} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
               <span className="hidden sm:inline text-xs">Адмін</span>
+            </button>
+          )}
+
+          {/* Guest Share Link Generator Button (Admin only) */}
+          {isAdmin && onOpenGuestShare && (
+            <button
+              type="button"
+              onClick={onOpenGuestShare}
+              className="h-8.5 px-2.5 sm:px-3 rounded-lg border border-stone-200/90 dark:border-zinc-800 bg-white hover:bg-emerald-50/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-stone-800 dark:text-zinc-200 hover:border-emerald-300 dark:hover:border-emerald-700 flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
+              title="Створити гостьове посилання для перегляду дерева"
+            >
+              <Link2 size={14} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
+              <span className="hidden md:inline text-xs">Гостям</span>
             </button>
           )}
 
@@ -924,6 +984,20 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     <div className="px-2.5 py-1 text-[10px] font-semibold tracking-wider text-stone-400 dark:text-zinc-500">
                       Керування
                     </div>
+
+                    {onOpenGuestShare && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onOpenGuestShare();
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full h-8.5 px-2.5 rounded-lg hover:bg-emerald-50/90 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left"
+                      >
+                        <Link2 size={15} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
+                        <span className="flex-1 truncate">Гостьове посилання</span>
+                      </button>
+                    )}
 
                     {onOpenGuestFeedback && (
                       <button

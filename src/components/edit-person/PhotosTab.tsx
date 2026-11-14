@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PersonPhoto } from '../../types/tree';
 import { uploadFileToServerDetailed } from '../../utils/fileStorage';
-import { handleUploadImageError } from '../../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../../utils/mediaSync';
 import { DocumentLightboxModal, LightboxDocumentItem } from '../DocumentLightboxModal';
 import { Image as ImageIcon, Upload, Trash2, Info, ZoomIn, UserCheck } from 'lucide-react';
 
@@ -45,6 +45,7 @@ export const PhotosTab: React.FC<PhotosTabProps> = ({
           continue;
         }
         const res = await uploadFileToServerDetailed(file, {
+          kind: 'album',
           onProgress: (pct) => setUploadPercent(Math.round(((i + pct / 100) / files.length) * 100)),
         });
         added.push({
@@ -104,7 +105,7 @@ export const PhotosTab: React.FC<PhotosTabProps> = ({
           {isUploading ? `Завантаження фото... ${uploadPercent}%` : 'Додати фотографії з життя або перетягніть сюди'}
         </span>
         <span className="text-[11px] text-sky-800/80 dark:text-sky-400/80 mt-0.5">
-          Можна обрати декілька фото одразу (JPG, PNG, WebP, до 50 MB)
+          Можна обрати декілька фото одразу (JPG, PNG, WebP · збереження у Firebase)
         </span>
         <input
           type="file"
@@ -143,7 +144,7 @@ export const PhotosTab: React.FC<PhotosTabProps> = ({
                   title="Відкрити у збільшеному вигляді"
                 >
                   <img
-                    src={photo.url}
+                    src={getResolvedMediaSrc(photo.url)}
                     alt={photo.caption || photo.title || 'Фото з життя'}
                     onError={(e) => handleUploadImageError(e, photo.url)}
                     className="w-full h-full object-cover"

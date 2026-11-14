@@ -1,10 +1,15 @@
-import { authHeaders } from './auth';
+import { authHeaders, getAuthToken } from './auth';
+import { isCloudWriteAuthenticated } from './firestoreTreeService';
 import { logError, logTree } from './logger';
+import {
+  MediaUploadKind,
+  primeResolvedMediaCache,
+  uploadImageToFirebase,
+} from './mediaSync';
 
 const IMAGE_FILE_EXT_RE = /\.(jpe?g|png|gif|webp|avif|bmp|tiff?|ico|heic|heif)$/i;
 const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
-const MAX_LOCAL_FALLBACK_BYTES = 4 * 1024 * 1024;
-const UPLOAD_TIMEOUT_MS = 35_000;
+const FAST_SERVER_UPLOAD_TIMEOUT_MS = 8_000;
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -24,10 +29,6 @@ export async function compressImageFile(
   return readFileAsDataUrl(file);
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export async function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit,
@@ -44,29 +45,30 @@ export async function fetchWithTimeout(
 
 export interface UploadFileResult {
   url: string;
-  storage: 'server' | 'local';
+  storage: 'firebase' | 'server' | 'local';
   size: number;
   fileName: string;
   warning?: string;
 }
 
 export interface UploadFileOptions {
+  kind?: MediaUploadKind;
   isDocument?: boolean;
   maxDimension?: number;
   quality?: number;
   onProgress?: (percent: number) => void;
 }
 
-function uploadRawViaXhr(
+function uploadRawViaXhrFast(
   file: File,
   onProgress?: (percent: number) => void
 ): Promise<{ status: number; url?: string; error?: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload/raw', true);
-    xhr.timeout = UPLOAD_TIMEOUT_MS;
+    xhr.timeout = FAST_SERVER_UPLOAD_TIMEOUT_MS;
     xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-    xhr.setRequestHeader('X-Filename', encodeURIComponent(file.name || 'metric-photo.png'));
+    xhr.setRequestHeader('X-Filename', encodeURIComponent(file.name || 'photo.png'));
 
     const headers = authHeaders();
     Object.entries(headers).forEach(([k, v]) => {
@@ -75,7 +77,7 @@ function uploadRawViaXhr(
 
     xhr.upload.onprogress = (ev) => {
       if (ev.lengthComputable && onProgress) {
-        const pct = Math.min(95, Math.max(5, Math.round((ev.loaded / ev.total) * 95)));
+        const pct = Math.min(92, Math.max(8, Math.round((ev.loaded / ev.total) * 92)));
         onProgress(pct);
       }
     };
@@ -96,11 +98,34 @@ function uploadRawViaXhr(
       }
     };
 
-    xhr.onerror = () => reject(new Error('Помилка мережі під час передачі файлу'));
-    xhr.ontimeout = () => reject(new Error('Час очікування завантаження на сервер вичерпано'));
+    xhr.onerror = () => reject(new Error('Сервер завантаження недоступний'));
+    xhr.ontimeout = () => reject(new Error('Час очікування локального сервера вичерпано'));
     xhr.onabort = () => reject(new Error('Завантаження було перервано'));
     xhr.send(file);
   });
+}
+
+function formatFirebaseUploadError(rawMessage: string): string {
+  let inner = rawMessage;
+  try {
+    const parsed = JSON.parse(rawMessage) as { error?: unknown };
+    if (parsed && typeof parsed.error === 'string' && parsed.error.trim()) {
+      inner = parsed.error.trim();
+    }
+  } catch {
+    /* rawMessage is plain text */
+  }
+  const lower = inner.toLowerCase();
+  if (lower.includes('quota exceeded') || lower.includes('resource-exhausted')) {
+    return 'Вичерпано безкоштовну денну квоту Firebase Firestore. Спробуйте пізніше або зменшіть розмір фото.';
+  }
+  if (lower.includes('missing or insufficient permissions') || lower.includes('permission-denied')) {
+    return 'Недостатньо прав Firebase для запису фото. Переконайтеся, що ви увійшли через Google з підтвердженим email.';
+  }
+  if (lower.includes('unavailable') || lower.includes('network') || lower.includes('failed to fetch')) {
+    return 'Помилка мережі при підключенні до Firebase. Перевірте інтернет і повторіть спробу.';
+  }
+  return inner;
 }
 
 export async function uploadFileToServerDetailed(
@@ -122,108 +147,75 @@ export async function uploadFileToServerDetailed(
     throw new Error(`Файл "${safeName}" перевищує максимальний розмір 50 МБ.`);
   }
 
-  options?.onProgress?.(4);
-  let lastErrorMsg = '';
+  const kind: MediaUploadKind =
+    options?.kind || (options?.isDocument ? 'metric' : 'general');
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  options?.onProgress?.(4);
+
+  // Primary path: direct upload into Firebase Firestore (/media/{mediaId})
+  if (isCloudWriteAuthenticated()) {
     try {
-      const result = await uploadRawViaXhr(file, options?.onProgress);
+      const fbRes = await uploadImageToFirebase(file, {
+        kind,
+        isPublic: true,
+        onProgress: options?.onProgress,
+      });
+      logTree(`Завантажено медіафайл «${safeName}» у Firebase`, {
+        fileName: safeName,
+        kind,
+        size: fbRes.size,
+        url: fbRes.url,
+        deduplicated: fbRes.deduplicated,
+      }, 'success');
+      return {
+        url: fbRes.url,
+        storage: 'firebase',
+        size: fbRes.size,
+        fileName: safeName,
+      };
+    } catch (err) {
+      const rawMsg = err instanceof Error ? err.message : 'Не вдалося завантажити фото у Firebase';
+      const userMsg = formatFirebaseUploadError(rawMsg);
+      logError('database', `Помилка завантаження «${safeName}» у Firebase: ${rawMsg}`, {
+        fileName: safeName,
+        kind,
+        size: file.size,
+      });
+      throw new Error(userMsg);
+    }
+  }
+
+  // Fallback when user is in local Admin mode without Google Firebase Auth:
+  // perform one fast local server attempt (never hang for 35s-175s) and warn to sync via Firebase.
+  if (getAuthToken()) {
+    try {
+      const result = await uploadRawViaXhrFast(file, options?.onProgress);
       if (result.status >= 200 && result.status < 300 && result.url) {
+        primeResolvedMediaCache(result.url, file, file.type || 'image/png');
         options?.onProgress?.(100);
-        logTree(`Завантажено медіафайл «${safeName}» (локальний кеш)`, {
+        logTree(`Завантажено медіафайл «${safeName}» локально (без входу Firebase)`, {
           fileName: safeName,
+          kind,
           size: file.size,
           url: result.url,
-        }, 'success');
+        }, 'warn');
         return {
           url: result.url,
           storage: 'server',
           size: file.size,
           fileName: safeName,
+          warning:
+            'Фото збережено лише локально. Увійдіть через Google (Firebase), щоб синхронізувати його в хмару.',
         };
       }
-      if (result.error) {
-        lastErrorMsg = result.error;
-      }
-      if (result.status >= 400 && result.status < 500 && result.status !== 408 && result.status !== 429) {
-        break;
-      }
-    } catch (err) {
-      lastErrorMsg = (err as Error)?.message || 'Помилка передачі файлу';
-      if (attempt === 2) {
-        console.warn('Raw upload failed after retries, trying base64 endpoint:', err);
-      }
+    } catch {
+      /* fall through to fast auth guidance error */
     }
-    await delay(300 * (attempt + 1));
   }
 
-  const dataUrl = await readFileAsDataUrl(file);
-  options?.onProgress?.(70);
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const res = await fetchWithTimeout(
-        '/api/upload',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...authHeaders() },
-          body: JSON.stringify({ image: dataUrl, filename: safeName }),
-        },
-        UPLOAD_TIMEOUT_MS
-      );
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.success && typeof json.url === 'string' && json.url) {
-          options?.onProgress?.(100);
-          logTree(`Завантажено медіафайл «${safeName}» (резервний канал)`, {
-            fileName: safeName,
-            size: file.size,
-            url: json.url,
-          }, 'success');
-          return {
-            url: json.url,
-            storage: 'server',
-            size: file.size,
-            fileName: safeName,
-          };
-        }
-      } else {
-        const errJson = await res.json().catch(() => null);
-        if (errJson?.error) lastErrorMsg = errJson.error;
-      }
-      if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
-        break;
-      }
-    } catch (err) {
-      lastErrorMsg = (err as Error)?.message || 'Помилка резервного завантаження';
-      if (attempt === 1) {
-        console.warn('Server upload failed, evaluating local offline fallback:', err);
-      }
-    }
-    await delay(350);
-  }
-
-  if (file.size > MAX_LOCAL_FALLBACK_BYTES) {
-    const errMessage = `${lastErrorMsg ? `${lastErrorMsg}. ` : ''}Не вдалося зберегти великий файл (${(file.size / (1024 * 1024)).toFixed(1)} МБ). Перевірте з'єднання та повторіть спробу.`;
-    logError('system', `Не вдалося завантажити файл «${safeName}»: ${errMessage}`, {
-      fileName: safeName,
-      size: file.size,
-    });
-    throw new Error(errMessage);
-  }
-
-  options?.onProgress?.(100);
-  logTree(`Медіафайл «${safeName}» збережено локально у браузері`, {
-    fileName: safeName,
-    size: file.size,
-  }, 'warn');
-  return {
-    url: dataUrl,
-    storage: 'local',
-    size: file.size,
-    fileName: safeName,
-    warning:
-      'Локал-сервер медіа тимчасово недоступний: фото збережено локально у браузері.',
-  };
+  throw new Error(
+    'Для завантаження фотографій у Firebase (аватари, метрики, альбом) увійдіть через Google.'
+  );
 }
 
 export async function uploadFileToServer(

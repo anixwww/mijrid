@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pet } from '../../types/tree';
 import { uploadFileToServer } from '../../utils/fileStorage';
-import { handleUploadImageError } from '../../utils/mediaSync';
+import { getResolvedMediaSrc, handleUploadImageError } from '../../utils/mediaSync';
 import { Info, Upload, Trash2, Plus, X } from 'lucide-react';
 
 interface PetsTabProps {
@@ -64,7 +64,7 @@ export const PetsTab: React.FC<PetsTabProps> = ({
     try {
       setUploadingPetAvatarId('new');
       onUploadingChange?.(true);
-      const url = await uploadFileToServer(file);
+      const url = await uploadFileToServer(file, { kind: 'pet' });
       setNewPetAvatarUrl(url);
     } catch (err) {
       onError((err as Error).message);
@@ -84,7 +84,7 @@ export const PetsTab: React.FC<PetsTabProps> = ({
     try {
       setUploadingPetAvatarId(petId);
       onUploadingChange?.(true);
-      const url = await uploadFileToServer(file);
+      const url = await uploadFileToServer(file, { kind: 'pet' });
       onChangePets(pets.map((p) => (p.id === petId ? { ...p, avatarUrl: url } : p)));
     } catch (err) {
       onError((err as Error).message);
@@ -140,7 +140,7 @@ export const PetsTab: React.FC<PetsTabProps> = ({
                 <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-amber-900 flex items-center justify-center font-bold text-xl shrink-0 overflow-hidden">
                   {pet.avatarUrl ? (
                     <img
-                      src={pet.avatarUrl}
+                      src={getResolvedMediaSrc(pet.avatarUrl)}
                       alt={pet.name}
                       onError={(e) => handleUploadImageError(e, pet.avatarUrl)}
                       className="w-full h-full object-cover"
@@ -243,7 +243,7 @@ export const PetsTab: React.FC<PetsTabProps> = ({
           <div className="w-14 h-14 rounded-xl bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
             {newPetAvatarUrl ? (
               <img
-                src={newPetAvatarUrl}
+                src={getResolvedMediaSrc(newPetAvatarUrl)}
                 alt="Аватар тварини"
                 onError={(e) => handleUploadImageError(e, newPetAvatarUrl)}
                 className="w-full h-full object-cover"

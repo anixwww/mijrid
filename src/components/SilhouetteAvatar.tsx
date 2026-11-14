@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Gender } from '../types/tree';
-import { resolveMediaFallbackFromFirestore } from '../utils/mediaSync';
+import {
+  getResolvedMediaSrc,
+  resolveMediaFallbackFromFirestore,
+  uploadUrlToMediaId,
+} from '../utils/mediaSync';
 
 interface SilhouetteAvatarProps {
   gender: Gender;
@@ -33,7 +37,8 @@ export const SilhouetteAvatar: React.FC<SilhouetteAvatarProps> = ({
     lg: 'w-20 h-20 rounded-xl',
   }[size];
 
-  const effectiveSrc = fallbackSrc || avatarUrl;
+  const resolvedDirect = getResolvedMediaSrc(avatarUrl);
+  const effectiveSrc = fallbackSrc || resolvedDirect;
   const hasCustomPhoto = !!effectiveSrc && !imageError;
 
   return (
@@ -46,7 +51,7 @@ export const SilhouetteAvatar: React.FC<SilhouetteAvatarProps> = ({
             src={effectiveSrc}
             alt={name}
             onError={() => {
-              if (!fallbackSrc && avatarUrl?.startsWith('/uploads/')) {
+              if (!fallbackSrc && avatarUrl && uploadUrlToMediaId(avatarUrl)) {
                 void resolveMediaFallbackFromFirestore(avatarUrl).then((resolved) => {
                   if (resolved) {
                     setFallbackSrc(resolved);

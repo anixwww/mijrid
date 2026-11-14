@@ -15,8 +15,10 @@ import {
   Loader2,
 } from 'lucide-react';
 import {
+  getResolvedMediaSrc,
   handleUploadImageError,
   resolveMediaFallbackFromFirestore,
+  uploadUrlToMediaId,
 } from '../utils/mediaSync';
 
 export interface LightboxDocumentItem {
@@ -136,14 +138,16 @@ export const DocumentLightboxModal: React.FC<DocumentLightboxModalProps> = ({
 
   if (!isOpen || !currentItem) return null;
 
+  const resolvedDirect = getResolvedMediaSrc(currentUrl) || currentUrl;
+  const isInlineUrl = resolvedDirect.startsWith('data:') || resolvedDirect.startsWith('blob:');
   const isDataUrl = currentUrl.startsWith('data:');
-  const effectiveBaseUrl = fallbackUrl || currentUrl;
+  const effectiveBaseUrl = fallbackUrl || resolvedDirect;
   const displaySrc =
     fallbackUrl
       ? fallbackUrl
-      : reloadNonce > 0 && !isDataUrl
-      ? `${currentUrl}${currentUrl.includes('?') ? '&' : '?'}v=${reloadNonce}`
-      : currentUrl;
+      : reloadNonce > 0 && !isInlineUrl
+      ? `${resolvedDirect}${resolvedDirect.includes('?') ? '&' : '?'}v=${reloadNonce}`
+      : resolvedDirect;
 
   const activeFilterCss = FILTER_OPTIONS.find((f) => f.id === filterMode)?.css || 'none';
   const isHeicOrTiff = /\.(heic|heif|tiff?)(\?.*)?$/i.test(currentUrl);
@@ -418,7 +422,7 @@ export const DocumentLightboxModal: React.FC<DocumentLightboxModalProps> = ({
               setHasLoadError(false);
             }}
             onError={() => {
-              if (!fallbackUrl && currentUrl.startsWith('/uploads/') && fallbackAttemptedRef.current !== currentUrl) {
+              if (!fallbackUrl && uploadUrlToMediaId(currentUrl) && fallbackAttemptedRef.current !== currentUrl) {
                 fallbackAttemptedRef.current = currentUrl;
                 void resolveMediaFallbackFromFirestore(currentUrl).then((resolved) => {
                   if (resolved) {
@@ -495,7 +499,7 @@ export const DocumentLightboxModal: React.FC<DocumentLightboxModalProps> = ({
                 title={item.title || `Фото ${idx + 1}`}
               >
                 <img
-                  src={item.url}
+                  src={getResolvedMediaSrc(item.url)}
                   alt=""
                   onError={(e) => handleUploadImageError(e, item.url)}
                   className="w-full h-full object-cover"

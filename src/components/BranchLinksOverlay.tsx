@@ -39,6 +39,7 @@ interface RenderedArc {
   strokeWidth: number;
   lineShape: BranchLinkCurveStyle;
   markerId: string;
+  probableRelation?: string;
   label: string;
   sourceFullName: string;
   targetFullName: string;
@@ -238,6 +239,8 @@ const BranchLinksOverlayComponent: React.FC<BranchLinksOverlayProps> = ({
         const jumpSourceId = jumpToSource ? target.id : source.id;
         const jumpTargetName = jumpToSource ? sourceFullName : targetFullName;
 
+        const probableRelation =
+          bl.probableRelation?.trim() || reverseLink?.probableRelation?.trim() || undefined;
         const customLabel = bl.label?.trim() || reverseLink?.label?.trim() || '';
         const defaultLabel =
           linkKind === 'godparent'
@@ -262,6 +265,7 @@ const BranchLinksOverlayComponent: React.FC<BranchLinksOverlayProps> = ({
           strokeWidth: currentStrokeWidth,
           lineShape,
           markerId,
+          probableRelation,
           label,
           sourceFullName,
           targetFullName,
@@ -408,10 +412,16 @@ const BranchLinksOverlayComponent: React.FC<BranchLinksOverlayProps> = ({
             style={{
               borderColor: arc.color,
             }}
-            className={`px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 border shadow-md hover:scale-105 transition-transform flex items-center gap-1 text-[10px] font-bold text-stone-800 dark:text-zinc-100 max-w-[185px] cursor-pointer ${
+            className={`px-2 py-0.5 rounded-full bg-white/95 dark:bg-zinc-900/95 border shadow-md hover:scale-105 transition-transform flex items-center gap-1 text-[10px] font-bold text-stone-800 dark:text-zinc-100 ${
+              arc.probableRelation ? 'max-w-[265px]' : 'max-w-[185px]'
+            } cursor-pointer ${
               arc.isEmphasized ? 'scale-105 shadow-lg' : ''
             }`}
-            title={`Перейти до картки: ${arc.jumpTargetName}`}
+            title={
+              arc.probableRelation
+                ? `Ймовірний звʼязок: ${arc.probableRelation} — перейти до картки: ${arc.jumpTargetName}`
+                : `Перейти до картки: ${arc.jumpTargetName}`
+            }
           >
             {arc.linkKind === 'godparent' ? (
               <span className="text-[10px] leading-none shrink-0" style={{ color: arc.color }}>
@@ -422,6 +432,14 @@ const BranchLinksOverlayComponent: React.FC<BranchLinksOverlayProps> = ({
                 className="w-2 h-2 rounded-full shrink-0"
                 style={{ backgroundColor: arc.color }}
               />
+            )}
+            {arc.probableRelation && (
+              <span
+                style={{ backgroundColor: `${arc.color}1f`, color: arc.color }}
+                className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold shrink-0 leading-tight"
+              >
+                {arc.probableRelation}
+              </span>
             )}
             <span className="truncate">{arc.label}</span>
             <ArrowUpRight size={10.5} className="shrink-0" style={{ color: arc.color }} />
