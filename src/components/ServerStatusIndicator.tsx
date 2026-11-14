@@ -5,9 +5,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ChevronDown, RefreshCw, Download, Cloud, Check, LogOut } from 'lucide-react';
+import { X, ChevronDown, RefreshCw, Download, Cloud, Check, LogOut, AlertTriangle, Copy, Loader2 } from 'lucide-react';
 import { AnimatedSyncIcon, SyncIconState } from './AnimatedIcons';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, describeFirebaseAuthError, FirebaseAuthErrorDetails } from '../context/AuthContext';
 
 export type SyncStatusType = 'synced' | 'syncing' | 'error' | 'offline' | 'rejected' | 'schema_mismatch';
 
@@ -40,8 +40,41 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
 }) => {
   const { currentUser, isCloudAuthenticated, signInWithGoogle, logOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [authError, setAuthError] = useState<FirebaseAuthErrorDetails | null>(null);
+  const [copiedHelper, setCopiedHelper] = useState<'domain' | 'url' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isSyncing = syncStatus === 'syncing' || isFirebaseSyncing;
+
+  useEffect(() => {
+    if (isCloudAuthenticated) {
+      setAuthError(null);
+      setIsSigningIn(false);
+    }
+  }, [isCloudAuthenticated]);
+
+  const handleGoogleSignIn = async () => {
+    if (isSigningIn) return;
+    setAuthError(null);
+    setIsSigningIn(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setAuthError(describeFirebaseAuthError(err));
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleCopyText = async (text: string, type: 'domain' | 'url') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedHelper(type);
+      window.setTimeout(() => setCopiedHelper((prev) => (prev === type ? null : prev)), 2000);
+    } catch {
+      /* clipboard permission denied */
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -286,14 +319,73 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => void signInWithGoogle().catch(() => {})}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-stone-200/80 dark:border-zinc-800 text-[11px] font-semibold text-stone-700 dark:text-zinc-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Cloud size={12.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span>Підключити Google для хмари</span>
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      disabled={isSigningIn}
+                      onClick={() => void handleGoogleSignIn()}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-stone-50 hover:bg-stone-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-stone-200/80 dark:border-zinc-800 text-[11px] font-semibold text-stone-700 dark:text-zinc-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                    >
+                      {isSigningIn ? (
+                        <>
+                          <Loader2 size={12.5} className="text-amber-600 dark:text-amber-400 animate-spin shrink-0" />
+                          <span>Відкриття вікна Google…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Cloud size={12.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span>Підключити Google для хмари</span>
+                        </>
+                      )}
+                    </button>
+
+                    {authError && (
+                      <div className="p-2.5 rounded-xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/70 text-[11px] text-rose-900 dark:text-rose-200 space-y-1.5">
+                        <div className="flex items-start gap-1.5">
+                          <AlertTriangle size={13} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                          <span className="leading-snug">{authError.message}</span>
+                        </div>
+
+                        {authError.code === 'auth/unauthorized-domain' && authError.domain && (
+                          <div className="space-y-1 pt-0.5 border-t border-rose-200/70 dark:border-rose-800/50">
+                            <p className="text-[10px] text-rose-700 dark:text-rose-300 leading-snug">
+                              Додайте цей домен у Firebase Console ({authError.projectId || 'проєкт'}) → Authentication → Settings → Authorized domains:
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <code className="flex-1 px-1.5 py-1 rounded bg-white/80 dark:bg-zinc-900/80 border border-rose-200/80 dark:border-rose-800/60 font-mono text-[10px] truncate select-all">
+                                {authError.domain}
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => void handleCopyText(authError.domain!, 'domain')}
+                                className="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/60 dark:hover:bg-rose-900 text-[10px] font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+                                title="Скопіювати домен"
+                              >
+                                {copiedHelper === 'domain' ? <Check size={11} /> : <Copy size={11} />}
+                                <span>{copiedHelper === 'domain' ? 'Скопійовано' : 'Копіювати'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {authError.code === 'auth/popup-blocked' && typeof window !== 'undefined' && (
+                          <div className="pt-0.5 border-t border-rose-200/70 dark:border-rose-800/50 flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-rose-700 dark:text-rose-300 leading-snug">
+                              Якщо вікно блокується у вбудованій рамці — відкрийте сайт у новій вкладці:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => void handleCopyText(window.location.href, 'url')}
+                              className="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/60 dark:hover:bg-rose-900 text-[10px] font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+                            >
+                              {copiedHelper === 'url' ? <Check size={11} /> : <Copy size={11} />}
+                              <span>{copiedHelper === 'url' ? 'Скопійовано' : 'URL'}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )
               )}
 

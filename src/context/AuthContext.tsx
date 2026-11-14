@@ -9,7 +9,70 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
 import { handleFirestoreError, OperationType } from '../utils/firestoreTreeService';
-import { logAuth } from '../utils/logger';
+import { logAuth, logError } from '../utils/logger';
+import firebaseConfig from '../../firebase-applet-config.json';
+
+export interface FirebaseAuthErrorDetails {
+  code: string;
+  message: string;
+  domain?: string;
+  projectId?: string;
+}
+
+export function describeFirebaseAuthError(error: unknown): FirebaseAuthErrorDetails {
+  const err = error as { code?: string; message?: string } | null;
+  const code = typeof err?.code === 'string' ? err.code : 'auth/unknown';
+  const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
+  const projectId = firebaseConfig?.projectId || '';
+
+  switch (code) {
+    case 'auth/unauthorized-domain':
+      return {
+        code,
+        domain: currentDomain,
+        projectId,
+        message: `Домен «${currentDomain || 'поточний сайт'}» не додано до списку авторизованих доменів Firebase Authentication.`,
+      };
+    case 'auth/popup-blocked':
+      return {
+        code,
+        domain: currentDomain,
+        projectId,
+        message:
+          'Браузер заблокував спливаюче вікно входу Google. Дозвольте спливаючі вікна для цього сайту або відкрийте додаток у новій вкладці браузера.',
+      };
+    case 'auth/popup-closed-by-user':
+      return {
+        code,
+        message: 'Вікно входу Google було закрито до завершення авторизації.',
+      };
+    case 'auth/cancelled-popup-request':
+      return {
+        code,
+        message: 'Попередній запит входу скасовано новим кліком. Спробуйте ще раз.',
+      };
+    case 'auth/operation-not-allowed':
+      return {
+        code,
+        projectId,
+        message: 'Вхід через Google вимкнено у налаштуваннях Firebase Authentication.',
+      };
+    case 'auth/network-request-failed':
+      return {
+        code,
+        message: 'Помилка мережі при зверненні до Google / Firebase. Перевірте інтернет-з’єднання.',
+      };
+    default:
+      return {
+        code,
+        domain: currentDomain,
+        projectId,
+        message: err?.message
+          ? `Не вдалося відкрити або завершити вхід через Google (${code}): ${err.message}`
+          : `Не вдалося увійти через Google (${code}).`,
+      };
+  }
+}
 
 export interface UserProfile {
   userId: string;
@@ -120,8 +183,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       );
       return cred.user;
     } catch (error: any) {
-      if (error?.code !== 'auth/popup-closed-by-user' && error?.code !== 'auth/cancelled-popup-request') {
+      const details = describeFirebaseAuthError(error);
+      if (details.code !== 'auth/popup-closed-by-user' && details.code !== 'auth/cancelled-popup-request') {
         console.error('Google Sign-In error:', error);
+        logError('auth', details.message, {
+          code: details.code,
+          domain: details.domain,
+          projectId: details.projectId,
+        });
       }
       throw error;
     }
