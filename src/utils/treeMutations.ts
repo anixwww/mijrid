@@ -3,6 +3,7 @@ import {
   Person,
   RelativeType,
   ConnectionMeta,
+  ConnectionLine,
   BranchLink,
   BranchLinkCurveStyle,
   BranchLinkKind,
@@ -465,13 +466,11 @@ export function applyAddRelative(
   };
 }
 
-export function applySaveConnectionMeta(
-  prev: FamilyTreeData,
+function applyConnectionVerificationToPersons(
+  personsCopy: Record<string, Person>,
   connectionId: string,
-  meta: ConnectionMeta
-): FamilyTreeData {
-  const personsCopy = { ...prev.persons };
-
+  verified: boolean
+): void {
   if (connectionId.startsWith('marriage:')) {
     const raw = connectionId.replace(/^marriage:/, '');
     const ids = raw.includes('::') ? raw.split('::') : raw.split(':');
@@ -483,7 +482,7 @@ export function applySaveConnectionMeta(
         const list = p1.unverifiedRelations || [];
         personsCopy[id1] = {
           ...p1,
-          unverifiedRelations: meta.verified
+          unverifiedRelations: verified
             ? list.filter((id) => id !== id2)
             : list.includes(id2)
             ? list
@@ -494,7 +493,7 @@ export function applySaveConnectionMeta(
         const list = p2.unverifiedRelations || [];
         personsCopy[id2] = {
           ...p2,
-          unverifiedRelations: meta.verified
+          unverifiedRelations: verified
             ? list.filter((id) => id !== id1)
             : list.includes(id1)
             ? list
@@ -503,51 +502,64 @@ export function applySaveConnectionMeta(
       }
     }
   } else if (connectionId.startsWith('descent:child:')) {
-    const parts = connectionId.split(':');
-    const childId = parts[parts.length - 1];
-    const child = personsCopy[childId];
-    if (child) {
-      const pKey = parts[2] || '';
-      const parentIds = pKey.includes('::') ? pKey.split('::') : [pKey];
-      const list = child.unverifiedRelations || [];
-      personsCopy[childId] = {
-        ...child,
-        unverifiedRelations: meta.verified
-          ? list.filter((id) => !parentIds.includes(id))
-          : Array.from(new Set([...list, ...parentIds])),
-      };
+    const raw = connectionId.replace(/^descent:child:/, '');
+    const lastColonIndex = raw.lastIndexOf(':');
+    if (lastColonIndex !== -1) {
+      const pKey = raw.substring(0, lastColonIndex);
+      const childId = raw.substring(lastColonIndex + 1);
+      const parentIds = (pKey.includes('::') ? pKey.split('::') : [pKey]).filter(Boolean);
+      const child = personsCopy[childId];
+      if (child) {
+        const list = child.unverifiedRelations || [];
+        personsCopy[childId] = {
+          ...child,
+          unverifiedRelations: verified
+            ? list.filter((id) => !parentIds.includes(id))
+            : Array.from(new Set([...list, ...parentIds])),
+        };
+      }
+      parentIds.forEach((pid) => {
+        const parent = personsCopy[pid];
+        if (parent) {
+          const list = parent.unverifiedRelations || [];
+          personsCopy[pid] = {
+            ...parent,
+            unverifiedRelations: verified
+              ? list.filter((id) => id !== childId)
+              : list.includes(childId)
+              ? list
+              : [...list, childId],
+          };
+        }
+      });
     }
   } else if (connectionId.startsWith('sibling:')) {
     const raw = connectionId.replace(/^sibling:/, '');
-    const ids = raw.includes('::') ? raw.split('::') : raw.split(':');
+    const ids = (raw.includes('::') ? raw.split('::') : raw.split(':')).filter(Boolean);
     if (ids.length >= 2) {
-      const [id1, id2] = ids;
-      const p1 = personsCopy[id1];
-      const p2 = personsCopy[id2];
-      if (p1) {
-        const list = p1.unverifiedRelations || [];
-        personsCopy[id1] = {
-          ...p1,
-          unverifiedRelations: meta.verified
-            ? list.filter((id) => id !== id2)
-            : list.includes(id2)
-            ? list
-            : [...list, id2],
+      ids.forEach((pid) => {
+        const person = personsCopy[pid];
+        if (!person) return;
+        const others = ids.filter((id) => id !== pid);
+        const list = person.unverifiedRelations || [];
+        personsCopy[pid] = {
+          ...person,
+          unverifiedRelations: verified
+            ? list.filter((id) => !others.includes(id))
+            : Array.from(new Set([...list, ...others])),
         };
-      }
-      if (p2) {
-        const list = p2.unverifiedRelations || [];
-        personsCopy[id2] = {
-          ...p2,
-          unverifiedRelations: meta.verified
-            ? list.filter((id) => id !== id1)
-            : list.includes(id1)
-            ? list
-            : [...list, id1],
-        };
-      }
+      });
     }
   }
+}
+
+export function applySaveConnectionMeta(
+  prev: FamilyTreeData,
+  connectionId: string,
+  meta: ConnectionMeta
+): FamilyTreeData {
+  const personsCopy = { ...prev.persons };
+  applyConnectionVerificationToPersons(personsCopy, connectionId, meta.verified);
 
   return {
     ...prev,
@@ -556,6 +568,146 @@ export function applySaveConnectionMeta(
       ...(prev.connectionOverrides || {}),
       [connectionId]: meta,
     },
+  };
+}
+
+export type BatchConnectionScope = 'between' | 'touching';
+
+export interface BatchConnectionTargetsResult {
+  connectionIds: string[];
+  verifiedCount: number;
+  unverifiedCount: number;
+}
+
+export function collectBatchConnectionTargets(
+  persons: Record<string, Person>,
+  connectionOverrides: Record<string, ConnectionMeta> | undefined,
+  connections: ConnectionLine[],
+  selectedIds: Set<string>,
+  scope: BatchConnectionScope
+): BatchConnectionTargetsResult {
+  if (selectedIds.size === 0) {
+    return { connectionIds: [], verifiedCount: 0, unverifiedCount: 0 };
+  }
+
+  const connectionIds: string[] = [];
+  const seenIds = new Set<string>();
+  let verifiedCount = 0;
+  let unverifiedCount = 0;
+
+  connections.forEach((conn) => {
+    const ids = (conn.personIds || []).filter((id) => Boolean(persons[id]));
+    if (ids.length === 0) return;
+    if (ids.some((id) => persons[id]?.isGhost)) return;
+
+    let matches = false;
+    if (conn.type === 'marriage') {
+      matches =
+        scope === 'between'
+          ? ids.length >= 2 && ids.every((id) => selectedIds.has(id))
+          : ids.some((id) => selectedIds.has(id));
+    } else if (conn.type === 'child-branch') {
+      const childId = conn.toId;
+      const parentIds = ids.filter((id) => id !== childId);
+      if (scope === 'between') {
+        matches = Boolean(
+          childId &&
+            selectedIds.has(childId) &&
+            parentIds.some((pid) => selectedIds.has(pid))
+        );
+      } else {
+        matches = Boolean(
+          (childId && selectedIds.has(childId)) ||
+            parentIds.some((pid) => selectedIds.has(pid))
+        );
+      }
+    } else if (conn.type === 'sibling-tie') {
+      matches =
+        scope === 'between'
+          ? ids.filter((id) => selectedIds.has(id)).length >= 2
+          : ids.some((id) => selectedIds.has(id));
+    }
+
+    if (matches && !seenIds.has(conn.id)) {
+      seenIds.add(conn.id);
+      connectionIds.push(conn.id);
+      if (conn.isVerified) {
+        verifiedCount += 1;
+      } else {
+        unverifiedCount += 1;
+      }
+    }
+  });
+
+  // Also include adjacent CoupleCard marriages (not emitted as SVG lines in generateConnections)
+  const processedMarriageIds = new Set<string>();
+  Object.values(persons).forEach((p1) => {
+    if (!p1 || p1.isGhost || !p1.spouses || p1.spouses.length === 0) return;
+    p1.spouses.forEach((spouseId) => {
+      const p2 = persons[spouseId];
+      if (!p2 || p2.isGhost) return;
+      const mKey = [p1.id, p2.id].sort().join('::');
+      const connId = `marriage:${mKey}`;
+      if (processedMarriageIds.has(connId) || seenIds.has(connId)) return;
+      processedMarriageIds.add(connId);
+
+      const matches =
+        scope === 'between'
+          ? selectedIds.has(p1.id) && selectedIds.has(p2.id)
+          : selectedIds.has(p1.id) || selectedIds.has(p2.id);
+
+      if (!matches) return;
+
+      const override = connectionOverrides?.[connId];
+      const isDivorced = override?.eventType === 'divorce';
+      const isVerified =
+        isDivorced ||
+        (override?.verified !== undefined
+          ? override.verified
+          : Boolean(p1.isFullyVerified) &&
+            Boolean(p2.isFullyVerified) &&
+            !p1.unverifiedRelations?.includes(p2.id) &&
+            !p2.unverifiedRelations?.includes(p1.id));
+
+      seenIds.add(connId);
+      connectionIds.push(connId);
+      if (isVerified) {
+        verifiedCount += 1;
+      } else {
+        unverifiedCount += 1;
+      }
+    });
+  });
+
+  return { connectionIds, verifiedCount, unverifiedCount };
+}
+
+export function applyBatchConnectionsVerification(
+  prev: FamilyTreeData,
+  connectionIds: string[],
+  verified: boolean
+): FamilyTreeData {
+  if (connectionIds.length === 0) return prev;
+
+  const personsCopy: Record<string, Person> = { ...prev.persons };
+  const overridesCopy: Record<string, ConnectionMeta> = {
+    ...(prev.connectionOverrides || {}),
+  };
+
+  const uniqueIds = Array.from(new Set(connectionIds));
+  uniqueIds.forEach((connectionId) => {
+    applyConnectionVerificationToPersons(personsCopy, connectionId, verified);
+    overridesCopy[connectionId] = {
+      ...(overridesCopy[connectionId] || {}),
+      verified,
+      confidenceLevel: verified ? 'verified' : 'hypothetical',
+    };
+  });
+
+  return {
+    ...prev,
+    persons: personsCopy,
+    connectionOverrides: overridesCopy,
   };
 }
 

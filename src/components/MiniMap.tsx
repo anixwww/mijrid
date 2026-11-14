@@ -1,7 +1,7 @@
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Person, TreeViewport } from '../types/tree';
 import { CARD_WIDTH, CARD_HEIGHT } from '../utils/treeLayout';
-import { Map, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Map, X } from 'lucide-react';
 
 interface MiniMapProps {
   persons: Record<string, Person>;
@@ -18,7 +18,6 @@ const MiniMapComponent: React.FC<MiniMapProps> = ({
   onNavigate,
   onClose,
 }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const isDraggingRef = useRef(false);
   const mapSvgRef = useRef<SVGSVGElement>(null);
 
@@ -157,71 +156,52 @@ const MiniMapComponent: React.FC<MiniMapProps> = ({
       onTouchEnd={handleDragEnd}
     >
       <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-stone-200/90 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col">
-        {/* Toggle & Close Bar */}
+        {/* Header & Close Bar */}
         <div className="px-2.5 py-1.5 flex items-center justify-between gap-1.5 border-b border-stone-100 dark:border-zinc-800 bg-stone-50/80 dark:bg-zinc-800/80">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1.5 text-[11px] font-bold text-stone-800 dark:text-zinc-200 hover:text-stone-950 dark:hover:text-white cursor-pointer truncate"
-            title="Міні-карта дерева для швидкої навігації"
-          >
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-800 dark:text-zinc-200 truncate">
             <Map size={13} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
             <span className="truncate">Огляд ({personList.length})</span>
-          </button>
-          <div className="flex items-center gap-0.5 shrink-0">
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 rounded text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200 hover:bg-stone-200/60 dark:hover:bg-zinc-700/60 cursor-pointer"
-              title={isExpanded ? 'Згорнути' : 'Розгорнути'}
-              aria-label={isExpanded ? 'Згорнути' : 'Розгорнути'}
-            >
-              {isExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-            </button>
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="p-1 rounded text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
-                title="Закрити міні-карту"
-                aria-label="Закрити"
-              >
-                <X size={14} />
-              </button>
-            )}
           </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1 rounded text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer shrink-0"
+              title="Приховати міні-карту"
+              aria-label="Закрити"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
-        {isExpanded && (
-          <div className="relative p-1.5 bg-[#f8faf8] dark:bg-zinc-950 cursor-crosshair">
-            <svg
-              ref={mapSvgRef}
-              width={MAP_WIDTH}
-              height={MAP_HEIGHT}
-              className="rounded-lg bg-stone-100/80 dark:bg-zinc-900 border border-stone-200/60 dark:border-zinc-800 overflow-hidden touch-none"
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-            >
-              {/* Nodes preview (memoized independently from viewport camera rect) */}
-              {nodeRects}
+        <div className="relative p-1.5 bg-[#f8faf8] dark:bg-zinc-950 cursor-crosshair">
+          <svg
+            ref={mapSvgRef}
+            width={MAP_WIDTH}
+            height={MAP_HEIGHT}
+            className="rounded-lg bg-stone-100/80 dark:bg-zinc-900 border border-stone-200/60 dark:border-zinc-800 overflow-hidden touch-none"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+          >
+            {/* Nodes preview (memoized independently from viewport camera rect) */}
+            {nodeRects}
 
-              {/* Viewport Camera Rectangle */}
-              <rect
-                x={Math.max(0, vpMapX)}
-                y={Math.max(0, vpMapY)}
-                width={Math.min(MAP_WIDTH, Math.max(8, vpMapW))}
-                height={Math.min(MAP_HEIGHT, Math.max(6, vpMapH))}
-                fill="rgba(5, 150, 105, 0.15)"
-                stroke="#059669"
-                strokeWidth={1.8}
-                rx={2}
-                className="pointer-events-none"
-              />
-            </svg>
-            <div className="text-[9.5px] text-stone-500 font-medium text-center pt-1 leading-none">
-              Клацніть або торкніться для переходу
-            </div>
-          </div>
-        )}
+            {/* Viewport Camera Rectangle */}
+            <rect
+              x={Math.max(0, vpMapX)}
+              y={Math.max(0, vpMapY)}
+              width={Math.min(MAP_WIDTH, Math.max(8, vpMapW))}
+              height={Math.min(MAP_HEIGHT, Math.max(6, vpMapH))}
+              fill="rgba(5, 150, 105, 0.15)"
+              stroke="#059669"
+              strokeWidth={1.8}
+              rx={2}
+              className="pointer-events-none"
+            />
+          </svg>
+        </div>
       </div>
     </div>
   );

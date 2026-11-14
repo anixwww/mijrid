@@ -41,22 +41,22 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const isWarning = variant === 'warning';
 
   const headerBg = isDanger
-    ? 'bg-rose-50/90 border-rose-200/80'
+    ? 'bg-rose-50/90 dark:bg-rose-950/50 border-rose-200/80 dark:border-rose-900/70'
     : isWarning
-    ? 'bg-amber-50/90 border-amber-200/80'
-    : 'bg-stone-50 border-stone-200/80';
+    ? 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-200/80 dark:border-amber-900/70'
+    : 'bg-stone-50 dark:bg-zinc-900 border-stone-200/80 dark:border-zinc-800';
 
   const iconBg = isDanger
     ? 'bg-rose-600 text-white'
     : isWarning
     ? 'bg-amber-600 text-white'
-    : 'bg-stone-900 text-white';
+    : 'bg-stone-900 dark:bg-zinc-700 text-white';
 
   const confirmBtn = isDanger
     ? 'bg-rose-600 hover:bg-rose-700 text-white'
     : isWarning
     ? 'bg-amber-600 hover:bg-amber-700 text-white'
-    : 'bg-stone-900 hover:bg-stone-800 text-white';
+    : 'bg-stone-900 dark:bg-emerald-700 hover:bg-stone-800 dark:hover:bg-emerald-600 text-white';
 
   return (
     <div
@@ -67,7 +67,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       onClick={onCancel}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-stone-200/90 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-150"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-stone-200/90 dark:border-zinc-800 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`px-5 py-4 border-b flex items-center justify-between gap-3 ${headerBg}`}>
@@ -83,7 +83,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             </div>
             <h3
               id="confirm-dialog-title"
-              className="text-sm font-bold text-stone-900 leading-snug truncate"
+              className="text-sm font-bold text-stone-900 dark:text-zinc-100 leading-snug truncate"
             >
               {title}
             </h3>
@@ -91,7 +91,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-black/5 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-zinc-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
             aria-label="Закрити"
           >
             <X size={16} />
@@ -99,7 +99,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
 
         <div className="p-5 space-y-5">
-          <p className="text-xs sm:text-[13px] text-stone-600 leading-relaxed">
+          <p className="text-xs sm:text-[13px] text-stone-600 dark:text-zinc-300 leading-relaxed">
             {description}
           </p>
 
@@ -108,7 +108,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="h-9 px-3.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+                className="h-9 px-3.5 text-xs font-semibold text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer whitespace-nowrap"
               >
                 {cancelLabel}
               </button>

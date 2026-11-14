@@ -75,6 +75,96 @@ function deriveAccentHex(hex: string): string {
   return norm;
 }
 
+interface MetricDateRowProps {
+  label: string;
+  formattedDate: string;
+  age?: string | null;
+  externalLink?: string | null;
+  hasMetric: boolean;
+  isAdmin: boolean;
+  onOpenMetric?: () => void;
+  linkTitle: string;
+}
+
+const MetricDateRow: React.FC<MetricDateRowProps> = ({
+  label,
+  formattedDate,
+  age,
+  externalLink,
+  hasMetric,
+  isAdmin,
+  onOpenMetric,
+  linkTitle,
+}) => (
+  <div className="flex items-center justify-between py-2 first:pt-0 last:pb-0 gap-2">
+    <span className="text-stone-500 dark:text-zinc-400 shrink-0">{label}</span>
+    <div className="flex items-center gap-1 justify-end min-w-0">
+      {externalLink ? (
+        <a
+          href={externalLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="tabular-nums font-semibold px-2 py-0.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/70 text-sky-950 dark:text-sky-200 border border-sky-200/90 dark:border-sky-800"
+          title={linkTitle}
+        >
+          <Link2 size={12} className="text-sky-700 dark:text-sky-400 shrink-0" />
+          <span>{formattedDate}</span>
+          {age && (
+            <span className="text-[10px] font-semibold text-emerald-900 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800/70">
+              {age}
+            </span>
+          )}
+          <ExternalLink size={11} className="text-sky-600 dark:text-sky-400 shrink-0" />
+        </a>
+      ) : (isAdmin || hasMetric) && onOpenMetric ? (
+        <button
+          type="button"
+          onClick={onOpenMetric}
+          className={`tabular-nums font-medium px-2 py-0.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
+            hasMetric
+              ? 'bg-amber-100/90 dark:bg-amber-950/60 hover:bg-amber-200 dark:hover:bg-amber-900/70 text-amber-950 dark:text-amber-200 font-semibold border border-amber-300/80 dark:border-amber-700/80'
+              : 'bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 text-stone-800 dark:text-zinc-200'
+          }`}
+        >
+          <Camera
+            size={12}
+            className={
+              hasMetric
+                ? 'text-amber-800 dark:text-amber-400 shrink-0'
+                : 'text-stone-400 dark:text-zinc-500 shrink-0'
+            }
+          />
+          <span>{formattedDate}</span>
+          {age && (
+            <span className="text-[10px] font-semibold text-emerald-900 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800/70">
+              {age}
+            </span>
+          )}
+        </button>
+      ) : (
+        <span className="tabular-nums font-semibold text-stone-900 dark:text-zinc-100 inline-flex items-center gap-1.5 flex-wrap justify-end">
+          <span>{formattedDate}</span>
+          {age && (
+            <span className="text-[10px] font-semibold text-emerald-900 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.2 rounded border border-emerald-200/60 dark:border-emerald-800/70">
+              {age}
+            </span>
+          )}
+        </span>
+      )}
+      {externalLink && (isAdmin || hasMetric) && onOpenMetric && (
+        <button
+          type="button"
+          onClick={onOpenMetric}
+          className="p-1 rounded-lg bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 text-stone-600 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors cursor-pointer shrink-0"
+          title="Переглянути або додати документи метрики"
+        >
+          <Camera size={12} />
+        </button>
+      )}
+    </div>
+  </div>
+);
+
 interface DetailsSidebarProps {
   person: Person | null;
   allPersons: Record<string, Person>;
@@ -83,7 +173,6 @@ interface DetailsSidebarProps {
   userPersonId?: string | null;
   onClose: () => void;
   onEdit: (person: Person) => void;
-  onDelete: (personId: string) => void;
   onAddRelative: (targetPerson: Person, relationType: RelativeType) => void;
   onSelectPerson: (personId: string) => void;
   onToggleRelationVerification?: (personId: string, relativeId: string) => void;
@@ -126,7 +215,6 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
   userPersonId,
   onClose,
   onEdit,
-  onDelete,
   onAddRelative,
   onSelectPerson,
   onToggleRelationVerification,
@@ -156,9 +244,10 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
   onRemoveCrossCanvasLink,
   onOpenGuestCustomize,
 }) => {
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [photoAlbumLightboxIndex, setPhotoAlbumLightboxIndex] = useState<number | null>(null);
-  const [screenshotLightboxOpen, setScreenshotLightboxOpen] = useState(false);
+  const [activeLightbox, setActiveLightbox] = useState<{
+    items: LightboxDocumentItem[];
+    initialIndex: number;
+  } | null>(null);
   const [isAddRelativeOpen, setIsAddRelativeOpen] = useState(false);
   const [confirmDeleteProposal, setConfirmDeleteProposal] = useState(false);
   const [copiedCardId, setCopiedCardId] = useState(false);
@@ -167,9 +256,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
     setIsAddRelativeOpen(false);
     setConfirmDeleteProposal(false);
     setCopiedCardId(false);
-    setScreenshotLightboxOpen(false);
-    setPhotoAlbumLightboxIndex(null);
-    setLightboxIndex(null);
+    setActiveLightbox(null);
   }, [person?.id]);
 
   const personClanName = person ? person.clanName || getClanName(person) : null;
@@ -177,6 +264,83 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
     if (!personClanName || !clanMap) return null;
     return clanMap[personClanName] || null;
   }, [personClanName, clanMap]);
+
+  const metricGalleryDocs = useMemo(() => {
+    if (!person) return [];
+    const list: Array<{
+      id: string;
+      type: string;
+      url: string;
+      title: string;
+      date?: string;
+      typeLabel: string;
+      isLink: boolean;
+    }> = [];
+    const seenUrls = new Set<string>();
+    const typeLabelFor = (t: string) =>
+      t === 'birth'
+        ? 'Народження'
+        : t === 'marriage'
+        ? 'Шлюб'
+        : t === 'death'
+        ? 'Смерть'
+        : t === 'children'
+        ? 'Діти'
+        : 'Інше';
+
+    (person.metricDocuments || []).forEach((doc) => {
+      if (!doc.url || seenUrls.has(doc.url)) return;
+      seenUrls.add(doc.url);
+      list.push({
+        id: doc.id,
+        type: doc.type,
+        url: doc.url,
+        title: doc.title || 'Документ',
+        date: doc.date,
+        typeLabel: typeLabelFor(doc.type),
+        isLink: isExternalMetricLink(doc),
+      });
+    });
+    if (person.birthMetricUrl && !seenUrls.has(person.birthMetricUrl)) {
+      seenUrls.add(person.birthMetricUrl);
+      list.unshift({
+        id: `legacy_birth_${person.id}`,
+        type: 'birth',
+        url: person.birthMetricUrl,
+        title: 'Метричний запис про народження',
+        date: person.birthDate || person.birthYear,
+        typeLabel: 'Народження',
+        isLink: isExternalMetricLink(person.birthMetricUrl),
+      });
+    }
+    if (person.deathMetricUrl && !seenUrls.has(person.deathMetricUrl)) {
+      seenUrls.add(person.deathMetricUrl);
+      list.push({
+        id: `legacy_death_${person.id}`,
+        type: 'death',
+        url: person.deathMetricUrl,
+        title: 'Метричний запис про смерть',
+        date: person.deathDate || person.deathYear,
+        typeLabel: 'Смерть',
+        isLink: isExternalMetricLink(person.deathMetricUrl),
+      });
+    }
+    return list;
+  }, [person]);
+
+  const metricImageItems = useMemo<LightboxDocumentItem[]>(
+    () =>
+      metricGalleryDocs
+        .filter((d) => !d.isLink)
+        .map((d) => ({
+          id: d.id,
+          url: d.url,
+          title: d.title,
+          date: d.date,
+          typeLabel: d.typeLabel,
+        })),
+    [metricGalleryDocs]
+  );
 
   if (!isOpen || !person) return null;
 
@@ -242,18 +406,18 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
   const lifePhotos = person.photoAlbum || [];
 
   return (
-    <aside className="fixed top-13 right-0 bottom-0 w-full sm:w-[368px] max-w-full bg-[#fafaf9] border-l border-stone-200/90 shadow-2xl z-30 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+    <aside className="fixed top-13 right-0 bottom-0 w-full sm:w-[368px] max-w-full bg-[#fafaf9] dark:bg-zinc-950 border-l border-stone-200/90 dark:border-zinc-800 shadow-2xl z-30 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
       {/* Top Drawer Header */}
-      <div className="px-4 py-3 bg-white/95 backdrop-blur-md border-b border-stone-200/80 flex items-center justify-between shrink-0">
+      <div className="px-4 py-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-zinc-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 truncate">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-zinc-300 truncate">
             Відомості про особу
           </h3>
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
               isAdmin
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80'
-                : 'bg-stone-100 text-stone-600 border border-stone-200/80'
+                ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800'
+                : 'bg-stone-100 dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 border border-stone-200/80 dark:border-zinc-700'
             }`}
           >
             {isAdmin ? 'Адмін' : 'Гість'}
@@ -262,7 +426,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="p-1.5 rounded-lg text-stone-400 hover:text-stone-800 hover:bg-stone-100 transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           aria-label="Закрити панель"
         >
           <X size={16} />
@@ -272,7 +436,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-4 pb-24 sm:pb-14 space-y-3.5">
         {/* HERO IDENTITY CARD (Pure Read-Only + 3 Primary Action Buttons) */}
-        <div className="rounded-2xl bg-white border border-stone-200/90 shadow-sm overflow-hidden relative">
+        <div className="rounded-2xl bg-white dark:bg-zinc-900 border border-stone-200/90 dark:border-zinc-800 shadow-sm overflow-hidden relative">
           <div
             className="absolute inset-x-0 top-0 h-32 pointer-events-none"
             style={{ background: heroHeaderGradient }}
@@ -285,10 +449,10 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           {/* Hero Top Bar: Gender Badge + Card ID + Verification Status */}
           <div className="relative z-10 px-3.5 pt-2.5 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/85 border border-stone-200/70 text-[11px] font-medium text-stone-600">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/85 dark:bg-zinc-800/90 border border-stone-200/70 dark:border-zinc-700 text-[11px] font-medium text-stone-600 dark:text-zinc-300">
                 {person.isGhost && !person.isBlankScreenshot ? (
                   <>
-                    <StickyNote size={11} className="text-amber-600 shrink-0" />
+                    <StickyNote size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
                     <span>Нотатка</span>
                   </>
                 ) : person.gender === 'female' ? (
@@ -309,14 +473,14 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     setTimeout(() => setCopiedCardId(false), 1500);
                   }).catch(() => {});
                 }}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/85 hover:bg-white text-stone-700 hover:text-stone-950 border border-stone-200/80 text-[10.5px] font-mono font-bold shadow-2xs transition-all cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/85 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-200 hover:text-stone-950 dark:hover:text-zinc-100 border border-stone-200/80 dark:border-zinc-700 text-[10.5px] font-mono font-bold shadow-2xs transition-all cursor-pointer shrink-0"
                 title={`Унікальний ID картки: ${formatCardId(person)} (натисніть, щоб скопіювати для пошуку)`}
               >
                 <span>{formatCardId(person)}</span>
                 {copiedCardId ? (
-                  <Check size={10.5} className="text-emerald-600 shrink-0" />
+                  <Check size={10.5} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                 ) : (
-                  <Copy size={10} className="text-stone-400 shrink-0" />
+                  <Copy size={10} className="text-stone-400 dark:text-zinc-500 shrink-0" />
                 )}
               </button>
             </div>
@@ -328,7 +492,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer border shadow-2xs ${
                   person.isFullyVerified
                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700'
-                    : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700'
                 }`}
                 title="Змінити статус перевірки картки"
               >
@@ -348,8 +512,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
               <span
                 className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                   person.isFullyVerified
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                    : 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                 }`}
               >
                 {person.isFullyVerified ? (
@@ -377,17 +541,17 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 size="lg"
               />
             ) : (
-              <div className="w-12 h-12 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 shadow-2xs">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-700 dark:text-amber-300 shadow-2xs">
                 <StickyNote size={22} />
               </div>
             )}
 
-            <h2 className="mt-2.5 text-[17px] font-bold text-stone-950 leading-snug tracking-tight">
+            <h2 className="mt-2.5 text-[17px] font-bold text-stone-950 dark:text-zinc-100 leading-snug tracking-tight">
               {fullName}
             </h2>
 
             {person.patronymic && (
-              <p className="text-xs font-medium text-stone-500 mt-0.5">{person.patronymic}</p>
+              <p className="text-xs font-medium text-stone-500 dark:text-zinc-400 mt-0.5">{person.patronymic}</p>
             )}
 
             {userPersonId === person.id ? (
@@ -414,10 +578,10 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 <button
                   type="button"
                   onClick={() => onSetUserPersonId(person.id)}
-                  className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-[11px] font-semibold border border-emerald-200 transition-colors cursor-pointer"
+                  className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/70 text-emerald-900 dark:text-emerald-200 text-[11px] font-semibold border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer"
                   title="Позначити цю особу як себе у родинному дереві"
                 >
-                  <UserCheck size={11} className="text-emerald-700" />
+                  <UserCheck size={11} className="text-emerald-700 dark:text-emerald-400" />
                   <span>Позначити як «Це я»</span>
                 </button>
               )
@@ -427,27 +591,27 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
             {(person.houseNumber || (person.gender === 'female' && person.maidenName) || person.nickname || lifeDates) && (
               <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2.5">
                 {person.houseNumber && (
-                  <span className="text-xs text-stone-800 bg-stone-100/90 px-2 py-0.5 rounded-lg border border-stone-200/80 inline-flex items-center gap-1">
-                    <Home size={10.5} className="text-amber-700 shrink-0" />
-                    <span className="font-semibold tabular-nums text-stone-900">Дім №{person.houseNumber}</span>
+                  <span className="text-xs text-stone-800 dark:text-zinc-200 bg-stone-100/90 dark:bg-zinc-800 px-2 py-0.5 rounded-lg border border-stone-200/80 dark:border-zinc-700 inline-flex items-center gap-1">
+                    <Home size={10.5} className="text-amber-700 dark:text-amber-400 shrink-0" />
+                    <span className="font-semibold tabular-nums text-stone-900 dark:text-zinc-100">Дім №{person.houseNumber}</span>
                   </span>
                 )}
 
                 {person.gender === 'female' && person.maidenName && (
-                  <span className="text-xs text-stone-800 bg-stone-100/90 px-2 py-0.5 rounded-lg border border-stone-200/80 inline-flex items-center gap-1">
-                    <span className="text-stone-500 text-[10.5px]">дівоче:</span>
+                  <span className="text-xs text-stone-800 dark:text-zinc-200 bg-stone-100/90 dark:bg-zinc-800 px-2 py-0.5 rounded-lg border border-stone-200/80 dark:border-zinc-700 inline-flex items-center gap-1">
+                    <span className="text-stone-500 dark:text-zinc-400 text-[10.5px]">дівоче:</span>
                     <span className="font-semibold">{person.maidenName}</span>
                   </span>
                 )}
 
                 {person.nickname && (
-                  <span className="text-xs font-serif italic text-amber-900 bg-amber-50/90 px-2 py-0.5 rounded-lg border border-amber-200/80">
+                  <span className="text-xs font-serif italic text-amber-900 dark:text-amber-200 bg-amber-50/90 dark:bg-amber-950/60 px-2 py-0.5 rounded-lg border border-amber-200/80 dark:border-amber-800">
                     «{person.nickname}»
                   </span>
                 )}
 
                 {lifeDates && (
-                  <span className="text-xs tabular-nums font-medium text-emerald-950 bg-emerald-50/90 px-2.5 py-0.5 rounded-lg border border-emerald-200/80">
+                  <span className="text-xs tabular-nums font-medium text-emerald-950 dark:text-emerald-200 bg-emerald-50/90 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-200/80 dark:border-emerald-800">
                     {lifeDates}
                   </span>
                 )}
@@ -456,7 +620,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
             {/* 3 Primary Admin Action Buttons */}
             {isAdmin && (
-              <div className="w-full mt-3.5 pt-3 border-t border-stone-100 space-y-2">
+              <div className="w-full mt-3.5 pt-3 border-t border-stone-100 dark:border-zinc-800 space-y-2">
                 <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
@@ -473,8 +637,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     onClick={() => setIsAddRelativeOpen((prev) => !prev)}
                     className={`h-9 px-2 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1 border transition-colors cursor-pointer ${
                       isAddRelativeOpen
-                        ? 'bg-stone-900 text-white border-stone-900'
-                        : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
+                        ? 'bg-stone-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-stone-900 dark:border-zinc-100'
+                        : 'bg-stone-50 dark:bg-zinc-800 hover:bg-stone-100 dark:hover:bg-zinc-700 text-stone-800 dark:text-zinc-200 border-stone-200 dark:border-zinc-700'
                     }`}
                     title="Створити нову картку родича"
                   >
@@ -486,7 +650,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => onOpenConnectModal(person)}
-                      className="h-9 px-2 rounded-xl bg-stone-50 hover:bg-stone-100 text-stone-800 border border-stone-200 text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      className="h-9 px-2 rounded-xl bg-stone-50 dark:bg-zinc-800 hover:bg-stone-100 dark:hover:bg-zinc-700 text-stone-800 dark:text-zinc-200 border border-stone-200 dark:border-zinc-700 text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
                       title="Зв'язати з наявною карткою"
                     >
                       <Link2 size={13} className="shrink-0" />
@@ -505,9 +669,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         setIsAddRelativeOpen(false);
                         onAddRelative(person, 'father');
                       }}
-                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 hover:bg-emerald-50 border border-stone-200/90 hover:border-emerald-300 text-stone-800 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 dark:bg-zinc-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-stone-200/90 dark:border-zinc-700 hover:border-emerald-300 dark:hover:border-emerald-700 text-stone-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
                     >
-                      <User size={13} className="text-emerald-700 shrink-0" />
+                      <User size={13} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
                       <span>Батько</span>
                     </button>
 
@@ -517,9 +681,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         setIsAddRelativeOpen(false);
                         onAddRelative(person, 'mother');
                       }}
-                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 hover:bg-emerald-50 border border-stone-200/90 hover:border-emerald-300 text-stone-800 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 dark:bg-zinc-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-stone-200/90 dark:border-zinc-700 hover:border-emerald-300 dark:hover:border-emerald-700 text-stone-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
                     >
-                      <User size={13} className="text-emerald-700 shrink-0" />
+                      <User size={13} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
                       <span>Мати</span>
                     </button>
 
@@ -529,9 +693,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         setIsAddRelativeOpen(false);
                         onAddRelative(person, 'spouse');
                       }}
-                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 hover:bg-rose-50 border border-stone-200/90 hover:border-rose-300 text-stone-800 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 dark:bg-zinc-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/60 border border-stone-200/90 dark:border-zinc-700 hover:border-rose-300 dark:hover:border-rose-700 text-stone-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
                     >
-                      <Heart size={13} className="text-rose-600 shrink-0" />
+                      <Heart size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
                       <span>
                         {person.gender === 'female' ? 'Чоловік' : person.gender === 'male' ? 'Дружина' : 'Подружжя'}
                       </span>
@@ -543,9 +707,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         setIsAddRelativeOpen(false);
                         onAddRelative(person, 'child');
                       }}
-                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 hover:bg-amber-50 border border-stone-200/90 hover:border-amber-300 text-stone-800 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                      className="px-2.5 py-2 rounded-xl bg-stone-50/80 dark:bg-zinc-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/60 border border-stone-200/90 dark:border-zinc-700 hover:border-amber-300 dark:hover:border-amber-700 text-stone-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
                     >
-                      <Users size={13} className="text-amber-700 shrink-0" />
+                      <Users size={13} className="text-amber-700 dark:text-amber-400 shrink-0" />
                       <span>Дитина</span>
                     </button>
 
@@ -555,9 +719,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         setIsAddRelativeOpen(false);
                         onAddRelative(person, 'sibling');
                       }}
-                      className="col-span-2 px-2.5 py-2 rounded-xl bg-stone-50/80 hover:bg-sky-50 border border-stone-200/90 hover:border-sky-300 text-stone-800 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      className="col-span-2 px-2.5 py-2 rounded-xl bg-stone-50/80 dark:bg-zinc-800/80 hover:bg-sky-50 dark:hover:bg-sky-950/60 border border-stone-200/90 dark:border-zinc-700 hover:border-sky-300 dark:hover:border-sky-700 text-stone-800 dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                     >
-                      <Users size={13} className="text-sky-700 shrink-0" />
+                      <Users size={13} className="text-sky-700 dark:text-sky-400 shrink-0" />
                       <span>Брат / Сестра</span>
                     </button>
                   </div>
@@ -588,7 +752,19 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
             {person.screenshotUrl && (
               <div
-                onClick={() => setScreenshotLightboxOpen(true)}
+                onClick={() =>
+                  setActiveLightbox({
+                    items: [
+                      {
+                        id: `screenshot-${person.id}`,
+                        url: person.screenshotUrl!,
+                        title: person.firstName || 'Нерозшифрований запис',
+                        typeLabel: 'Скріншот запису',
+                      },
+                    ],
+                    initialIndex: 0,
+                  })
+                }
                 className="group relative rounded-xl overflow-hidden border border-amber-300 dark:border-amber-700 bg-stone-950 cursor-zoom-in shadow-xs"
                 title="Відкрити у збільшеному перегляді з фільтрами для розшифровки"
               >
@@ -674,14 +850,14 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
         {/* PROPOSAL CARD REVIEW BANNER */}
         {person.isProposal && (
-          <div className="rounded-2xl border-2 border-sky-400/90 bg-sky-50/90 p-3.5 shadow-2xs space-y-2.5">
+          <div className="rounded-2xl border-2 border-sky-400/90 dark:border-sky-700/80 bg-sky-50/90 dark:bg-sky-950/30 p-3.5 shadow-2xs space-y-2.5">
             <div className="flex items-start gap-2.5">
               <span className="w-7 h-7 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
                 <UserPlus size={14} />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs font-bold text-sky-950 leading-tight">
+                  <span className="text-xs font-bold text-sky-950 dark:text-sky-200 leading-tight">
                     Картка-пропозиція від гостя
                   </span>
                   <span className="relative flex h-2 w-2">
@@ -689,7 +865,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-600" />
                   </span>
                 </div>
-                <div className="text-[11px] text-sky-900/90 leading-snug mt-0.5">
+                <div className="text-[11px] text-sky-900/90 dark:text-sky-300/90 leading-snug mt-0.5">
                   Автор: <strong>{person.proposalMeta?.authorName || 'Гість'}</strong>
                   {person.proposalMeta?.targetPersonId && allPersons[person.proposalMeta.targetPersonId] && (
                     <span>
@@ -697,7 +873,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                       <button
                         type="button"
                         onClick={() => onSelectPerson(person.proposalMeta!.targetPersonId)}
-                        className="underline font-semibold hover:text-sky-700 cursor-pointer"
+                        className="underline font-semibold hover:text-sky-700 dark:hover:text-sky-200 cursor-pointer"
                       >
                         {allPersons[person.proposalMeta.targetPersonId].firstName}{' '}
                         {allPersons[person.proposalMeta.targetPersonId].lastName}
@@ -709,15 +885,15 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
             </div>
 
             {person.proposalMeta?.note && (
-              <div className="p-2.5 rounded-xl bg-white border border-sky-200 text-xs text-stone-800 leading-relaxed whitespace-pre-wrap">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-sky-200 dark:border-sky-800/70 text-xs text-stone-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
                 {person.proposalMeta.note}
               </div>
             )}
 
             {isAdmin ? (
               confirmDeleteProposal ? (
-                <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-rose-50 border border-rose-200">
-                  <span className="text-[11px] font-semibold text-rose-800">
+                <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+                  <span className="text-[11px] font-semibold text-rose-800 dark:text-rose-200">
                     Видалити пропозицію?
                   </span>
                   <div className="flex items-center gap-1.5">
@@ -735,7 +911,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteProposal(false)}
-                      className="px-2 py-1 rounded-lg bg-white text-stone-600 border border-stone-200 text-[11px] font-semibold cursor-pointer"
+                      className="px-2 py-1 rounded-lg bg-white dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 border border-stone-200 dark:border-zinc-700 text-[11px] font-semibold cursor-pointer"
                     >
                       Ні
                     </button>
@@ -756,7 +932,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => onEdit(person)}
-                    className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-sky-100 text-sky-900 border border-sky-300 text-[11px] font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-sky-100 dark:hover:bg-sky-950/60 text-sky-900 dark:text-sky-200 border border-sky-300 dark:border-sky-700 text-[11px] font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
                   >
                     <Pencil size={12} />
                     <span>Редагувати</span>
@@ -765,7 +941,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteProposal(true)}
-                      className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-[11px] font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
                       title="Відхилити та видалити картку-пропозицію"
                     >
                       <Trash2 size={12} />
@@ -774,7 +950,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 </div>
               )
             ) : (
-              <div className="text-[11px] text-sky-800 font-medium">
+              <div className="text-[11px] text-sky-800 dark:text-sky-300 font-medium">
                 Очікує перевірки й затвердження адміністратором родоводу.
               </div>
             )}
@@ -801,8 +977,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           };
 
           return (
-            <div className="rounded-2xl border-2 border-amber-300/90 bg-amber-50/75 p-3.5 shadow-2xs space-y-2.5">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-amber-950 flex items-center gap-2">
+            <div className="rounded-2xl border-2 border-amber-300/90 dark:border-amber-700/80 bg-amber-50/75 dark:bg-amber-950/25 p-3.5 shadow-2xs space-y-2.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-amber-950 dark:text-amber-200 flex items-center gap-2">
                 <span className="relative w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
                   <span className="animate-ping absolute inset-0 rounded-lg bg-amber-400 opacity-60 pointer-events-none" />
                   <MessageSquareDot size={13} className="relative z-10" />
@@ -818,11 +994,11 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   return (
                     <div
                       key={s.id}
-                      className="p-2.5 rounded-xl bg-white border border-amber-200/90 space-y-2 text-xs"
+                      className="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-amber-200/90 dark:border-amber-800/70 space-y-2 text-xs"
                     >
-                      <div className="flex items-center justify-between gap-2 text-[10.5px] text-stone-500">
-                        <span className="font-bold text-stone-800">{s.authorName || 'Гість'}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold text-[9.5px]">
+                      <div className="flex items-center justify-between gap-2 text-[10.5px] text-stone-500 dark:text-zinc-400">
+                        <span className="font-bold text-stone-800 dark:text-zinc-200">{s.authorName || 'Гість'}</span>
+                        <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 font-semibold text-[9.5px]">
                           {s.category === 'memory'
                             ? 'Спогад'
                             : s.category === 'date_place'
@@ -832,7 +1008,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             : 'Уточнення'}
                         </span>
                       </div>
-                      <p className="text-stone-800 leading-relaxed whitespace-pre-wrap">
+                      <p className="text-stone-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
                         {s.message}
                       </p>
                       {fields.length > 0 && (
@@ -840,7 +1016,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                           {fields.map(([k, val]) => (
                             <span
                               key={k}
-                              className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-[10px] text-sky-900"
+                              className="px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-[10px] text-sky-900 dark:text-sky-200"
                             >
                               {fieldLabels[k] || k}: <strong>{String(val)}</strong>
                             </span>
@@ -848,11 +1024,11 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         </div>
                       )}
                       {isAdmin && onResolveGuestSuggestion && (
-                        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1 border-t border-stone-100">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1 border-t border-stone-100 dark:border-zinc-800">
                           <button
                             type="button"
                             onClick={() => onResolveGuestSuggestion(person.id, s.id, 'reject')}
-                            className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-rose-50 text-stone-600 hover:text-rose-700 text-[10.5px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-stone-100 dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-stone-600 dark:text-zinc-300 hover:text-rose-700 dark:hover:text-rose-300 text-[10.5px] font-semibold inline-flex items-center gap-1 cursor-pointer"
                           >
                             <Ban size={11} />
                             <span>Відхилити</span>
@@ -877,9 +1053,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
         {/* GUEST MODE CONTRIBUTION ACTIONS */}
         {!isAdmin && !person.isBlankScreenshot && (onOpenGuestSuggestion || (onOpenProposeRelative && !person.isProposal)) && (
-          <div className="bg-white rounded-2xl border border-amber-200/90 p-3.5 shadow-2xs space-y-2.5">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-amber-950 flex items-center gap-1.5">
-              <Sparkles size={13} className="text-amber-600" />
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-amber-200/90 dark:border-amber-800/70 p-3.5 shadow-2xs space-y-2.5">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+              <Sparkles size={13} className="text-amber-600 dark:text-amber-400" />
               <span>Допомогти доповнити родовід</span>
             </h4>
             <div className="space-y-1.5">
@@ -887,9 +1063,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenGuestSuggestion(person)}
-                  className="w-full px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <MessageSquarePlus size={14} className="text-amber-700 shrink-0" />
+                  <MessageSquarePlus size={14} className="text-amber-700 dark:text-amber-400 shrink-0" />
                   <span>Запропонувати нотатку / уточнення</span>
                 </button>
               )}
@@ -897,9 +1073,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenProposeRelative(person)}
-                  className="w-full px-3 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-950 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/60 border border-sky-200 dark:border-sky-800 text-sky-950 dark:text-sky-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <UserPlus size={14} className="text-sky-700 shrink-0" />
+                  <UserPlus size={14} className="text-sky-700 dark:text-sky-400 shrink-0" />
                   <span>Запропонувати родича</span>
                 </button>
               )}
@@ -909,127 +1085,43 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
         {/* BIOGRAPHICAL ARCHIVE SUMMARY (Read-Only) */}
         {hasBiographicalDetails && (
-          <div className="bg-white rounded-2xl border border-stone-200/90 p-3.5 shadow-2xs space-y-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-600 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-stone-200/90 dark:border-zinc-800 p-3.5 shadow-2xs space-y-2">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-zinc-300 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-stone-100 dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
                 <FileText size={13} />
               </span>
               <span>Основна інформація</span>
             </h4>
-            <div className="divide-y divide-stone-100 text-xs">
+            <div className="divide-y divide-stone-100 dark:divide-zinc-800 text-xs">
               {formattedBirth && (
-                <div className="flex items-center justify-between py-2 first:pt-0 last:pb-0 gap-2">
-                  <span className="text-stone-500 shrink-0">Народження</span>
-                  <div className="flex items-center gap-1 justify-end min-w-0">
-                    {birthExternalLink ? (
-                      <a
-                        href={birthExternalLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="tabular-nums font-semibold px-2 py-0.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer bg-sky-50 hover:bg-sky-100 text-sky-950 border border-sky-200/90"
-                        title={`Відкрити посилання на метрику про народження (${birthExternalLink})`}
-                      >
-                        <Link2 size={12} className="text-sky-700 shrink-0" />
-                        <span>{formattedBirth}</span>
-                        {personAge && (
-                          <span className="text-[10px] font-semibold text-emerald-900 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60">
-                            {personAge}
-                          </span>
-                        )}
-                        <ExternalLink size={11} className="text-sky-600 shrink-0" />
-                      </a>
-                    ) : (isAdmin || hasBirthMetric) && onOpenMetricModal ? (
-                      <button
-                        type="button"
-                        onClick={() => onOpenMetricModal(person, 'birth')}
-                        className={`tabular-nums font-medium px-2 py-0.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
-                          hasBirthMetric
-                            ? 'bg-amber-100/90 hover:bg-amber-200 text-amber-950 font-semibold border border-amber-300/80'
-                            : 'bg-stone-100 hover:bg-stone-200 text-stone-800'
-                        }`}
-                      >
-                        <Camera size={12} className={hasBirthMetric ? 'text-amber-800 shrink-0' : 'text-stone-400 shrink-0'} />
-                        <span>{formattedBirth}</span>
-                        {personAge && (
-                          <span className="text-[10px] font-semibold text-emerald-900 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60">
-                            {personAge}
-                          </span>
-                        )}
-                      </button>
-                    ) : (
-                      <span className="tabular-nums font-semibold text-stone-900 inline-flex items-center gap-1.5 flex-wrap justify-end">
-                        <span>{formattedBirth}</span>
-                        {personAge && (
-                          <span className="text-[10px] font-semibold text-emerald-900 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60">
-                            {personAge}
-                          </span>
-                        )}
-                      </span>
-                    )}
-                    {birthExternalLink && (isAdmin || hasBirthMetric) && onOpenMetricModal && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenMetricModal(person, 'birth')}
-                        className="p-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer shrink-0"
-                        title="Переглянути або додати документи метрики"
-                      >
-                        <Camera size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <MetricDateRow
+                  label="Народження"
+                  formattedDate={formattedBirth}
+                  age={personAge}
+                  externalLink={birthExternalLink}
+                  hasMetric={hasBirthMetric}
+                  isAdmin={isAdmin}
+                  onOpenMetric={onOpenMetricModal ? () => onOpenMetricModal(person, 'birth') : undefined}
+                  linkTitle={`Відкрити посилання на метрику про народження (${birthExternalLink})`}
+                />
               )}
 
               {formattedDeath && (
-                <div className="flex items-center justify-between py-2 first:pt-0 last:pb-0 gap-2">
-                  <span className="text-stone-500 shrink-0">Смерть</span>
-                  <div className="flex items-center gap-1 justify-end min-w-0">
-                    {deathExternalLink ? (
-                      <a
-                        href={deathExternalLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="tabular-nums font-semibold px-2 py-0.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer bg-sky-50 hover:bg-sky-100 text-sky-950 border border-sky-200/90"
-                        title={`Відкрити посилання на метрику про смерть (${deathExternalLink})`}
-                      >
-                        <Link2 size={12} className="text-sky-700 shrink-0" />
-                        <span>{formattedDeath}</span>
-                        <ExternalLink size={11} className="text-sky-600 shrink-0" />
-                      </a>
-                    ) : (isAdmin || hasDeathMetric) && onOpenMetricModal ? (
-                      <button
-                        type="button"
-                        onClick={() => onOpenMetricModal(person, 'death')}
-                        className={`tabular-nums font-medium px-2 py-0.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer ${
-                          hasDeathMetric
-                            ? 'bg-amber-100/90 hover:bg-amber-200 text-amber-950 font-semibold border border-amber-300/80'
-                            : 'bg-stone-100 hover:bg-stone-200 text-stone-800'
-                        }`}
-                      >
-                        <Camera size={12} className={hasDeathMetric ? 'text-amber-800 shrink-0' : 'text-stone-400 shrink-0'} />
-                        <span>{formattedDeath}</span>
-                      </button>
-                    ) : (
-                      <span className="tabular-nums font-semibold text-stone-900">{formattedDeath}</span>
-                    )}
-                    {deathExternalLink && (isAdmin || hasDeathMetric) && onOpenMetricModal && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenMetricModal(person, 'death')}
-                        className="p-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer shrink-0"
-                        title="Переглянути або додати документи метрики"
-                      >
-                        <Camera size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <MetricDateRow
+                  label="Смерть"
+                  formattedDate={formattedDeath}
+                  externalLink={deathExternalLink}
+                  hasMetric={hasDeathMetric}
+                  isAdmin={isAdmin}
+                  onOpenMetric={onOpenMetricModal ? () => onOpenMetricModal(person, 'death') : undefined}
+                  linkTitle={`Відкрити посилання на метрику про смерть (${deathExternalLink})`}
+                />
               )}
 
               {person.birthPlace && (
                 <div className="flex items-start justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Місце народж.</span>
-                  <span className="text-stone-900 font-medium text-right break-words min-w-0">
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Місце народж.</span>
+                  <span className="text-stone-900 dark:text-zinc-100 font-medium text-right break-words min-w-0">
                     {person.birthPlace}
                   </span>
                 </div>
@@ -1037,8 +1129,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
               {person.residencePlace && (
                 <div className="flex items-start justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Проживання</span>
-                  <span className="text-stone-900 font-medium text-right break-words min-w-0">
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Проживання</span>
+                  <span className="text-stone-900 dark:text-zinc-100 font-medium text-right break-words min-w-0">
                     {person.residencePlace}
                   </span>
                 </div>
@@ -1046,8 +1138,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
               {person.deathPlace && (
                 <div className="flex items-start justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Місце смерті</span>
-                  <span className="text-stone-900 font-medium text-right break-words min-w-0">
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Місце смерті</span>
+                  <span className="text-stone-900 dark:text-zinc-100 font-medium text-right break-words min-w-0">
                     {person.deathPlace}
                   </span>
                 </div>
@@ -1055,8 +1147,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
               {person.burialPlace && (
                 <div className="flex items-start justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Поховання</span>
-                  <span className="text-stone-900 font-medium text-right break-words min-w-0">
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Поховання</span>
+                  <span className="text-stone-900 dark:text-zinc-100 font-medium text-right break-words min-w-0">
                     {person.burialPlace}
                   </span>
                 </div>
@@ -1064,15 +1156,15 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
               {person.houseNumber && (
                 <div className="flex items-center justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Номер дому</span>
-                  <span className="tabular-nums font-bold text-emerald-800">№{person.houseNumber}</span>
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Номер дому</span>
+                  <span className="tabular-nums font-bold text-emerald-800 dark:text-emerald-300">№{person.houseNumber}</span>
                 </div>
               )}
 
               {person.profession && (
                 <div className="flex items-start justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Професія</span>
-                  <span className="font-semibold text-stone-900 text-right break-words min-w-0">
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Професія</span>
+                  <span className="font-semibold text-stone-900 dark:text-zinc-100 text-right break-words min-w-0">
                     {person.profession}
                   </span>
                 </div>
@@ -1080,8 +1172,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
               {person.deathCause && (
                 <div className="flex items-start justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Причина смерті</span>
-                  <span className="text-stone-800 italic text-right break-words min-w-0">
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Причина смерті</span>
+                  <span className="text-stone-800 dark:text-zinc-200 italic text-right break-words min-w-0">
                     {person.deathCause}
                   </span>
                 </div>
@@ -1089,8 +1181,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
               {person.godparents && (
                 <div className="flex items-start justify-between py-2 first:pt-0 last:pb-0 gap-3">
-                  <span className="text-stone-500 shrink-0">Хресні / Куми</span>
-                  <span className="text-stone-900 font-medium text-right break-words min-w-0">
+                  <span className="text-stone-500 dark:text-zinc-400 shrink-0">Хресні / Куми</span>
+                  <span className="text-stone-900 dark:text-zinc-100 font-medium text-right break-words min-w-0">
                     {person.godparents}
                   </span>
                 </div>
@@ -1101,23 +1193,23 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
         {/* BIOGRAPHY (Read-Only) */}
         {!person.isBlankScreenshot && (person.biography || (!isAdmin && onOpenGuestSuggestion)) && (
-          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-2xs space-y-2">
-            <h4 className="text-[11px] font-bold text-stone-700 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-stone-200/90 dark:border-zinc-800 shadow-2xs space-y-2">
+            <h4 className="text-[11px] font-bold text-stone-700 dark:text-zinc-300 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <BookOpen size={13} />
               </span>
               <span>Біографія</span>
             </h4>
             {person.biography ? (
-              <p className="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap">{person.biography}</p>
+              <p className="text-xs text-stone-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">{person.biography}</p>
             ) : (
-              <div className="text-xs text-stone-500 leading-relaxed space-y-2">
+              <div className="text-xs text-stone-500 dark:text-zinc-400 leading-relaxed space-y-2">
                 <p>Детальна біографія цієї особи ще не додана.</p>
                 {!isAdmin && onOpenGuestSuggestion && (
                   <button
                     type="button"
                     onClick={() => onOpenGuestSuggestion(person)}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-200 underline cursor-pointer"
                   >
                     <MessageSquarePlus size={12} />
                     <span>Поділитися спогадом або нотаткою →</span>
@@ -1128,39 +1220,44 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           </div>
         )}
 
-        {/* NOTES */}
-        {person.notes && !person.isBlankScreenshot && !person.isGhost && (
-          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-2xs space-y-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
-                <StickyNote size={13} />
-              </span>
-              <span>Примітки</span>
-            </h4>
-            <p className="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap">
-              {person.notes}
-            </p>
-          </div>
-        )}
-
-        {/* INTERESTING STORIES */}
-        {person.interestingStories && (
-          <div className="bg-white rounded-2xl p-3.5 border border-amber-200/90 shadow-2xs space-y-2">
-            <h4 className="text-[11px] font-bold text-amber-950 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                <Sparkles size={13} />
-              </span>
-              <span>Цікаві історії</span>
-            </h4>
-            <p className="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap">
-              {person.interestingStories}
-            </p>
+        {/* NOTES & INTERESTING STORIES (Combined Card) */}
+        {((person.notes && !person.isBlankScreenshot && !person.isGhost) || person.interestingStories) && (
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-amber-200/80 dark:border-zinc-800 shadow-2xs space-y-3">
+            {person.notes && !person.isBlankScreenshot && !person.isGhost && (
+              <div className="space-y-1.5">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-zinc-300 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <StickyNote size={13} />
+                  </span>
+                  <span>Примітки</span>
+                </h4>
+                <p className="text-xs text-stone-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                  {person.notes}
+                </p>
+              </div>
+            )}
+            {person.notes && !person.isBlankScreenshot && !person.isGhost && person.interestingStories && (
+              <div className="border-t border-stone-100 dark:border-zinc-800" />
+            )}
+            {person.interestingStories && (
+              <div className="space-y-1.5">
+                <h4 className="text-[11px] font-bold text-amber-950 dark:text-amber-200 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Sparkles size={13} />
+                  </span>
+                  <span>Цікаві історії</span>
+                </h4>
+                <p className="text-xs text-stone-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                  {person.interestingStories}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {/* CLAN / LINEAGE CARD (Read-Only + Coat of Arms viewer) */}
         {(person.clanName || personClanName) && (
-          <div className="bg-white rounded-2xl border border-stone-200/90 p-3 shadow-2xs">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-stone-200/90 dark:border-zinc-800 p-3 shadow-2xs">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
                 {personClanInfo?.coatOfArmsUrl ? (
@@ -1168,7 +1265,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     src={getResolvedMediaSrc(personClanInfo.coatOfArmsUrl)}
                     alt={`Герб ${personClanInfo.name}`}
                     onError={(e) => handleUploadImageError(e, personClanInfo.coatOfArmsUrl)}
-                    className="w-8 h-8 object-contain rounded-lg border border-stone-200/80 bg-stone-50 p-0.5 shrink-0 cursor-pointer"
+                    className="w-8 h-8 object-contain rounded-lg border border-stone-200/80 dark:border-zinc-700 bg-stone-50 dark:bg-zinc-800 p-0.5 shrink-0 cursor-pointer"
                     onClick={() => onOpenClanCoatOfArmsModal && onOpenClanCoatOfArmsModal(personClanInfo)}
                     title="Переглянути герб роду"
                   />
@@ -1185,10 +1282,10 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   </div>
                 )}
                 <div className="min-w-0 text-left">
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-stone-400 leading-none">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-stone-400 dark:text-zinc-500 leading-none">
                     Рід
                   </div>
-                  <div className="text-sm font-bold text-stone-900 truncate mt-0.5">
+                  <div className="text-sm font-bold text-stone-900 dark:text-zinc-100 truncate mt-0.5">
                     {person.clanName || personClanName}
                   </div>
                 </div>
@@ -1198,7 +1295,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenClanCoatOfArmsModal(personClanInfo)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/90 transition-colors cursor-pointer shrink-0"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-200 border border-amber-200/90 dark:border-amber-800 transition-colors cursor-pointer shrink-0"
                   title="Герб роду"
                 >
                   {personClanInfo.coatOfArmsUrl ? 'Герб ✓' : '+ Герб'}
@@ -1210,32 +1307,32 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
         {/* GEOGRAPHY */}
         {person.migrationNotes && (
-          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-2xs space-y-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-stone-200/90 dark:border-zinc-800 shadow-2xs space-y-2">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-zinc-300 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0">
                 <MapPin size={13} />
               </span>
               <span>Міграція та переїзди</span>
             </h4>
-            <p className="text-xs text-stone-800 leading-relaxed whitespace-pre-wrap">{person.migrationNotes}</p>
+            <p className="text-xs text-stone-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">{person.migrationNotes}</p>
           </div>
         )}
 
         {/* EDUCATION & WORK */}
         {(person.education || person.workplaceNotes) && (
-          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-2xs space-y-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-stone-200/90 dark:border-zinc-800 shadow-2xs space-y-2">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-zinc-300 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 flex items-center justify-center shrink-0">
                 <Briefcase size={13} />
               </span>
               <span>Навчання й служба</span>
             </h4>
-            <div className="text-xs space-y-1.5 text-stone-800">
+            <div className="text-xs space-y-1.5 text-stone-800 dark:text-zinc-200">
               {person.education && (
-                <div><span className="text-stone-500 font-medium">Освіта:</span> {person.education}</div>
+                <div><span className="text-stone-500 dark:text-zinc-400 font-medium">Освіта:</span> {person.education}</div>
               )}
               {person.workplaceNotes && (
-                <div><span className="text-stone-500 font-medium">Робота / служба:</span> {person.workplaceNotes}</div>
+                <div><span className="text-stone-500 dark:text-zinc-400 font-medium">Робота / служба:</span> {person.workplaceNotes}</div>
               )}
             </div>
           </div>
@@ -1243,14 +1340,14 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
         {/* MIDWIFE */}
         {person.midwife && (
-          <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-2xs space-y-1.5">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-stone-200/90 dark:border-zinc-800 shadow-2xs space-y-1.5">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-700 dark:text-zinc-300 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
                 <UserCheck size={13} />
               </span>
               <span>Повитуха</span>
             </h4>
-            <p className="text-xs text-stone-800">{person.midwife}</p>
+            <p className="text-xs text-stone-800 dark:text-zinc-200">{person.midwife}</p>
           </div>
         )}
 
@@ -1306,9 +1403,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
         )}
 
         {/* FAMILY CONNECTIONS HIERARCHY (Relative Navigation) */}
-        <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-2xs space-y-3.5">
-          <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-600 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-stone-200/90 dark:border-zinc-800 shadow-2xs space-y-3.5">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-zinc-300 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-lg bg-stone-100 dark:bg-zinc-800 text-stone-700 dark:text-zinc-300 flex items-center justify-center shrink-0">
               <Users size={13} />
             </span>
             <span>Родинні зв&apos;язки</span>
@@ -1316,25 +1413,25 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
           {/* Parents */}
           <div className="space-y-1.5">
-            <span className="text-[11px] font-semibold text-stone-500 block">Батьки</span>
+            <span className="text-[11px] font-semibold text-stone-500 dark:text-zinc-400 block">Батьки</span>
             {parents.length === 0 ? (
-              <p className="text-xs text-stone-400 italic">Не вказані</p>
+              <p className="text-xs text-stone-400 dark:text-zinc-500 italic">Не вказані</p>
             ) : (
               parents.map((p) => {
                 const isUnverified = person.unverifiedRelations?.includes(p.id);
                 return (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/70 hover:bg-stone-100/90 border border-stone-200/60 text-xs text-stone-800 transition-colors group"
+                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/70 dark:bg-zinc-800/70 hover:bg-stone-100/90 dark:hover:bg-zinc-800 border border-stone-200/60 dark:border-zinc-700/70 text-xs text-stone-800 dark:text-zinc-200 transition-colors group"
                   >
                     <button
                       type="button"
                       onClick={() => onSelectPerson(p.id)}
-                      className="font-medium group-hover:text-emerald-800 flex items-center gap-1.5 truncate text-left cursor-pointer min-w-0 flex-1"
+                      className="font-medium group-hover:text-emerald-800 dark:group-hover:text-emerald-300 flex items-center gap-1.5 truncate text-left cursor-pointer min-w-0 flex-1"
                     >
                       <span className="truncate">{p.firstName} {p.lastName}</span>
                       {p.houseNumber && (
-                        <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded shrink-0">
+                        <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded shrink-0">
                           №{p.houseNumber}
                         </span>
                       )}
@@ -1345,18 +1442,18 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         onClick={() => onToggleRelationVerification(person.id, p.id)}
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors shrink-0 cursor-pointer inline-flex items-center gap-1 ${
                           isUnverified
-                            ? 'bg-white text-stone-600 border-stone-300 hover:bg-stone-100'
-                            : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                            ? 'bg-white dark:bg-zinc-900 text-stone-600 dark:text-zinc-300 border-stone-300 dark:border-zinc-700 hover:bg-stone-100 dark:hover:bg-zinc-800'
+                            : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
                         }`}
                         title="Змінити достовірність зв'язку"
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-400' : 'bg-emerald-500'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-400 dark:bg-zinc-500' : 'bg-emerald-500'}`} />
                         <span>{isUnverified ? 'Неперевірений' : 'Достовірний'}</span>
                       </button>
                     ) : (
                       <span
-                        className={`w-2 h-2 rounded-full shrink-0 ${isUnverified ? 'bg-stone-300' : 'bg-emerald-500'}`}
-                        title={isUnverified ? 'Неперевірений зв’язок' : 'Достовірний зв’язок'}
+                        className={`w-2 h-2 rounded-full shrink-0 ${isUnverified ? 'bg-stone-300 dark:bg-zinc-600' : 'bg-emerald-500'}`}
+                        title={isUnverified ? 'Неперевірений зв’зок' : 'Достовірний зв’зок'}
                       />
                     )}
                   </div>
@@ -1366,9 +1463,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           </div>
 
           {/* Spouses */}
-          <div className="space-y-2 pt-2 border-t border-stone-100">
-            <span className="text-[11px] font-semibold text-stone-600 flex items-center gap-1.5">
-              <Heart size={12} className="text-rose-600" />
+          <div className="space-y-2 pt-2 border-t border-stone-100 dark:border-zinc-800">
+            <span className="text-[11px] font-semibold text-stone-600 dark:text-zinc-300 flex items-center gap-1.5">
+              <Heart size={12} className="text-rose-600 dark:text-rose-400" />
               <span>
                 {person.gender === 'female'
                   ? 'Чоловік / Подружжя'
@@ -1380,7 +1477,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
             </span>
 
             {spouses.length === 0 ? (
-              <p className="text-xs text-stone-400 italic">Немає</p>
+              <p className="text-xs text-stone-400 dark:text-zinc-500 italic">Немає</p>
             ) : (
               spouses.map((s) => {
                 const isUnverified = person.unverifiedRelations?.includes(s.id);
@@ -1395,42 +1492,42 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     key={s.id}
                     className={`p-2.5 rounded-xl text-xs transition-colors border flex flex-col gap-1.5 ${
                       isDivorced
-                        ? 'bg-rose-50/40 border-rose-200/70'
+                        ? 'bg-rose-50/40 dark:bg-rose-950/30 border-rose-200/70 dark:border-rose-800/70'
                         : isCohabitation
-                        ? 'bg-emerald-50/40 border-emerald-200/70'
-                        : 'bg-stone-50/70 border-stone-200/80'
+                        ? 'bg-emerald-50/40 dark:bg-emerald-950/30 border-emerald-200/70 dark:border-emerald-800/70'
+                        : 'bg-stone-50/70 dark:bg-zinc-800/70 border-stone-200/80 dark:border-zinc-700/80'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-1.5">
                       <button
                         type="button"
                         onClick={() => onSelectPerson(s.id)}
-                        className="font-semibold text-stone-900 hover:text-rose-800 flex items-center gap-1.5 truncate text-left cursor-pointer min-w-0"
+                        className="font-semibold text-stone-900 dark:text-zinc-100 hover:text-rose-800 dark:hover:text-rose-300 flex items-center gap-1.5 truncate text-left cursor-pointer min-w-0"
                       >
                         <span className="truncate">{s.firstName} {s.lastName}</span>
                         {s.maidenName && (
-                          <span className="text-[10px] text-stone-500 font-normal truncate">
+                          <span className="text-[10px] text-stone-500 dark:text-zinc-400 font-normal truncate">
                             ({s.maidenName})
                           </span>
                         )}
                         {s.houseNumber && (
-                          <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded shrink-0">
+                          <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded shrink-0">
                             №{s.houseNumber}
                           </span>
                         )}
                       </button>
 
                       {isDivorced ? (
-                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-rose-100 text-rose-900 border border-rose-200 flex items-center gap-1 shrink-0">
+                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-rose-100 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200 border border-rose-200 dark:border-rose-800 flex items-center gap-1 shrink-0">
                           <span>💔 Розлучені</span>
                           {override?.eventDate && <span className="tabular-nums">({override.eventDate})</span>}
                         </span>
                       ) : isCohabitation ? (
-                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-emerald-100 text-emerald-950 border border-emerald-200 flex items-center gap-1 shrink-0">
+                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-950 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 shrink-0">
                           <span>Без шлюбу</span>
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1 shrink-0">
+                        <span className="px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800 flex items-center gap-1 shrink-0">
                           <span>💍 Шлюб</span>
                           {override?.eventDate && <span className="tabular-nums">({override.eventDate})</span>}
                         </span>
@@ -1438,7 +1535,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     </div>
 
                     {(isAdmin || onToggleRelationVerification) && (
-                      <div className="flex items-center justify-between pt-1.5 border-t border-stone-200/60">
+                      <div className="flex items-center justify-between pt-1.5 border-t border-stone-200/60 dark:border-zinc-700/70">
                         <div>
                           {isAdmin && onToggleRelationVerification ? (
                             <button
@@ -1446,16 +1543,16 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                               onClick={() => onToggleRelationVerification(person.id, s.id)}
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors shrink-0 cursor-pointer inline-flex items-center gap-1 ${
                                 isUnverified
-                                  ? 'bg-white text-stone-600 border-stone-300'
-                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  ? 'bg-white dark:bg-zinc-900 text-stone-600 dark:text-zinc-300 border-stone-300 dark:border-zinc-700'
+                                  : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                               }`}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-400' : 'bg-emerald-500'}`} />
+                              <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-400 dark:bg-zinc-500' : 'bg-emerald-500'}`} />
                               <span>{isUnverified ? 'Неперевірений' : 'Достовірний'}</span>
                             </button>
                           ) : (
-                            <span className="text-[10px] text-stone-500 inline-flex items-center gap-1">
-                              <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-300' : 'bg-emerald-500'}`} />
+                            <span className="text-[10px] text-stone-500 dark:text-zinc-400 inline-flex items-center gap-1">
+                              <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-300 dark:bg-zinc-600' : 'bg-emerald-500'}`} />
                               <span>{isUnverified ? 'Неперевірений зв’язок' : 'Підтверджений зв’язок'}</span>
                             </span>
                           )}
@@ -1470,9 +1567,9 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                                   e.stopPropagation();
                                   onDisconnectSpouse(person.id, s.id);
                                 }}
-                                className="px-2 py-0.5 text-[10px] font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 rounded-md border border-rose-200 flex items-center gap-1 transition-colors cursor-pointer"
+                                className="px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-200 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-md border border-rose-200 dark:border-rose-800 flex items-center gap-1 transition-colors cursor-pointer"
                               >
-                                <HeartCrack size={11} className="text-rose-600" />
+                                <HeartCrack size={11} className="text-rose-600 dark:text-rose-400" />
                                 <span>Розлучення</span>
                               </button>
                             )}
@@ -1483,7 +1580,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                                   e.stopPropagation();
                                   onEditMarriageConnection(connId);
                                 }}
-                                className="p-1 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-md border border-stone-200 transition-colors cursor-pointer"
+                                className="p-1 text-stone-500 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-700 rounded-md border border-stone-200 dark:border-zinc-700 transition-colors cursor-pointer"
                                 title={isDivorced ? 'Редагувати деталі розлучення' : 'Редагувати дату шлюбу, вінчання'}
                               >
                                 <Settings size={12} />
@@ -1500,53 +1597,53 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           </div>
 
           {/* Siblings */}
-          <div className="space-y-1.5 pt-2 border-t border-stone-100">
-            <span className="text-[11px] font-semibold text-stone-500 block">Брати та сестри</span>
+          <div className="space-y-1.5 pt-2 border-t border-stone-100 dark:border-zinc-800">
+            <span className="text-[11px] font-semibold text-stone-500 dark:text-zinc-400 block">Брати та сестри</span>
             {siblings.length === 0 ? (
-              <p className="text-xs text-stone-400 italic">Немає або не вказані</p>
+              <p className="text-xs text-stone-400 dark:text-zinc-500 italic">Немає або не вказані</p>
             ) : (
               siblings.map((sib) => (
                 <button
                   key={sib.id}
                   type="button"
                   onClick={() => onSelectPerson(sib.id)}
-                  className="w-full text-left px-2.5 py-1.5 rounded-xl bg-stone-50/70 hover:bg-sky-50 border border-stone-200/60 flex items-center justify-between text-xs text-stone-800 transition-colors group cursor-pointer"
+                  className="w-full text-left px-2.5 py-1.5 rounded-xl bg-stone-50/70 dark:bg-zinc-800/70 hover:bg-sky-50 dark:hover:bg-sky-950/40 border border-stone-200/60 dark:border-zinc-700/70 flex items-center justify-between text-xs text-stone-800 dark:text-zinc-200 transition-colors group cursor-pointer"
                 >
-                  <span className="font-medium group-hover:text-sky-800 flex items-center gap-1.5 truncate">
+                  <span className="font-medium group-hover:text-sky-800 dark:group-hover:text-sky-300 flex items-center gap-1.5 truncate">
                     <span className="truncate">{sib.firstName} {sib.lastName}</span>
                     {sib.houseNumber && (
-                      <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded shrink-0">
+                      <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded shrink-0">
                         №{sib.houseNumber}
                       </span>
                     )}
                   </span>
-                  <ChevronRight size={14} className="text-stone-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                  <ChevronRight size={14} className="text-stone-400 dark:text-zinc-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </button>
               ))
             )}
           </div>
 
           {/* Children */}
-          <div className="space-y-1.5 pt-2 border-t border-stone-100">
-            <span className="text-[11px] font-semibold text-stone-500 block">Діти</span>
+          <div className="space-y-1.5 pt-2 border-t border-stone-100 dark:border-zinc-800">
+            <span className="text-[11px] font-semibold text-stone-500 dark:text-zinc-400 block">Діти</span>
             {children.length === 0 ? (
-              <p className="text-xs text-stone-400 italic">Немає</p>
+              <p className="text-xs text-stone-400 dark:text-zinc-500 italic">Немає</p>
             ) : (
               children.map((c) => {
                 const isUnverified = person.unverifiedRelations?.includes(c.id);
                 return (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/70 hover:bg-amber-50/60 border border-stone-200/60 text-xs text-stone-800 transition-colors group"
+                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/70 dark:bg-zinc-800/70 hover:bg-amber-50/60 dark:hover:bg-amber-950/30 border border-stone-200/60 dark:border-zinc-700/70 text-xs text-stone-800 dark:text-zinc-200 transition-colors group"
                   >
                     <button
                       type="button"
                       onClick={() => onSelectPerson(c.id)}
-                      className="font-medium group-hover:text-amber-900 flex items-center gap-1.5 truncate text-left cursor-pointer min-w-0 flex-1"
+                      className="font-medium group-hover:text-amber-900 dark:group-hover:text-amber-300 flex items-center gap-1.5 truncate text-left cursor-pointer min-w-0 flex-1"
                     >
                       <span className="truncate">{c.firstName} {c.lastName}</span>
                       {c.houseNumber && (
-                        <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded shrink-0">
+                        <span className="text-[9.5px] tabular-nums font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded shrink-0">
                           №{c.houseNumber}
                         </span>
                       )}
@@ -1557,16 +1654,16 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         onClick={() => onToggleRelationVerification(person.id, c.id)}
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors shrink-0 cursor-pointer inline-flex items-center gap-1 ${
                           isUnverified
-                            ? 'bg-white text-stone-600 border-stone-300 hover:bg-stone-100'
-                            : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                            ? 'bg-white dark:bg-zinc-900 text-stone-600 dark:text-zinc-300 border-stone-300 dark:border-zinc-700 hover:bg-stone-100 dark:hover:bg-zinc-800'
+                            : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
                         }`}
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-400' : 'bg-emerald-500'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${isUnverified ? 'bg-stone-400 dark:bg-zinc-500' : 'bg-emerald-500'}`} />
                         <span>{isUnverified ? 'Неперевірений' : 'Достовірний'}</span>
                       </button>
                     ) : (
                       <span
-                        className={`w-2 h-2 rounded-full shrink-0 ${isUnverified ? 'bg-stone-300' : 'bg-emerald-500'}`}
+                        className={`w-2 h-2 rounded-full shrink-0 ${isUnverified ? 'bg-stone-300 dark:bg-zinc-600' : 'bg-emerald-500'}`}
                         title={isUnverified ? 'Неперевірений зв’язок' : 'Достовірний зв’язок'}
                       />
                     )}
@@ -1614,10 +1711,10 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           }
 
           return (
-            <div className="bg-white rounded-2xl p-3.5 border border-emerald-200/90 shadow-2xs space-y-2.5">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-emerald-200/90 dark:border-emerald-900/60 shadow-2xs space-y-2.5">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-950 dark:text-emerald-200 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
                     <ExternalLink size={13} />
                   </span>
                   <span>Міжгілкові зв&apos;язки ({outgoingCross.length + incomingCross.length})</span>
@@ -1626,7 +1723,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenBranchLinkModal(person)}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10.5px] font-semibold transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10.5px] font-semibold transition-colors cursor-pointer"
                   >
                     <Plus size={11} />
                     <span>Додати</span>
@@ -1635,7 +1732,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
               </div>
 
               {outgoingCross.length === 0 && incomingCross.length === 0 ? (
-                <p className="text-xs text-stone-400 italic">
+                <p className="text-xs text-stone-400 dark:text-zinc-500 italic">
                   Немає зв&apos;язків з іншими полотнами (гілками)
                 </p>
               ) : (
@@ -1643,7 +1740,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   {outgoingCross.map((ccl) => (
                     <div
                       key={ccl.id}
-                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-50/50 hover:bg-emerald-100/70 border border-emerald-200/70 text-xs transition-colors group"
+                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/50 border border-emerald-200/70 dark:border-emerald-800/70 text-xs transition-colors group"
                     >
                       <button
                         type="button"
@@ -1657,12 +1754,12 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                           style={{ backgroundColor: ccl.color || '#047857' }}
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-stone-900 group-hover:text-emerald-900 truncate flex items-center gap-1.5 flex-wrap">
-                            <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-900 text-[9.5px] font-bold shrink-0">
+                          <div className="font-semibold text-stone-900 dark:text-zinc-100 group-hover:text-emerald-900 dark:group-hover:text-emerald-200 truncate flex items-center gap-1.5 flex-wrap">
+                            <span className="px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 text-[9.5px] font-bold shrink-0">
                               {ccl.targetCanvasTitle || 'Полотно'}
                             </span>
                             {ccl.targetCardId && (
-                              <span className="px-1 py-0.2 rounded bg-white border border-emerald-200 text-stone-700 font-mono text-[9.5px] font-bold shrink-0">
+                              <span className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border border-emerald-200 dark:border-emerald-800 text-stone-700 dark:text-zinc-200 font-mono text-[9.5px] font-bold shrink-0">
                                 {ccl.targetCardId}
                               </span>
                             )}
@@ -1671,12 +1768,12 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             )}
                           </div>
                           {ccl.label && (
-                            <div className="text-[10px] text-emerald-800 truncate mt-0.5">
+                            <div className="text-[10px] text-emerald-800 dark:text-emerald-300 truncate mt-0.5">
                               {ccl.label}
                             </div>
                           )}
                         </div>
-                        <ExternalLink size={12} className="text-emerald-600 shrink-0" />
+                        <ExternalLink size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                       </button>
 
                       {isAdmin && onRemoveCrossCanvasLink && (
@@ -1686,7 +1783,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             e.stopPropagation();
                             onRemoveCrossCanvasLink(person.id, ccl.id);
                           }}
-                          className="p-1 rounded-md text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                          className="p-1 rounded-md text-stone-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer shrink-0"
                           title="Прибрати зв'язок між полотнами"
                         >
                           <Trash2 size={12.5} />
@@ -1703,7 +1800,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         key={`in-ccl-${inc.sourceTreeId}-${inc.sourcePerson.id}`}
                         type="button"
                         onClick={() => onSelectTree?.(inc.sourceTreeId, inc.sourcePerson.id, person.id)}
-                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/80 hover:bg-emerald-50/60 border border-stone-200/80 text-xs transition-colors group cursor-pointer text-left"
+                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/80 dark:bg-zinc-800/70 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/40 border border-stone-200/80 dark:border-zinc-700/70 text-xs transition-colors group cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <span
@@ -1711,23 +1808,23 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             style={{ backgroundColor: inc.linkColor || '#047857' }}
                           />
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-stone-800 group-hover:text-emerald-900 truncate flex items-center gap-1.5 flex-wrap">
-                              <span className="px-1.5 py-0.2 rounded bg-stone-200/80 text-stone-800 text-[9.5px] font-bold shrink-0">
+                            <div className="font-medium text-stone-800 dark:text-zinc-200 group-hover:text-emerald-900 dark:group-hover:text-emerald-200 truncate flex items-center gap-1.5 flex-wrap">
+                              <span className="px-1.5 py-0.2 rounded bg-stone-200/80 dark:bg-zinc-700 text-stone-800 dark:text-zinc-200 text-[9.5px] font-bold shrink-0">
                                 {inc.sourceTreeTitle}
                               </span>
-                              <span className="px-1 py-0.2 rounded bg-white border border-stone-200 text-stone-700 font-mono text-[9.5px] font-bold shrink-0">
+                              <span className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 text-stone-700 dark:text-zinc-200 font-mono text-[9.5px] font-bold shrink-0">
                                 {formatCardId(inc.sourcePerson)}
                               </span>
                               <span className="truncate">← Від: {srcName}</span>
                             </div>
                             {inc.linkLabel && (
-                              <div className="text-[10px] text-stone-500 truncate mt-0.5">
+                              <div className="text-[10px] text-stone-500 dark:text-zinc-400 truncate mt-0.5">
                                 {inc.linkLabel}
                               </div>
                             )}
                           </div>
                         </div>
-                        <ExternalLink size={12} className="text-stone-400 group-hover:text-emerald-700 shrink-0" />
+                        <ExternalLink size={12} className="text-stone-400 dark:text-zinc-500 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 shrink-0" />
                       </button>
                     );
                   })}
@@ -1749,10 +1846,10 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
             return null;
           }
           return (
-            <div className="bg-white rounded-2xl p-3.5 border border-indigo-200/80 shadow-2xs space-y-2.5">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-indigo-200/80 dark:border-indigo-900/60 shadow-2xs space-y-2.5">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-indigo-950 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-indigo-950 dark:text-indigo-200 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 flex items-center justify-center shrink-0">
                     <ArrowUpRight size={13} />
                   </span>
                   <span>Стрілки на цьому полотні ({outgoingLinks.length + incomingSources.length})</span>
@@ -1761,7 +1858,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenBranchLinkModal(person)}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10.5px] font-semibold transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[10.5px] font-semibold transition-colors cursor-pointer"
                   >
                     <Plus size={11} />
                     <span>Додати</span>
@@ -1770,7 +1867,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
               </div>
 
               {outgoingLinks.length === 0 && incomingSources.length === 0 ? (
-                <p className="text-xs text-stone-400 italic">
+                <p className="text-xs text-stone-400 dark:text-zinc-500 italic">
                   Немає посилань на інші картки полотна
                 </p>
               ) : (
@@ -1784,7 +1881,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                     return (
                       <div
                         key={bl.id}
-                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-indigo-50/50 hover:bg-indigo-100/70 border border-indigo-200/70 text-xs transition-colors group"
+                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-950/50 border border-indigo-200/70 dark:border-indigo-800/70 text-xs transition-colors group"
                       >
                         <button
                           type="button"
@@ -1805,24 +1902,24 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             />
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-stone-900 group-hover:text-indigo-900 truncate flex items-center gap-1.5">
-                              <span className="px-1 py-0.2 rounded bg-indigo-100/80 text-indigo-800 font-mono text-[9.5px] font-bold shrink-0">
+                            <div className="font-semibold text-stone-900 dark:text-zinc-100 group-hover:text-indigo-900 dark:group-hover:text-indigo-200 truncate flex items-center gap-1.5">
+                              <span className="px-1 py-0.2 rounded bg-indigo-100/80 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 font-mono text-[9.5px] font-bold shrink-0">
                                 {formatCardId(target)}
                               </span>
                               <span className="truncate">→ {tName}</span>
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {bl.probableRelation && (
-                                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 text-[9.5px] font-bold">
+                                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300/80 dark:border-amber-800 text-[9.5px] font-bold">
                                   {bl.probableRelation}
                                 </span>
                               )}
                               {bl.label && (
-                                <span className="text-[10px] text-indigo-700 truncate">
+                                <span className="text-[10px] text-indigo-700 dark:text-indigo-300 truncate">
                                   {bl.label}
                                 </span>
                               )}
-                              <span className="text-[9px] font-mono text-stone-500">
+                              <span className="text-[9px] font-mono text-stone-500 dark:text-zinc-400">
                                 {shapeText} · {widthVal}px
                               </span>
                             </div>
@@ -1836,7 +1933,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                               e.stopPropagation();
                               onEditBranchLink(person.id, bl.id);
                             }}
-                            className="p-1 rounded-md text-stone-400 hover:text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer shrink-0"
+                            className="p-1 rounded-md text-stone-400 dark:text-zinc-500 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 transition-colors cursor-pointer shrink-0"
                             title="Налаштувати стиль стрілки"
                           >
                             <Settings size={12.5} />
@@ -1849,7 +1946,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                               e.stopPropagation();
                               onRemoveBranchLink(person.id, bl.id);
                             }}
-                            className="p-1 rounded-md text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                            className="p-1 rounded-md text-stone-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer shrink-0"
                             title="Прибрати посилання"
                           >
                             <Trash2 size={12.5} />
@@ -1867,7 +1964,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                         key={`in-${src.id}`}
                         type="button"
                         onClick={() => onSelectPerson(src.id)}
-                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/80 hover:bg-stone-100 border border-stone-200/70 text-xs transition-colors group cursor-pointer text-left"
+                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50/80 dark:bg-zinc-800/70 hover:bg-stone-100 dark:hover:bg-zinc-800 border border-stone-200/70 dark:border-zinc-700/70 text-xs transition-colors group cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           {sLink?.linkKind === 'godparent' ? (
@@ -1884,8 +1981,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             />
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-stone-800 group-hover:text-indigo-900 truncate flex items-center gap-1.5">
-                              <span className="px-1 py-0.2 rounded bg-stone-200/70 text-stone-700 font-mono text-[9.5px] font-bold shrink-0">
+                            <div className="font-medium text-stone-800 dark:text-zinc-200 group-hover:text-indigo-900 dark:group-hover:text-indigo-200 truncate flex items-center gap-1.5">
+                              <span className="px-1 py-0.2 rounded bg-stone-200/70 dark:bg-zinc-700 text-stone-700 dark:text-zinc-200 font-mono text-[9.5px] font-bold shrink-0">
                                 {formatCardId(src)}
                               </span>
                               <span className="truncate">← Від: {sName}</span>
@@ -1893,12 +1990,12 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             {(sLink?.probableRelation || sLink?.label) && (
                               <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                                 {sLink?.probableRelation && (
-                                  <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 text-[9.5px] font-bold">
+                                  <span className="px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border border-amber-300/80 dark:border-amber-800 text-[9.5px] font-bold">
                                     {sLink.probableRelation}
                                   </span>
                                 )}
                                 {sLink?.label && (
-                                  <span className="text-[10px] text-stone-500 truncate">
+                                  <span className="text-[10px] text-stone-500 dark:text-zinc-400 truncate">
                                     {sLink.label}
                                   </span>
                                 )}
@@ -1906,7 +2003,7 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                             )}
                           </div>
                         </div>
-                        <ChevronRight size={13} className="text-stone-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                        <ChevronRight size={13} className="text-stone-400 dark:text-zinc-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </button>
                     );
                   })}
@@ -1932,7 +2029,20 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   <div
                     key={photo.id}
                     className="group relative rounded-xl border border-stone-200 dark:border-zinc-700 overflow-hidden bg-stone-100 dark:bg-zinc-800 aspect-square cursor-zoom-in hover:border-sky-500 transition-colors shadow-2xs"
-                    onClick={() => setPhotoAlbumLightboxIndex(idx)}
+                    onClick={() =>
+                      setActiveLightbox({
+                        items: lifePhotos.map(
+                          (p): LightboxDocumentItem => ({
+                            id: p.id,
+                            url: p.url,
+                            title: p.caption || p.title || `Фото · ${fullName}`,
+                            date: p.date,
+                            typeLabel: 'Фото з життя',
+                          })
+                        ),
+                        initialIndex: idx,
+                      })
+                    }
                     title={captionText ? `${captionText}${photo.date ? ` (${photo.date})` : ''}` : 'Натисніть для перегляду'}
                   >
                     <img
@@ -1968,85 +2078,24 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
         )}
 
         {/* METRIC DOCUMENTS SECTION (Read-Only + viewer/modal trigger) */}
-        {(() => {
-          const allMetricGallery: Array<{
-            id: string;
-            type: string;
-            url: string;
-            title: string;
-            date?: string;
-            typeLabel: string;
-            isLink: boolean;
-          }> = [];
-          const seenUrls = new Set<string>();
-          const typeLabelFor = (t: string) =>
-            t === 'birth'
-              ? 'Народження'
-              : t === 'marriage'
-              ? 'Шлюб'
-              : t === 'death'
-              ? 'Смерть'
-              : t === 'children'
-              ? 'Діти'
-              : 'Інше';
-
-          (person.metricDocuments || []).forEach((doc) => {
-            if (!doc.url || seenUrls.has(doc.url)) return;
-            seenUrls.add(doc.url);
-            allMetricGallery.push({
-              id: doc.id,
-              type: doc.type,
-              url: doc.url,
-              title: doc.title || 'Документ',
-              date: doc.date,
-              typeLabel: typeLabelFor(doc.type),
-              isLink: isExternalMetricLink(doc),
-            });
-          });
-          if (person.birthMetricUrl && !seenUrls.has(person.birthMetricUrl)) {
-            seenUrls.add(person.birthMetricUrl);
-            allMetricGallery.unshift({
-              id: `legacy_birth_${person.id}`,
-              type: 'birth',
-              url: person.birthMetricUrl,
-              title: 'Метричний запис про народження',
-              date: person.birthDate || person.birthYear,
-              typeLabel: 'Народження',
-              isLink: isExternalMetricLink(person.birthMetricUrl),
-            });
-          }
-          if (person.deathMetricUrl && !seenUrls.has(person.deathMetricUrl)) {
-            seenUrls.add(person.deathMetricUrl);
-            allMetricGallery.push({
-              id: `legacy_death_${person.id}`,
-              type: 'death',
-              url: person.deathMetricUrl,
-              title: 'Метричний запис про смерть',
-              date: person.deathDate || person.deathYear,
-              typeLabel: 'Смерть',
-              isLink: isExternalMetricLink(person.deathMetricUrl),
-            });
-          }
-
-          if (allMetricGallery.length === 0) return null;
-
-          const linkDocs = allMetricGallery.filter((d) => d.isLink);
-          const imageDocs = allMetricGallery.filter((d) => !d.isLink);
+        {metricGalleryDocs.length > 0 && (() => {
+          const linkDocs = metricGalleryDocs.filter((d) => d.isLink);
+          const imageDocs = metricGalleryDocs.filter((d) => !d.isLink);
 
           return (
-            <div className="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-2xs space-y-2.5">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-stone-200/90 dark:border-zinc-800 shadow-2xs space-y-2.5">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-600 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-zinc-300 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
                     <FileText size={13} />
                   </span>
-                  <span>Документи та метрики ({allMetricGallery.length})</span>
+                  <span>Документи та метрики ({metricGalleryDocs.length})</span>
                 </h4>
                 {onOpenMetricModal && isAdmin && (
                   <button
                     type="button"
                     onClick={() => onOpenMetricModal(person, 'birth')}
-                    className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 cursor-pointer"
+                    className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-300 cursor-pointer"
                   >
                     + Додати
                   </button>
@@ -2061,26 +2110,26 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                       href={doc.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-sky-50/75 hover:bg-sky-100/90 border border-sky-200/90 transition-colors group"
+                      className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-sky-50/75 dark:bg-sky-950/40 hover:bg-sky-100/90 dark:hover:bg-sky-950/60 border border-sky-200/90 dark:border-sky-800/70 transition-colors group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-8 h-8 rounded-lg bg-white border border-sky-200 text-sky-700 flex items-center justify-center shrink-0 shadow-2xs">
+                        <span className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0 shadow-2xs">
                           <Link2 size={14} />
                         </span>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">
                               {getMetricLinkDomainLabel(doc.url)}
                             </span>
-                            <span className="text-[10px] text-stone-400">·</span>
-                            <span className="text-[10px] font-semibold text-stone-600">{doc.typeLabel}</span>
+                            <span className="text-[10px] text-stone-400 dark:text-zinc-500">·</span>
+                            <span className="text-[10px] font-semibold text-stone-600 dark:text-zinc-400">{doc.typeLabel}</span>
                           </div>
-                          <div className="text-xs font-semibold text-stone-900 truncate">
+                          <div className="text-xs font-semibold text-stone-900 dark:text-zinc-100 truncate">
                             {doc.title}
                           </div>
                         </div>
                       </div>
-                      <ExternalLink size={14} className="text-sky-700 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                      <ExternalLink size={14} className="text-sky-700 dark:text-sky-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                     </a>
                   ))}
                 </div>
@@ -2091,8 +2140,8 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   {imageDocs.map((doc, idx) => (
                     <div
                       key={doc.id}
-                      className="group relative rounded-xl border border-stone-200 overflow-hidden bg-stone-50 aspect-square cursor-zoom-in hover:border-emerald-500 transition-colors shadow-2xs"
-                      onClick={() => setLightboxIndex(idx)}
+                      className="group relative rounded-xl border border-stone-200 dark:border-zinc-700 overflow-hidden bg-stone-50 dark:bg-zinc-800 aspect-square cursor-zoom-in hover:border-emerald-500 transition-colors shadow-2xs"
+                      onClick={() => setActiveLightbox({ items: metricImageItems, initialIndex: idx })}
                     >
                       <img
                         src={getResolvedMediaSrc(doc.url)}
@@ -2116,17 +2165,17 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
         {/* REACTIONS LIST */}
         {person.reactions && person.reactions.length > 0 && (
-          <div className="bg-white rounded-2xl p-3.5 border border-rose-200/80 shadow-2xs space-y-2.5">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-rose-200/80 dark:border-rose-900/60 shadow-2xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <h4 className="text-[11px] font-bold text-rose-950 uppercase tracking-wider flex items-center gap-1.5">
-                <Heart size={12.5} className="text-rose-600 shrink-0 fill-rose-600" />
+              <h4 className="text-[11px] font-bold text-rose-950 dark:text-rose-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Heart size={12.5} className="text-rose-600 dark:text-rose-400 shrink-0 fill-rose-600 dark:fill-rose-400" />
                 <span>Реакції відвідувачів ({person.reactions.length})</span>
               </h4>
               {isAdmin && onOpenReactionsModal && (
                 <button
                   type="button"
                   onClick={onOpenReactionsModal}
-                  className="text-[11px] font-semibold text-rose-700 hover:text-rose-900 underline cursor-pointer"
+                  className="text-[11px] font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 dark:hover:text-rose-200 underline cursor-pointer"
                 >
                   Управління →
                 </button>
@@ -2136,25 +2185,25 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
               {person.reactions.map((r, idx) => (
                 <div
                   key={r.id || idx}
-                  className="p-2 rounded-xl bg-rose-50/40 border border-rose-100 flex items-center justify-between gap-2"
+                  className="p-2 rounded-xl bg-rose-50/40 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/60 flex items-center justify-between gap-2"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="text-base">{r.emoji}</span>
                     <div className="min-w-0 text-xs">
-                      <div className="font-semibold text-stone-800 truncate">
+                      <div className="font-semibold text-stone-800 dark:text-zinc-100 truncate">
                         {r.userName || 'Гість'}
                         {isAdmin && r.userEmail && (
-                          <span className="text-stone-400 font-normal ml-1 text-[10px]">({r.userEmail})</span>
+                          <span className="text-stone-400 dark:text-zinc-400 font-normal ml-1 text-[10px]">({r.userEmail})</span>
                         )}
                       </div>
-                      {r.createdAt && <div className="text-[10px] text-stone-400">{r.createdAt}</div>}
+                      {r.createdAt && <div className="text-[10px] text-stone-400 dark:text-zinc-400">{r.createdAt}</div>}
                     </div>
                   </div>
                   {isAdmin && onDeleteReaction && (
                     <button
                       type="button"
                       onClick={() => onDeleteReaction(person.id, r.id || idx)}
-                      className="p-1.5 rounded-lg bg-white hover:bg-rose-100 text-stone-400 hover:text-rose-700 border border-stone-200 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-stone-400 dark:text-zinc-400 hover:text-rose-700 dark:hover:text-rose-300 border border-stone-200 dark:border-zinc-700 transition-colors cursor-pointer"
                       title="Видалити реакцію"
                     >
                       <Trash2 size={12.5} />
@@ -2165,116 +2214,14 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
             </div>
           </div>
         )}
-
-        {/* DANGER ZONE */}
-        {isAdmin && (
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                onDelete(person.id);
-                onClose();
-              }}
-              className="w-full px-3 py-2.5 text-xs font-semibold text-rose-700 hover:text-rose-800 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/80 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Trash2 size={13.5} />
-              <span>Видалити цю картку</span>
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Lightbox Modal for Metric / Photo */}
-      {lightboxIndex !== null && (() => {
-        const items: LightboxDocumentItem[] = [];
-        const seen = new Set<string>();
-        const typeLabelFor = (t: string) =>
-          t === 'birth'
-            ? 'Народження'
-            : t === 'marriage'
-            ? 'Шлюб'
-            : t === 'death'
-            ? 'Смерть'
-            : t === 'children'
-            ? 'Діти'
-            : 'Інше';
-
-        (person.metricDocuments || []).forEach((doc) => {
-          if (!doc.url || seen.has(doc.url) || isExternalMetricLink(doc)) return;
-          seen.add(doc.url);
-          items.push({
-            id: doc.id,
-            url: doc.url,
-            title: doc.title || 'Документ',
-            date: doc.date,
-            typeLabel: typeLabelFor(doc.type),
-          });
-        });
-        if (person.birthMetricUrl && !seen.has(person.birthMetricUrl) && !isExternalMetricLink(person.birthMetricUrl)) {
-          seen.add(person.birthMetricUrl);
-          items.unshift({
-            id: `legacy_birth_${person.id}`,
-            url: person.birthMetricUrl,
-            title: 'Метричний запис про народження',
-            date: person.birthDate || person.birthYear,
-            typeLabel: 'Народження',
-          });
-        }
-        if (person.deathMetricUrl && !seen.has(person.deathMetricUrl) && !isExternalMetricLink(person.deathMetricUrl)) {
-          seen.add(person.deathMetricUrl);
-          items.push({
-            id: `legacy_death_${person.id}`,
-            url: person.deathMetricUrl,
-            title: 'Метричний запис про смерть',
-            date: person.deathDate || person.deathYear,
-            typeLabel: 'Смерть',
-          });
-        }
-
-        if (items.length === 0) return null;
-
-        return (
-          <DocumentLightboxModal
-            isOpen={lightboxIndex !== null}
-            items={items}
-            initialIndex={lightboxIndex}
-            onClose={() => setLightboxIndex(null)}
-          />
-        );
-      })()}
-
-      {/* Dedicated Lightbox for Undeciphered Screenshot Card */}
-      {screenshotLightboxOpen && person.screenshotUrl && (
+      {activeLightbox && activeLightbox.items.length > 0 && (
         <DocumentLightboxModal
-          isOpen={screenshotLightboxOpen}
-          items={[
-            {
-              id: `screenshot-${person.id}`,
-              url: person.screenshotUrl,
-              title: person.firstName || 'Нерозшифрований запис',
-              typeLabel: 'Скріншот запису',
-            },
-          ]}
-          initialIndex={0}
-          onClose={() => setScreenshotLightboxOpen(false)}
-        />
-      )}
-
-      {/* Public Lightbox for Everyday Life Photos */}
-      {photoAlbumLightboxIndex !== null && lifePhotos.length > 0 && (
-        <DocumentLightboxModal
-          isOpen={photoAlbumLightboxIndex !== null}
-          items={lifePhotos.map(
-            (photo): LightboxDocumentItem => ({
-              id: photo.id,
-              url: photo.url,
-              title: photo.caption || photo.title || `Фото · ${fullName}`,
-              date: photo.date,
-              typeLabel: 'Фото з життя',
-            })
-          )}
-          initialIndex={photoAlbumLightboxIndex}
-          onClose={() => setPhotoAlbumLightboxIndex(null)}
+          isOpen={true}
+          items={activeLightbox.items}
+          initialIndex={activeLightbox.initialIndex}
+          onClose={() => setActiveLightbox(null)}
         />
       )}
     </aside>

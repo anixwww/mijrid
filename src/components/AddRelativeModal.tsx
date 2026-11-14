@@ -277,16 +277,16 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-3.5 bg-gradient-to-r from-[#f4f7f4] to-[#edf3ee] border-b border-[#d8e2d9] flex items-center justify-between shrink-0">
+        <div className="px-5 py-3.5 bg-gradient-to-r from-[#f4f7f4] to-[#edf3ee] dark:from-zinc-950/80 dark:to-zinc-900 border-b border-[#d8e2d9] dark:border-zinc-800 flex items-center justify-between shrink-0">
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-stone-900 leading-tight">
+            <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-zinc-100 leading-tight">
               {isFirstPerson ? 'Додати першу особу до дерева' : 'Додати родича'}
             </h3>
-            <p className="text-[11px] text-stone-600 mt-0.5">
+            <p className="text-[11px] text-stone-600 dark:text-zinc-400 mt-0.5">
               {isFirstPerson ? (
                 'Початок нового класичного родоводу'
               ) : relationType === 'spouse' ? (
@@ -296,25 +296,25 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                     : targetPerson?.gender === 'male'
                     ? ((targetPerson?.spouses?.length || 0) > 0 ? 'Додати ще одну дружину для:' : 'Додати дружину для:')
                     : 'Подружжя для:'}{' '}
-                  <span className="font-semibold text-emerald-900">{targetFullName}</span>
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-400">{targetFullName}</span>
                 </>
               ) : relationType === 'child' && spouseFullName ? (
                 <>
                   Для батьків:{' '}
-                  <span className="font-semibold text-emerald-900">
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-400">
                     {targetFullName} та {spouseFullName}
                   </span>
                 </>
               ) : (
                 <>
-                  Для: <span className="font-semibold text-emerald-900">{targetFullName}</span>
+                  Для: <span className="font-semibold text-emerald-900 dark:text-emerald-400">{targetFullName}</span>
                 </>
               )}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors"
+            className="p-1.5 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-zinc-100 hover:bg-stone-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             title="Закрити"
           >
             <X size={18} />
@@ -326,12 +326,12 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
           <FirebasePhotoAuthBanner compact />
 
           {errorMessage && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center justify-between animate-in fade-in">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/70 text-rose-800 dark:text-rose-200 rounded-xl text-xs flex items-center justify-between animate-in fade-in">
               <span>{errorMessage}</span>
               <button
                 type="button"
                 onClick={() => setErrorMessage(null)}
-                className="text-rose-400 hover:text-rose-700 p-0.5 cursor-pointer"
+                className="text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 p-0.5 cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -342,8 +342,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
             const genderWarning = checkGenderMismatch(firstName, gender);
             if (!genderWarning) return null;
             return (
-              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-2.5 animate-in fade-in">
-                <AlertCircle size={16} className="text-amber-600 shrink-0" />
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/70 text-amber-900 dark:text-amber-200 rounded-xl text-xs flex items-center gap-2.5 animate-in fade-in">
+                <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
                 <span className="font-medium">{genderWarning}</span>
               </div>
             );
@@ -352,13 +352,13 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
           {/* Relation Selector */}
           {!isFirstPerson && (
             <div>
-              <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-stone-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
                 Тип родинного зв'язку
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                 {[
-                  { type: 'father', label: 'Батько', icon: User, color: 'text-emerald-700' },
-                  { type: 'mother', label: 'Мати', icon: User, color: 'text-emerald-700' },
+                  { type: 'father', label: 'Батько', icon: User, color: 'text-emerald-700 dark:text-emerald-400' },
+                  { type: 'mother', label: 'Мати', icon: User, color: 'text-emerald-700 dark:text-emerald-400' },
                   {
                     type: 'spouse',
                     label: targetPerson?.gender === 'female'
@@ -367,10 +367,10 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                       ? 'Дружина'
                       : 'Подружжя',
                     icon: Heart,
-                    color: 'text-rose-600',
+                    color: 'text-rose-600 dark:text-rose-400',
                   },
-                  { type: 'child', label: 'Дитина', icon: Users, color: 'text-amber-700' },
-                  { type: 'sibling', label: 'Брат / Сестра', icon: Users, color: 'text-sky-700' },
+                  { type: 'child', label: 'Дитина', icon: Users, color: 'text-amber-700 dark:text-amber-400' },
+                  { type: 'sibling', label: 'Брат / Сестра', icon: Users, color: 'text-sky-700 dark:text-sky-400' },
                 ].map((item) => {
                   const isSelected = relationType === item.type;
                   const Icon = item.icon;
@@ -379,13 +379,13 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                       key={item.type}
                       type="button"
                       onClick={() => handleRelationChange(item.type as RelativeType)}
-                      className={`py-2 px-2 rounded-xl border text-xs font-medium flex flex-col items-center gap-1 transition-all ${
+                      className={`py-2 px-2 rounded-xl border text-xs font-medium flex flex-col items-center gap-1 transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-emerald-700 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-600 shadow-2xs font-semibold'
-                          : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                          ? 'border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 ring-1 ring-emerald-600 shadow-2xs font-semibold'
+                          : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-200 hover:bg-stone-50 dark:hover:bg-zinc-800'
                       }`}
                     >
-                      <Icon size={16} className={isSelected ? 'text-emerald-800' : item.color} />
+                      <Icon size={16} className={isSelected ? 'text-emerald-800 dark:text-emerald-400' : item.color} />
                       <span className="text-[11px] leading-tight text-center">{item.label}</span>
                     </button>
                   );
@@ -396,12 +396,12 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
           {/* Union Type Selector when relation is Spouse */}
           {!isFirstPerson && relationType === 'spouse' && (
-            <div className="p-3.5 bg-gradient-to-br from-emerald-50/90 to-stone-50 rounded-xl border border-emerald-200/90 space-y-3 animate-in fade-in duration-150">
+            <div className="p-3.5 bg-gradient-to-br from-emerald-50/90 to-stone-50 dark:from-emerald-950/30 dark:to-zinc-900 rounded-xl border border-emerald-200/90 dark:border-emerald-900/60 space-y-3 animate-in fade-in duration-150">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-emerald-950 dark:text-emerald-200 uppercase tracking-wider">
                   Статус союзу / подружжя
                 </label>
-                <span className="text-[10px] text-emerald-800 font-medium">
+                <span className="text-[10px] text-emerald-800 dark:text-emerald-400 font-medium">
                   {targetPerson?.gender === 'female' ? 'для жінки' : 'для чоловіка'}
                 </span>
               </div>
@@ -413,8 +413,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   onClick={() => setUnionType('marriage')}
                   className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     unionType === 'marriage'
-                      ? 'border-emerald-700 bg-white text-emerald-950 ring-2 ring-emerald-600/30 font-bold shadow-xs'
-                      : 'border-stone-200 bg-white/70 text-stone-700 hover:bg-white'
+                      ? 'border-emerald-700 bg-white dark:bg-emerald-950/70 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-600/30 font-bold shadow-xs'
+                      : 'border-stone-200 dark:border-zinc-700 bg-white/70 dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
                   }`}
                 >
                   <span className="text-base">💍</span>
@@ -426,8 +426,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   onClick={() => setUnionType('divorce')}
                   className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     unionType === 'divorce'
-                      ? 'border-rose-600 bg-rose-50 text-rose-950 ring-2 ring-rose-500/30 font-bold shadow-xs'
-                      : 'border-stone-200 bg-white/70 text-stone-700 hover:bg-white hover:text-rose-900'
+                      ? 'border-rose-600 bg-rose-50 dark:bg-rose-950/60 text-rose-950 dark:text-rose-100 ring-2 ring-rose-500/30 font-bold shadow-xs'
+                      : 'border-stone-200 dark:border-zinc-700 bg-white/70 dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 hover:text-rose-900 dark:hover:text-rose-300'
                   }`}
                 >
                   <span className="text-base">💔</span>
@@ -439,8 +439,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   onClick={() => setUnionType('cohabitation')}
                   className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     unionType === 'cohabitation'
-                      ? 'border-emerald-700 bg-white text-emerald-950 ring-2 ring-emerald-600/30 font-bold shadow-xs'
-                      : 'border-stone-200 bg-white/70 text-stone-700 hover:bg-white'
+                      ? 'border-emerald-700 bg-white dark:bg-emerald-950/70 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-600/30 font-bold shadow-xs'
+                      : 'border-stone-200 dark:border-zinc-700 bg-white/70 dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
                   }`}
                 >
                   <span className="text-base">💚</span>
@@ -450,8 +450,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
               {/* Date of Union or Divorce */}
               <div>
-                <label className="block text-[11px] font-semibold text-stone-700 mb-1 flex items-center gap-1">
-                  <Calendar size={12} className="text-stone-500" />
+                <label className="block text-[11px] font-semibold text-stone-700 dark:text-zinc-300 mb-1 flex items-center gap-1">
+                  <Calendar size={12} className="text-stone-500 dark:text-zinc-400" />
                   <span>
                     {unionType === 'marriage'
                       ? 'Рік або дата шлюбу'
@@ -459,7 +459,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                       ? 'Рік або дата розлучення'
                       : 'Рік або дата початку союзу'}
                   </span>
-                  <span className="text-[10px] text-stone-400 font-normal">(необов'язково)</span>
+                  <span className="text-[10px] text-stone-400 dark:text-zinc-500 font-normal">(необов'язково)</span>
                 </label>
                 <input
                   type="text"
@@ -472,13 +472,13 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                       ? 'напр. 1999 або 22.03.1999'
                       : 'напр. 2010'
                   }
-                  className="w-full text-xs px-3 py-1.5 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 font-mono"
+                  className="w-full text-xs px-3 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-600 font-mono"
                 />
               </div>
 
               {/* Previous Spouse Divorce Checkbox */}
               {activeSpousePersons.length > 0 && unionType !== 'divorce' && (
-                <div className="p-2.5 bg-amber-50/90 rounded-lg border border-amber-200 text-xs space-y-1.5">
+                <div className="p-2.5 bg-amber-50/90 dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-800/70 text-xs space-y-1.5">
                   <div className="flex items-start gap-2">
                     <input
                       type="checkbox"
@@ -487,9 +487,9 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                       onChange={(e) => setMarkPreviousSpouseDivorced(e.target.checked)}
                       className="mt-0.5 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
                     />
-                    <label htmlFor="divorcePrevSpouse" className="cursor-pointer text-amber-950 font-medium leading-tight">
+                    <label htmlFor="divorcePrevSpouse" className="cursor-pointer text-amber-950 dark:text-amber-200 font-medium leading-tight">
                       <span>Позначити попередній шлюб як розірваний (розлучення 💔)</span>
-                      <p className="text-[10.5px] text-amber-800 font-normal mt-0.5">
+                      <p className="text-[10.5px] text-amber-800 dark:text-amber-300/80 font-normal mt-0.5">
                         Попереднє подружжя ({activeSpousePersons.map((s) => `${s.firstName} ${s.lastName}`.trim()).join(', ')})
                         буде відокремлене лінією розлучення, а нова картка утворить актуальну пару.
                       </p>
@@ -500,8 +500,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
               {/* Link Existing Children Checkbox */}
               {existingChildren.length > 0 && (
-                <div className="p-2.5 bg-stone-100/90 rounded-lg border border-stone-200 text-xs">
-                  <label className="flex items-start gap-2 cursor-pointer text-stone-800 font-medium leading-tight">
+                <div className="p-2.5 bg-stone-100/90 dark:bg-zinc-800/80 rounded-lg border border-stone-200 dark:border-zinc-700 text-xs">
+                  <label className="flex items-start gap-2 cursor-pointer text-stone-800 dark:text-zinc-200 font-medium leading-tight">
                     <input
                       type="checkbox"
                       checked={linkAllExistingChildren}
@@ -510,7 +510,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                     />
                     <div>
                       <span>Пов'язати існуючих дітей ({existingChildren.length}) як спільних з цим подружжям</span>
-                      <p className="text-[10px] text-stone-500 font-normal mt-0.5">
+                      <p className="text-[10px] text-stone-500 dark:text-zinc-400 font-normal mt-0.5">
                         Діти ({existingChildren.slice(0, 3).map((c) => c.firstName).join(', ')}
                         {existingChildren.length > 3 ? '...' : ''}) отримають цього партнера як другого батька/матір.
                       </p>
@@ -523,34 +523,34 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
           {/* Connection Verification Status */}
           {!isFirstPerson && (
-            <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-200 flex items-center justify-between gap-2">
-              <div className="text-xs font-medium text-stone-700">
+            <div className="p-2.5 bg-stone-50 dark:bg-zinc-950/60 rounded-xl border border-stone-200 dark:border-zinc-800 flex items-center justify-between gap-2">
+              <div className="text-xs font-medium text-stone-700 dark:text-zinc-300">
                 <span>Статус зв'язку:</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setIsVerified(true)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border flex items-center gap-1.5 transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
                     isVerified
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-600 font-semibold'
-                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-600 font-semibold'
+                      : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 hover:bg-stone-50 dark:hover:bg-zinc-700'
                   }`}
                 >
-                  <CheckCircle size={12} className="text-emerald-700" />
+                  <CheckCircle size={12} className="text-emerald-700 dark:text-emerald-400" />
                   <span>🟢 Достовірний</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsVerified(false)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border flex items-center gap-1.5 transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
                     !isVerified
-                      ? 'border-stone-500 bg-stone-100 text-stone-900 ring-1 ring-stone-400 font-semibold'
-                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                      ? 'border-stone-500 bg-stone-100 dark:bg-zinc-800 text-stone-900 dark:text-zinc-100 ring-1 ring-stone-400 font-semibold'
+                      : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 text-stone-600 dark:text-zinc-300 hover:bg-stone-50 dark:hover:bg-zinc-800'
                   }`}
                 >
-                  <AlertCircle size={12} className="text-stone-500" />
+                  <AlertCircle size={12} className="text-stone-500 dark:text-zinc-400" />
                   <span>⚪ Неперевірений</span>
                 </button>
               </div>
@@ -558,7 +558,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
           )}
 
           {/* Gender & Photo Row */}
-          <div className="flex items-center gap-4 p-3 bg-stone-50/80 rounded-xl border border-stone-200">
+          <div className="flex items-center gap-4 p-3 bg-stone-50/80 dark:bg-zinc-950/50 rounded-xl border border-stone-200 dark:border-zinc-800">
             <div className="relative group shrink-0">
               <SilhouetteAvatar
                 gender={gender}
@@ -579,12 +579,12 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
 
             <div className="flex-1 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-stone-800">Стать та світлина</span>
+                <span className="text-xs font-semibold text-stone-800 dark:text-zinc-200">Стать та світлина</span>
                 {avatarUrl && (
                   <button
                     type="button"
                     onClick={() => setAvatarUrl(undefined)}
-                    className="text-[11px] text-rose-600 hover:underline font-medium"
+                    className="text-[11px] text-rose-600 dark:text-rose-400 hover:underline font-medium cursor-pointer"
                   >
                     Видалити
                   </button>
@@ -592,14 +592,14 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center bg-white border border-stone-300 rounded-lg p-0.5">
+                <div className="flex items-center bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-700 rounded-lg p-0.5">
                   <button
                     type="button"
                     onClick={() => setGender('male')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                       gender === 'male'
                         ? 'bg-sky-800 text-white shadow-2xs'
-                        : 'text-stone-600 hover:text-stone-900'
+                        : 'text-stone-600 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100'
                     }`}
                   >
                     Чоловіча
@@ -607,18 +607,18 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setGender('female')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
                       gender === 'female'
                         ? 'bg-rose-800 text-white shadow-2xs'
-                        : 'text-stone-600 hover:text-stone-900'
+                        : 'text-stone-600 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100'
                     }`}
                   >
                     Жіноча
                   </button>
                 </div>
 
-                <label className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-stone-300 bg-white hover:bg-stone-50 text-[11px] text-stone-700 font-medium transition-colors shadow-2xs">
-                  <Upload size={12} className="text-emerald-800" />
+                <label className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-stone-50 dark:hover:bg-zinc-700 text-[11px] text-stone-700 dark:text-zinc-200 font-medium transition-colors shadow-2xs">
+                  <Upload size={12} className="text-emerald-800 dark:text-emerald-400" />
                   <span>{isUploadingAvatar ? 'Завантаження...' : avatarUrl ? 'Змінити' : 'Завантажити фото'}</span>
                   <input
                     type="file"
@@ -635,7 +635,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
           {/* Names */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-stone-700 mb-1">
+              <label className="block text-xs font-medium text-stone-700 dark:text-zinc-300 mb-1">
                 Ім'я <span className="text-rose-500">*</span>
               </label>
               <input
@@ -644,19 +644,19 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="напр. Іван або Марія"
-                className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
+                className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
               />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-medium text-stone-700">
+                <label className="block text-xs font-medium text-stone-700 dark:text-zinc-300">
                   Прізвище
                 </label>
                 {relationType === 'spouse' && targetPerson?.gender === 'male' && targetPerson.lastName && lastName !== targetPerson.lastName && (
                   <button
                     type="button"
                     onClick={() => setLastName(targetPerson.lastName)}
-                    className="text-[10px] text-emerald-800 hover:text-emerald-950 font-medium hover:underline flex items-center gap-0.5"
+                    className="text-[10px] text-emerald-800 dark:text-emerald-400 hover:text-emerald-950 dark:hover:text-emerald-300 font-medium hover:underline flex items-center gap-0.5 cursor-pointer"
                   >
                     <span>Взяти прізвище чоловіка</span>
                   </button>
@@ -667,7 +667,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="напр. Коваленко"
-                className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
+                className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
               />
             </div>
           </div>
@@ -677,23 +677,23 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
             {gender === 'female' && (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-stone-700">
+                  <label className="block text-xs font-medium text-stone-700 dark:text-zinc-300">
                     Дівоче / дошлюбне прізвище
                   </label>
-                  <span className="text-[10px] text-stone-400 font-normal">відображається: (Дівоче)</span>
+                  <span className="text-[10px] text-stone-400 dark:text-zinc-500 font-normal">відображається: (Дівоче)</span>
                 </div>
                 <input
                   type="text"
                   value={maidenName}
                   onChange={(e) => setMaidenName(e.target.value)}
                   placeholder="напр. Ковальчук або Бондар"
-                  className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
+                  className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
                 />
               </div>
             )}
 
             <div className={gender === 'female' ? '' : 'sm:col-span-2'}>
-              <label className="block text-xs font-medium text-stone-700 mb-1">
+              <label className="block text-xs font-medium text-stone-700 dark:text-zinc-300 mb-1">
                 Прізвисько («придомок» родини)
               </label>
               <input
@@ -701,15 +701,15 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="напр. Чут або Кулинич"
-                className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
+                className="w-full text-sm px-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-emerald-950 mb-1 flex items-center gap-1.5">
+              <label className="block text-xs font-semibold text-emerald-950 dark:text-emerald-300 mb-1 flex items-center gap-1.5">
                 <svg
                   viewBox="0 0 24 24"
-                  className="w-4 h-4 text-emerald-800 shrink-0"
+                  className="w-4 h-4 text-emerald-800 dark:text-emerald-400 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.6"
@@ -726,14 +726,14 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   value={houseNumber}
                   onChange={(e) => setHouseNumber(e.target.value)}
                   placeholder="напр. 47 або 10"
-                  className="w-full text-sm px-3 py-2 pr-11 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600 font-mono"
+                  className="w-full text-sm px-3 py-2 pr-11 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/40 focus:border-emerald-600 font-mono"
                 />
                 {houseNumber && (
                   <div
-                    className="absolute right-2 h-6 px-2 min-w-[24px] flex items-center justify-center bg-white rounded-full shadow-xs border border-emerald-400 pointer-events-none"
+                    className="absolute right-2 h-6 px-2 min-w-[24px] flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-xs border border-emerald-400 dark:border-emerald-700 pointer-events-none"
                     title="Піктограма на картці"
                   >
-                    <span className="text-[10px] font-mono font-bold leading-none text-emerald-900">
+                    <span className="text-[10px] font-mono font-bold leading-none text-emerald-900 dark:text-emerald-300">
                       №{houseNumber}
                     </span>
                   </div>
@@ -742,16 +742,14 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
             </div>
           </div>
 
-
-
           {/* Date of Birth */}
-          <div className="p-3.5 bg-[#f8faf8] rounded-xl border border-stone-200 space-y-2.5">
+          <div className="p-3.5 bg-[#f8faf8] dark:bg-zinc-950/60 rounded-xl border border-stone-200 dark:border-zinc-800 space-y-2.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-stone-800 flex items-center gap-1.5">
-                <Calendar size={13} className="text-emerald-700" />
+              <label className="text-xs font-semibold text-stone-800 dark:text-zinc-200 flex items-center gap-1.5">
+                <Calendar size={13} className="text-emerald-700 dark:text-emerald-400" />
                 <span>Дата народження</span>
               </label>
-              <span className="text-[11px] text-emerald-800 font-mono font-medium">
+              <span className="text-[11px] text-emerald-800 dark:text-emerald-400 font-mono font-medium">
                 {formatSingleDate(
                   birthDay,
                   birthMonth,
@@ -764,7 +762,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
             </div>
 
             {/* Mode Selector: Точна дата / Період (діапазон) / Приблизно */}
-            <div className="flex items-center gap-1 bg-stone-200/60 p-0.5 rounded-lg text-[11px]">
+            <div className="flex items-center gap-1 bg-stone-200/60 dark:bg-zinc-800 p-0.5 rounded-lg text-[11px]">
               <button
                 type="button"
                 onClick={() => {
@@ -773,8 +771,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 }}
                 className={`flex-1 py-1 px-2 rounded-md font-medium transition-all cursor-pointer ${
                   birthDateType === 'exact'
-                    ? 'bg-white text-emerald-950 font-bold shadow-2xs'
-                    : 'text-stone-600 hover:text-stone-900'
+                    ? 'bg-white dark:bg-zinc-700 text-emerald-950 dark:text-emerald-200 font-bold shadow-2xs'
+                    : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
                 }`}
               >
                 Точна дата
@@ -787,8 +785,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 }}
                 className={`flex-1 py-1 px-2 rounded-md font-medium transition-all cursor-pointer ${
                   birthDateType === 'period'
-                    ? 'bg-white text-emerald-950 font-bold shadow-2xs'
-                    : 'text-stone-600 hover:text-stone-900'
+                    ? 'bg-white dark:bg-zinc-700 text-emerald-950 dark:text-emerald-200 font-bold shadow-2xs'
+                    : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
                 }`}
               >
                 Період (діапазон років)
@@ -801,8 +799,8 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 }}
                 className={`flex-1 py-1 px-2 rounded-md font-medium transition-all cursor-pointer ${
                   birthDateType === 'about'
-                    ? 'bg-white text-emerald-950 font-bold shadow-2xs'
-                    : 'text-stone-600 hover:text-stone-900'
+                    ? 'bg-white dark:bg-zinc-700 text-emerald-950 dark:text-emerald-200 font-bold shadow-2xs'
+                    : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
                 }`}
               >
                 Близько (бл.)
@@ -812,7 +810,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
             {birthDateType !== 'period' ? (
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-[11px] text-stone-600 mb-0.5">Число (день)</label>
+                  <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">Число (день)</label>
                   <input
                     type="number"
                     min="1"
@@ -820,15 +818,15 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                     value={birthDay}
                     onChange={(e) => setBirthDay(e.target.value)}
                     placeholder="1-31"
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-stone-600 mb-0.5">Місяць</label>
+                  <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">Місяць</label>
                   <select
                     value={birthMonth}
                     onChange={(e) => setBirthMonth(e.target.value)}
-                    className="w-full text-xs px-2 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
+                    className="w-full text-xs px-2 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100"
                   >
                     <option value="">Не обрано</option>
                     {UKRAINIAN_MONTHS.map((m) => (
@@ -839,7 +837,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-stone-600 mb-0.5">
+                  <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">
                     {birthDateType === 'about' ? 'Рік (бл.)' : 'Рік'}
                   </label>
                   <input
@@ -847,7 +845,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                     value={birthYear}
                     onChange={(e) => setBirthYear(e.target.value)}
                     placeholder="напр. 1925"
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 font-mono"
                   />
                 </div>
               </div>
@@ -855,27 +853,27 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
               <div className="space-y-2 animate-in fade-in duration-150">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] text-stone-600 mb-0.5">Рік від (початок періоду)</label>
+                    <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">Рік від (початок періоду)</label>
                     <input
                       type="text"
                       value={birthYear}
                       onChange={(e) => setBirthYear(e.target.value)}
                       placeholder="напр. 1910"
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white font-mono"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 font-mono"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-stone-600 mb-0.5">Рік до (кінець періоду)</label>
+                    <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">Рік до (кінець періоду)</label>
                     <input
                       type="text"
                       value={birthYearEnd}
                       onChange={(e) => setBirthYearEnd(e.target.value)}
                       placeholder="напр. 1912"
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white font-mono"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 font-mono"
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-stone-500 italic">
+                <p className="text-[10px] text-stone-500 dark:text-zinc-400 italic">
                   💡 Вказуйте період, коли точний рік народження в метриках чи переписах зазначено орієнтовно (наприклад: 1910–1912).
                 </p>
               </div>
@@ -883,9 +881,9 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
           </div>
 
           {/* Date of Death */}
-          <div className="p-3 bg-[#faf9f8] rounded-xl border border-stone-200 space-y-2">
+          <div className="p-3 bg-[#faf9f8] dark:bg-zinc-950/60 rounded-xl border border-stone-200 dark:border-zinc-800 space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-stone-800 flex items-center gap-2 cursor-pointer select-none">
+              <label className="text-xs font-semibold text-stone-800 dark:text-zinc-200 flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={isDeceased}
@@ -895,16 +893,16 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 <span>Особа померла (вказати дату смерті)</span>
               </label>
               {isDeceased && (
-                <span className="text-[10px] text-stone-600 font-mono font-medium">
+                <span className="text-[10px] text-stone-600 dark:text-zinc-400 font-mono font-medium">
                   {formatSingleDate(deathDay, deathMonth, deathYear, '.') || 'Дата не вказана'}
                 </span>
               )}
             </div>
 
             {isDeceased && (
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-stone-200 animate-in fade-in-50 duration-150">
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-stone-200 dark:border-zinc-800 animate-in fade-in-50 duration-150">
                 <div>
-                  <label className="block text-[11px] text-stone-600 mb-0.5">Число</label>
+                  <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">Число</label>
                   <input
                     type="number"
                     min="1"
@@ -912,15 +910,15 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                     value={deathDay}
                     onChange={(e) => setDeathDay(e.target.value)}
                     placeholder="1-31"
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-stone-600 mb-0.5">Місяць</label>
+                  <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">Місяць</label>
                   <select
                     value={deathMonth}
                     onChange={(e) => setDeathMonth(e.target.value)}
-                    className="w-full text-xs px-2 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
+                    className="w-full text-xs px-2 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100"
                   >
                     <option value="">Не обрано</option>
                     {UKRAINIAN_MONTHS.map((m) => (
@@ -931,13 +929,13 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-stone-600 mb-0.5">Рік</label>
+                  <label className="block text-[11px] text-stone-600 dark:text-zinc-400 mb-0.5">Рік</label>
                   <input
                     type="number"
                     value={deathYear}
                     onChange={(e) => setDeathYear(e.target.value)}
                     placeholder="напр. 1994"
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 font-mono"
                   />
                 </div>
               </div>
@@ -945,12 +943,12 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
           </div>
 
           {/* Card Background Color Selector */}
-          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-2">
+          <div className="p-3 bg-stone-50 dark:bg-zinc-950/60 rounded-xl border border-stone-200 dark:border-zinc-800 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-800">
+              <span className="text-xs font-semibold text-stone-800 dark:text-zinc-200">
                 Колір фону картки
               </span>
-              <span className="text-[10px] font-mono text-stone-500 uppercase">{cardBgColor}</span>
+              <span className="text-[10px] font-mono text-stone-500 dark:text-zinc-400 uppercase">{cardBgColor}</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {[
@@ -967,10 +965,10 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                   type="button"
                   onClick={() => setCardBgColor(c.hex)}
                   style={{ backgroundColor: c.hex }}
-                  className={`w-7 h-7 rounded-full border shadow-2xs transition-transform hover:scale-110 flex items-center justify-center ${
+                  className={`w-7 h-7 rounded-full border shadow-2xs transition-transform hover:scale-110 flex items-center justify-center cursor-pointer ${
                     cardBgColor.toLowerCase() === c.hex.toLowerCase()
-                      ? 'ring-2 ring-emerald-700 ring-offset-1 border-emerald-800'
-                      : 'border-stone-300'
+                      ? 'ring-2 ring-emerald-700 ring-offset-1 dark:ring-offset-zinc-900 border-emerald-800'
+                      : 'border-stone-300 dark:border-zinc-600'
                   }`}
                   title={c.name}
                 >
@@ -980,114 +978,114 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                 </button>
               ))}
 
-              <label className="flex items-center gap-1.5 ml-2 cursor-pointer text-xs text-stone-600">
+              <label className="flex items-center gap-1.5 ml-2 cursor-pointer text-xs text-stone-600 dark:text-zinc-300">
                 <span>Власний:</span>
                 <input
                   type="color"
                   value={cardBgColor}
                   onChange={(e) => setCardBgColor(e.target.value)}
-                  className="w-7 h-7 rounded border border-stone-300 cursor-pointer p-0.5 bg-white"
+                  className="w-7 h-7 rounded border border-stone-300 dark:border-zinc-700 cursor-pointer p-0.5 bg-white dark:bg-zinc-800"
                 />
               </label>
             </div>
           </div>
 
           {/* Collapsible Additional Details (Places, Profession, Godparents, Notes) */}
-          <div className="border border-stone-200 rounded-xl overflow-hidden">
+          <div className="border border-stone-200 dark:border-zinc-800 rounded-xl overflow-hidden">
             <button
               type="button"
               onClick={() => setShowExtraDetails((prev) => !prev)}
-              className="w-full px-3.5 py-2.5 bg-stone-50/80 hover:bg-stone-100 flex items-center justify-between text-xs font-semibold text-stone-700 transition-colors"
+              className="w-full px-3.5 py-2.5 bg-stone-50/80 dark:bg-zinc-950/60 hover:bg-stone-100 dark:hover:bg-zinc-800 flex items-center justify-between text-xs font-semibold text-stone-700 dark:text-zinc-200 transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-1.5">
-                <MapPin size={13} className="text-emerald-700" />
+                <MapPin size={13} className="text-emerald-700 dark:text-emerald-400" />
                 <span>Додаткові відомості (місця, професія, хресні, нотатки)</span>
               </span>
               {showExtraDetails ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
 
             {showExtraDetails && (
-              <div className="p-3.5 space-y-3 bg-white border-t border-stone-200 animate-in fade-in-50 duration-150">
+              <div className="p-3.5 space-y-3 bg-white dark:bg-zinc-900 border-t border-stone-200 dark:border-zinc-800 animate-in fade-in-50 duration-150">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-medium text-stone-700 mb-0.5">Місце народження</label>
+                    <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">Місце народження</label>
                     <input
                       type="text"
                       value={birthPlace}
                       onChange={(e) => setBirthPlace(e.target.value)}
                       placeholder="напр. с. Великі Дідушичі"
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-stone-700 mb-0.5">Місце проживання</label>
+                    <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">Місце проживання</label>
                     <input
                       type="text"
                       value={residencePlace}
                       onChange={(e) => setResidencePlace(e.target.value)}
                       placeholder="напр. м. Стрий"
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-stone-700 mb-0.5">Професія / Рід занять</label>
+                    <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">Професія / Рід занять</label>
                     <input
                       type="text"
                       value={profession}
                       onChange={(e) => setProfession(e.target.value)}
                       placeholder="напр. Господар, тесляр, вчитель"
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-stone-700 mb-0.5">Хресні / Куми / Повитухи</label>
+                    <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">Хресні / Куми / Повитухи</label>
                     <input
                       type="text"
                       value={godparents}
                       onChange={(e) => setGodparents(e.target.value)}
                       placeholder="напр. Іван Коваль, Маріяна Слив'як"
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                     />
                   </div>
                 </div>
 
                 {isDeceased && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-stone-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-stone-200 dark:border-zinc-800">
                     <div>
-                      <label className="block text-[11px] font-medium text-stone-700 mb-0.5">Місце смерті</label>
+                      <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">Місце смерті</label>
                       <input
                         type="text"
                         value={deathPlace}
                         onChange={(e) => setDeathPlace(e.target.value)}
                         placeholder="Місце смерті"
-                        className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                        className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-stone-700 mb-0.5">Місце поховання</label>
+                      <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">Місце поховання</label>
                       <input
                         type="text"
                         value={burialPlace}
                         onChange={(e) => setBurialPlace(e.target.value)}
                         placeholder="напр. Стрілківське кладовище"
-                        className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                        className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-medium text-stone-700 mb-0.5">Причина смерті</label>
+                      <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">Причина смерті</label>
                       <input
                         type="text"
                         value={deathCause}
                         onChange={(e) => setDeathCause(e.target.value)}
                         placeholder="напр. Природна старість, хвороба..."
-                        className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white"
+                        className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                       />
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-[11px] font-medium text-stone-700 mb-0.5">
+                  <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-0.5">
                     Додаткові нотатки / Спогади
                   </label>
                   <textarea
@@ -1095,7 +1093,7 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Архівні витяги, сімейні перекази..."
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                   />
                 </div>
               </div>
@@ -1103,17 +1101,17 @@ export const AddRelativeModal: React.FC<AddRelativeModalProps> = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-200 dark:border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-medium text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
             >
               Скасувати
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold text-white bg-emerald-800 hover:bg-emerald-900 rounded-lg shadow-xs transition-colors"
+              className="px-5 py-2 text-xs font-semibold text-white bg-emerald-800 hover:bg-emerald-900 rounded-lg shadow-xs transition-colors cursor-pointer"
             >
               Додати до дерева
             </button>

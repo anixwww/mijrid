@@ -9,7 +9,7 @@ import { getPersonCrossCanvasLinks } from '../utils/crossCanvasLinks';
 import { CardFrameOverlay } from './CardFrameOverlay';
 import { getResolvedMediaSrc, handleUploadImageError } from '../utils/mediaSync';
 import { getPrimaryMetricExternalLink } from '../utils/metricLinks';
-import { Pin, Link2, Check, Home, Camera, ExternalLink, ArrowUpRight, StickyNote, UserPlus, MessageSquareDot, ImagePlus, ZoomIn, Image as ImageIcon } from 'lucide-react';
+import { Pin, Link2, Check, Home, Camera, ExternalLink, ArrowUpRight, StickyNote, UserPlus, MessageSquareDot, ImagePlus, ZoomIn, Image as ImageIcon, SmilePlus } from 'lucide-react';
 
 function normalizeHex(hex: string): string | null {
   let c = hex.replace('#', '').trim();
@@ -68,6 +68,7 @@ export interface PersonCardSurfaceProps {
   onOpenClanCoatOfArmsModal?: (clan: ClanInfo) => void;
   onOpenMetricModal?: (person: Person, tab?: 'birth' | 'death') => void;
   onToggleReaction?: (personId: string, emoji: ReactionEmoji) => void;
+  onOpenReactionPicker?: (e: React.MouseEvent) => void;
   onSelectTree?: (treeId: string, targetPersonId?: string, sourcePersonId?: string) => void;
   allPersons?: Record<string, Person>;
   onJumpToBranchLink?: (targetPersonId: string, sourcePersonId: string) => void;
@@ -108,6 +109,7 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
   onOpenClanCoatOfArmsModal,
   onOpenMetricModal,
   onToggleReaction,
+  onOpenReactionPicker,
   onSelectTree,
   allPersons,
   onJumpToBranchLink,
@@ -862,14 +864,14 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
         )
       ) : isSimplified ? (
         <div className="relative z-10 w-full h-full flex flex-col justify-center items-center text-center px-0.5">
-          <p className="text-[10px] font-bold text-stone-900 leading-tight truncate w-full">
+          <p className="text-[10px] font-bold text-stone-900 dark:text-zinc-100 leading-tight truncate w-full">
             {person.lastName || person.firstName}
           </p>
-          <p className="text-[8.5px] font-medium text-stone-600 truncate w-full">
+          <p className="text-[8.5px] font-medium text-stone-600 dark:text-zinc-300 truncate w-full">
             {person.firstName}
           </p>
           {birthDisplay && (
-            <p className="text-[7.5px] tabular-nums text-stone-500 truncate mt-0.5">
+            <p className="text-[7.5px] tabular-nums text-stone-500 dark:text-zinc-400 truncate mt-0.5">
               {birthDisplay}
             </p>
           )}
@@ -881,7 +883,7 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
           <div className="w-full h-[16px] flex items-center justify-between gap-1 shrink-0 px-0.5">
             <div className="flex items-center gap-1 min-w-0">
               {isGroupSelected && !isSelected && groupCheckSide === 'left' ? (
-                <div className="w-4 h-4 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8.5px] font-bold shadow-2xs shrink-0">
+                <div className="w-4 h-4 rounded-full bg-stone-800 dark:bg-emerald-600 text-white flex items-center justify-center text-[8.5px] font-bold shadow-2xs shrink-0">
                   ✓
                 </div>
               ) : onToggleFullyVerified ? (
@@ -893,8 +895,8 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
                   }}
                   className={`w-4 h-4 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-90 shrink-0 ${
                     person.isFullyVerified
-                      ? 'bg-emerald-600/12 text-emerald-700 hover:bg-emerald-600/22 ring-1 ring-emerald-600/25'
-                      : 'bg-amber-600/12 text-amber-800 hover:bg-amber-600/22 ring-1 ring-amber-600/25'
+                      ? 'bg-emerald-600/12 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600/22 dark:hover:bg-emerald-500/30 ring-1 ring-emerald-600/25 dark:ring-emerald-400/40'
+                      : 'bg-amber-600/12 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 hover:bg-amber-600/22 dark:hover:bg-amber-500/30 ring-1 ring-amber-600/25 dark:ring-amber-400/40'
                   }`}
                   title={
                     person.isFullyVerified
@@ -904,9 +906,9 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
                   aria-label={person.isFullyVerified ? 'Статус: Перевірена' : 'Статус: Не перевірена'}
                 >
                   {person.isFullyVerified ? (
-                    <Check size={9.5} strokeWidth={3} className="text-emerald-700 shrink-0" />
+                    <Check size={9.5} strokeWidth={3} className="text-emerald-700 dark:text-emerald-300 shrink-0" />
                   ) : (
-                    <span className="font-bold text-[9.5px] leading-none text-amber-800 select-none">
+                    <span className="font-bold text-[9.5px] leading-none text-amber-800 dark:text-amber-300 select-none">
                       ?
                     </span>
                   )}
@@ -915,8 +917,8 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
                 <div
                   className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${
                     person.isFullyVerified
-                      ? 'bg-emerald-600/12 text-emerald-700 ring-1 ring-emerald-600/25'
-                      : 'bg-amber-600/12 text-amber-800 ring-1 ring-amber-600/25'
+                      ? 'bg-emerald-600/12 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-600/25 dark:ring-emerald-400/40'
+                      : 'bg-amber-600/12 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 ring-1 ring-amber-600/25 dark:ring-amber-400/40'
                   }`}
                   title={
                     person.isFullyVerified
@@ -925,9 +927,9 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
                   }
                 >
                   {person.isFullyVerified ? (
-                    <Check size={9} strokeWidth={2.8} className="text-emerald-700 shrink-0" />
+                    <Check size={9} strokeWidth={2.8} className="text-emerald-700 dark:text-emerald-300 shrink-0" />
                   ) : (
-                    <span className="font-bold text-[9.5px] leading-none text-amber-800 select-none">
+                    <span className="font-bold text-[9.5px] leading-none text-amber-800 dark:text-amber-300 select-none">
                       ?
                     </span>
                   )}
@@ -952,11 +954,28 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
                   <span>{person.photoAlbum.length}</span>
                 </span>
               )}
+
+              {(isHovered || isSelected) && onToggleReaction && onOpenReactionPicker && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenReactionPicker(e);
+                  }}
+                  className="w-4 h-4 rounded-full flex items-center justify-center bg-stone-900/[0.06] dark:bg-white/[0.1] hover:bg-rose-500/15 dark:hover:bg-rose-500/25 text-stone-500 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-300 transition-colors cursor-pointer shrink-0"
+                  title="Додати реакцію"
+                  aria-label="Додати реакцію"
+                >
+                  <SmilePlus size={9.5} />
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
               {isGroupSelected && !isSelected && groupCheckSide === 'right' && (
-                <div className="w-4 h-4 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8.5px] font-bold shadow-2xs shrink-0">
+                <div className="w-4 h-4 rounded-full bg-stone-800 dark:bg-emerald-600 text-white flex items-center justify-center text-[8.5px] font-bold shadow-2xs shrink-0">
                   ✓
                 </div>
               )}
@@ -997,14 +1016,14 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
             </div>
 
             <span
-              className="text-[10px] font-medium text-stone-600 leading-[1.15] truncate w-full text-center block tracking-tight"
+              className="text-[10px] font-medium text-stone-600 dark:text-zinc-400 leading-[1.15] truncate w-full text-center block tracking-tight"
               title={person.firstName}
             >
               {person.firstName || ''}
             </span>
 
             <span
-              className="text-[12px] font-bold text-stone-950 leading-[1.15] truncate w-full text-center block tracking-[-0.015em]"
+              className="text-[12px] font-bold text-stone-950 dark:text-zinc-100 leading-[1.15] truncate w-full text-center block tracking-[-0.015em]"
               title={person.lastName}
             >
               {person.lastName || '?'}
@@ -1012,7 +1031,7 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
 
             {person.gender === 'female' && person.maidenName && (
               <span
-                className="text-[8.5px] italic text-stone-500 leading-[1.1] truncate w-full text-center block"
+                className="text-[8.5px] italic text-stone-500 dark:text-zinc-400 leading-[1.1] truncate w-full text-center block"
                 title={`Дівоче: ${person.maidenName}`}
               >
                 ({person.maidenName})
@@ -1056,10 +1075,10 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
                       e.stopPropagation();
                       if (onOpenMetricModal) onOpenMetricModal(person, 'birth');
                     }}
-                    className={`text-[8px] px-1.5 py-0.5 rounded-md transition-colors inline-flex items-center gap-1 cursor-pointer font-medium ${
+                    className={`text-[8px] px-1.5 py-0.5 rounded-md transition-all inline-flex items-center gap-1 cursor-pointer font-medium ${
                       hasBirthMetric || hasDeathMetric
                         ? 'bg-amber-500/12 dark:bg-amber-400/15 hover:bg-amber-500/20 text-amber-950 dark:text-amber-200'
-                        : 'text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300 hover:bg-stone-900/[0.04] dark:hover:bg-white/[0.06]'
+                        : `${isHovered || isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none'} text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300 hover:bg-stone-900/[0.04] dark:hover:bg-white/[0.06]`
                     }`}
                     title={
                       hasBirthMetric || hasDeathMetric

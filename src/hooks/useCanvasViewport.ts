@@ -15,7 +15,6 @@ import { CARD_HEIGHT, CARD_WIDTH } from '../utils/treeLayout';
 interface UseCanvasViewportOptions {
   treeRef: MutableRefObject<FamilyTreeData>;
   isSidebarOpen: boolean;
-  isLineageFocus: boolean;
   showTimelineRef: MutableRefObject<boolean>;
   setSelectedPersonId: Dispatch<SetStateAction<string | null>>;
   setSelectedPersonIds: Dispatch<SetStateAction<Set<string>>>;
@@ -26,7 +25,6 @@ interface UseCanvasViewportOptions {
 export function useCanvasViewport({
   treeRef,
   isSidebarOpen,
-  isLineageFocus,
   showTimelineRef,
   setSelectedPersonId,
   setSelectedPersonIds,
@@ -179,13 +177,6 @@ export function useCanvasViewport({
     }
   }, []);
 
-  const handleZoom = useCallback((delta: number) => {
-    setViewport((prev) => {
-      const newZoom = Math.min(2.0, Math.max(0.25, prev.zoom + delta));
-      return { ...prev, zoom: Number(newZoom.toFixed(2)) };
-    });
-  }, []);
-
   const centerOnPerson = useCallback(
     (personId: string, openSidebar = false) => {
       const p = treeRef.current.persons[personId];
@@ -297,8 +288,7 @@ export function useCanvasViewport({
         cand.active &&
         !didPanRef.current &&
         !cand.startedOnCard &&
-        !cand.startedOnInteractive &&
-        !isLineageFocus
+        !cand.startedOnInteractive
       ) {
         setSelectedPersonId(null);
         setSelectedPersonIds(new Set());
@@ -306,7 +296,7 @@ export function useCanvasViewport({
       setIsPanning(false);
       flushPanUpdate();
     },
-    [flushPanUpdate, isLineageFocus, setSelectedPersonId, setSelectedPersonIds]
+    [flushPanUpdate, setSelectedPersonId, setSelectedPersonIds]
   );
 
   const handleTouchStart = useCallback(
@@ -490,7 +480,6 @@ export function useCanvasViewport({
     visibleBounds,
     isPanning,
     lastPanEndTimeRef,
-    handleZoom,
     centerOnPerson,
     fitToContent,
     handleMiniMapNavigate,

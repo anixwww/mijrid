@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Users,
   Copy,
@@ -16,15 +16,24 @@ import {
   Ruler,
   ChevronDown,
   GitFork,
+  Link2,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
-import { Person } from '../types/tree';
+import { ConnectionLine, ConnectionMeta, Person } from '../types/tree';
 import { ManualAlignAction } from '../utils/alignmentUtils';
+import {
+  BatchConnectionScope,
+  collectBatchConnectionTargets,
+} from '../utils/treeMutations';
 
 interface BatchSelectionBarProps {
   isAdmin: boolean;
   selectedPersonIds: Set<string>;
   clipboardCount: number;
   persons: Record<string, Person>;
+  connections?: ConnectionLine[];
+  connectionOverrides?: Record<string, ConnectionMeta>;
   onCopySelected: () => void;
   onSelectAll: () => void;
   onDeleteSelected: () => void;
@@ -33,6 +42,7 @@ interface BatchSelectionBarProps {
   onCancelClipboard: () => void;
   onAlignSelected?: (action: ManualAlignAction, gapCm?: number) => void;
   onGroupByGenerations?: () => void;
+  onBatchSetConnectionStatus?: (connectionIds: string[], verified: boolean) => void;
 }
 
 const CM_GAP_PRESETS = [0.5, 1.0, 1.2, 2.0];
@@ -41,6 +51,9 @@ export const BatchSelectionBar: React.FC<BatchSelectionBarProps> = ({
   isAdmin,
   selectedPersonIds,
   clipboardCount,
+  persons,
+  connections = [],
+  connectionOverrides,
   onCopySelected,
   onSelectAll,
   onDeleteSelected,
@@ -49,27 +62,69 @@ export const BatchSelectionBar: React.FC<BatchSelectionBarProps> = ({
   onCancelClipboard,
   onAlignSelected,
   onGroupByGenerations,
+  onBatchSetConnectionStatus,
 }) => {
   const [isAlignMenuOpen, setIsAlignMenuOpen] = useState(false);
+  const [isConnectionsMenuOpen, setIsConnectionsMenuOpen] = useState(false);
+  const [connectionScope, setConnectionScope] = useState<BatchConnectionScope>('between');
   const [customGapCm, setCustomGapCm] = useState('1.2');
   const alignWrapperRef = useRef<HTMLDivElement>(null);
+
+  const betweenTargets = useMemo(
+    () =>
+      collectBatchConnectionTargets(
+        persons,
+        connectionOverrides,
+        connections,
+        selectedPersonIds,
+        'between'
+      ),
+    [persons, connectionOverrides, connections, selectedPersonIds]
+  );
+
+  const touchingTargets = useMemo(
+    () =>
+      collectBatchConnectionTargets(
+        persons,
+        connectionOverrides,
+        connections,
+        selectedPersonIds,
+        'touching'
+      ),
+    [persons, connectionOverrides, connections, selectedPersonIds]
+  );
 
   useEffect(() => {
     if (selectedPersonIds.size < 2) {
       setIsAlignMenuOpen(false);
+      setIsConnectionsMenuOpen(false);
     }
   }, [selectedPersonIds.size]);
 
   useEffect(() => {
-    if (!isAlignMenuOpen) return;
+    if (!isAlignMenuOpen && !isConnectionsMenuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (alignWrapperRef.current && !alignWrapperRef.current.contains(e.target as Node)) {
         setIsAlignMenuOpen(false);
+        setIsConnectionsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsAlignMenuOpen(false);
+        setIsConnectionsMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isAlignMenuOpen]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAlignMenuOpen, isConnectionsMenuOpen]);
+
+  const activeConnectionTargets =
+    connectionScope === 'between' ? betweenTargets : touchingTargets;
 
   if (!isAdmin || (selectedPersonIds.size <= 1 && clipboardCount === 0)) {
     return null;
@@ -250,6 +305,107 @@ export const BatchSelectionBar: React.FC<BatchSelectionBarProps> = ({
         </div>
       )}
 
+      {/* Batch Connection Status Popover */}
+      {isConnectionsMenuOpen && selectedPersonIds.size >= 2 && onBatchSetConnectionStatus && (
+        <div className="mb-2.5 mx-auto w-[312px] sm:w-[356px] max-w-[calc(100vw-24px)] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-stone-200/90 dark:border-zinc-700/80 rounded-2xl shadow-2xl p-3 space-y-3 text-xs animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-stone-100 dark:border-zinc-800 pb-2">
+            <div className="flex items-center gap-1.5 font-bold text-stone-900 dark:text-zinc-100">
+              <Link2 size={14} className="text-emerald-700 dark:text-emerald-400" />
+              <span>Статус зв'язків</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsConnectionsMenuOpen(false)}
+              className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-center"
+              aria-label="Закрити"
+            >
+              <CloseIcon size={15} />
+            </button>
+          </div>
+
+          {/* Scope selector */}
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-stone-100 dark:bg-zinc-800/90">
+            <button
+              type="button"
+              onClick={() => setConnectionScope('between')}
+              className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 ${
+                connectionScope === 'between'
+                  ? 'bg-white dark:bg-zinc-900 text-stone-950 dark:text-zinc-100 shadow-2xs'
+                  : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              <span>Між обраними</span>
+              <span className="font-mono text-[10px] opacity-75">({betweenTargets.connectionIds.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setConnectionScope('touching')}
+              className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 ${
+                connectionScope === 'touching'
+                  ? 'bg-white dark:bg-zinc-900 text-stone-950 dark:text-zinc-100 shadow-2xs'
+                  : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              <span>Усі дотичні</span>
+              <span className="font-mono text-[10px] opacity-75">({touchingTargets.connectionIds.length})</span>
+            </button>
+          </div>
+
+          {activeConnectionTargets.connectionIds.length === 0 ? (
+            <p className="text-[11px] text-stone-500 dark:text-zinc-400 leading-snug px-1 py-1">
+              {touchingTargets.connectionIds.length > 0
+                ? 'Між виділеними картками немає прямих зв’язків. Оберіть «Усі дотичні», щоб змінити зв’язки із сусідніми родичами.'
+                : 'У виділених карток ще немає родинних зв’язків.'}
+            </p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-stone-50 dark:bg-zinc-800/60 border border-stone-200/70 dark:border-zinc-700/60 text-[11px]">
+                <span className="text-stone-600 dark:text-zinc-300 font-medium">
+                  У вибірці: <strong className="text-stone-900 dark:text-zinc-100 font-mono">{activeConnectionTargets.connectionIds.length}</strong>
+                </span>
+                <div className="flex items-center gap-2 font-mono text-[10.5px]">
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                    ✓ {activeConnectionTargets.verifiedCount}
+                  </span>
+                  <span className="text-stone-300 dark:text-zinc-600">/</span>
+                  <span className="text-amber-700 dark:text-amber-400 font-semibold">
+                    ? {activeConnectionTargets.unverifiedCount}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onBatchSetConnectionStatus(activeConnectionTargets.connectionIds, true);
+                    setIsConnectionsMenuOpen(false);
+                  }}
+                  className="h-10 sm:h-9 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+                  title="Зробити лінії суцільними та підтвердженими"
+                >
+                  <CheckCircle2 size={15} className="shrink-0" />
+                  <span>Перевірені</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onBatchSetConnectionStatus(activeConnectionTargets.connectionIds, false);
+                    setIsConnectionsMenuOpen(false);
+                  }}
+                  className="h-10 sm:h-9 px-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+                  title="Зробити лінії пунктирними (потребують перевірки)"
+                >
+                  <AlertCircle size={15} className="shrink-0" />
+                  <span>Неперевірені</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Main Floating Bar */}
       <div className="bg-stone-900/95 text-white border border-stone-700/80 backdrop-blur-xl px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-[18px] sm:rounded-2xl shadow-2xl flex items-center gap-1.5 sm:gap-2 text-xs animate-in slide-in-from-bottom duration-150 overflow-x-auto overscroll-x-contain touch-pan-x no-scrollbar">
         {selectedPersonIds.size > 0 && (
@@ -264,7 +420,10 @@ export const BatchSelectionBar: React.FC<BatchSelectionBarProps> = ({
             {selectedPersonIds.size >= 2 && onAlignSelected && (
               <button
                 type="button"
-                onClick={() => setIsAlignMenuOpen((prev) => !prev)}
+                onClick={() => {
+                  setIsConnectionsMenuOpen(false);
+                  setIsAlignMenuOpen((prev) => !prev);
+                }}
                 className={`h-10 sm:h-9 px-3 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap ${
                   isAlignMenuOpen
                     ? 'bg-sky-600 text-white'
@@ -290,6 +449,41 @@ export const BatchSelectionBar: React.FC<BatchSelectionBarProps> = ({
               >
                 <GitFork size={15} />
                 <span>По поколіннях</span>
+              </button>
+            )}
+
+            {selectedPersonIds.size >= 2 && onBatchSetConnectionStatus && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAlignMenuOpen(false);
+                  setIsConnectionsMenuOpen((prev) => {
+                    const next = !prev;
+                    if (
+                      next &&
+                      betweenTargets.connectionIds.length === 0 &&
+                      touchingTargets.connectionIds.length > 0
+                    ) {
+                      setConnectionScope('touching');
+                    } else if (next && betweenTargets.connectionIds.length > 0) {
+                      setConnectionScope('between');
+                    }
+                    return next;
+                  });
+                }}
+                className={`h-10 sm:h-9 px-3 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap ${
+                  isConnectionsMenuOpen
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-stone-800 hover:bg-stone-700 text-emerald-300'
+                }`}
+                title="Групова зміна статусу зв'язків (перевірені / неперевірені)"
+              >
+                <Link2 size={15} />
+                <span>Зв'язки</span>
+                <ChevronDown
+                  size={13}
+                  className={`transition-transform duration-150 ${isConnectionsMenuOpen ? 'rotate-180' : ''}`}
+                />
               </button>
             )}
 

@@ -50,7 +50,6 @@ import { downloadTreeSvgFile, downloadTreePngFile, PreparedPrintTree } from './u
 import {
   buildClanMap,
   getClanName,
-  getPatrilinealLineageIds,
   swapSpousePositions,
   groupPersonsIntoRenderUnits,
   ClanInfo,
@@ -67,6 +66,7 @@ import {
   applyBatchBranchLinkStyle,
   applyRemoveBranchLink,
   applyToggleRelationVerification,
+  applyBatchConnectionsVerification,
   applyDeletePerson,
   applySavePerson,
   CreateGhostCardInput,
@@ -133,7 +133,6 @@ const ImportJsonModal = lazy(() => import('./components/ImportJsonModal').then((
 const UserIdentityModal = lazy(() => import('./components/UserIdentityModal').then((m) => ({ default: m.UserIdentityModal })));
 const GuestCustomizeModal = lazy(() => import('./components/GuestCustomizeModal').then((m) => ({ default: m.GuestCustomizeModal })));
 const ClanCoatOfArmsModal = lazy(() => import('./components/ClanCoatOfArmsModal').then((m) => ({ default: m.ClanCoatOfArmsModal })));
-const MyTreesModal = lazy(() => import('./components/MyTreesModal').then((m) => ({ default: m.MyTreesModal })));
 const MetricModal = lazy(() => import('./components/MetricModal').then((m) => ({ default: m.MetricModal })));
 const DatesCalendarSidebar = lazy(() => import('./components/DatesCalendarSidebar').then((m) => ({ default: m.DatesCalendarSidebar })));
 const ReactionsModal = lazy(() => import('./components/ReactionsModal').then((m) => ({ default: m.ReactionsModal })));
@@ -143,7 +142,7 @@ const DocumentLightboxModal = lazy(() => import('./components/DocumentLightboxMo
 const GuestShareModal = lazy(() => import('./components/GuestShareModal').then((m) => ({ default: m.GuestShareModal })));
 import { AlignmentGuidesOverlay } from './components/AlignmentGuidesOverlay';
 import { useAuth } from './context/AuthContext';
-import { Cake, Flame, X as CloseIcon, FolderTree, Upload, ArrowUpRight, ArrowLeft, Settings, StickyNote, Image as ImageIcon, ChevronDown, ZoomIn, Link2, LogOut } from 'lucide-react';
+import { Cake, Flame, X as CloseIcon, FolderTree, Upload, ArrowLeft, StickyNote, Image as ImageIcon, ChevronDown, ZoomIn, Link2, LogOut, Filter } from 'lucide-react';
 
 interface ConnectingMode {
   sourceId: string;
@@ -217,7 +216,6 @@ export default function App() {
   });
 
   // User Identity State
-  const [isMyTreesModalOpen, setIsMyTreesModalOpen] = useState<boolean>(false);
   const [userPersonId, setUserPersonId] = useState<string | null>(() => {
     try {
       return localStorage.getItem('family_tree_user_person_id');
@@ -266,7 +264,6 @@ export default function App() {
     handleRestoreFromCloud,
     handleCreateNewTree,
     handleSelectTree,
-    handleCloneTree,
     handleRenameTree,
     handleDeleteTree,
     handleImportTreeFromJson,
@@ -305,8 +302,6 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [highlightedHouseNumber, setHighlightedHouseNumber] = useState<string | null>(null);
-  const [isLineageFocus] = useState<boolean>(false);
-  const [focusPersonId] = useState<string | null>(null);
 
   // Freeze / Lock Layout Protection State
   const [isLayoutLocked, setIsLayoutLocked] = useState<boolean>(() => {
@@ -348,7 +343,6 @@ export default function App() {
     visibleBounds,
     isPanning,
     lastPanEndTimeRef,
-    handleZoom,
     centerOnPerson,
     fitToContent,
     handleMiniMapNavigate,
@@ -361,7 +355,6 @@ export default function App() {
   } = useCanvasViewport({
     treeRef,
     isSidebarOpen,
-    isLineageFocus,
     showTimelineRef,
     setSelectedPersonId,
     setSelectedPersonIds,
@@ -436,7 +429,6 @@ export default function App() {
   const [draggedJsonFile, setDraggedJsonFile] = useState<File | null>(null);
   const [isDraggingFileOnCanvas, setIsDraggingFileOnCanvas] = useState(false);
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(null);
-  const [, setConnectionClickCoords] = useState<{ x: number; y: number } | null>(null);
   const [connectingPerson, setConnectingPerson] = useState<Person | null>(null);
   const [connectModalInitialMode, setConnectModalInitialMode] = useState<'relation' | 'branch-link' | 'godparent'>('relation');
   const [preselectedTargetId, setPreselectedTargetId] = useState<string | null>(null);
@@ -481,13 +473,6 @@ export default function App() {
   }, []);
 
   const [hoveredBranchLink, setHoveredBranchLink] = useState<{ sourceId: string; targetId: string } | null>(null);
-  const [showAllBranchArrows, setShowAllBranchArrows] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('rodovid_show_all_branch_arrows') !== 'false';
-    } catch {
-      return true;
-    }
-  });
   const [branchJumpReturn, setBranchJumpReturn] = useState<{
     fromTreeId?: string;
     fromTreeTitle?: string;
@@ -582,15 +567,6 @@ export default function App() {
     ? `${userPerson.firstName || ''} ${userPerson.lastName || ''}`.trim()
     : (customUserName ? `${customUserName.firstName || ''} ${customUserName.lastName || ''}`.trim() : null);
 
-  const [notifications, setNotifications] = useState<{
-    id: string;
-    type: 'new_card' | 'new_note';
-    personId?: string;
-    personName: string;
-    text: string;
-    createdAt: string;
-  }[]>([]);
-
   // Calculate resolved display name: user customization takes precedence over Google account name
   const getResolvedDisplayName = useCallback(() => {
     if (customUserName) {
@@ -608,18 +584,6 @@ export default function App() {
     if (currentUser?.email) return currentUser.email.split('@')[0];
     return 'Гість';
   }, [customUserName, userProfile, currentUser]);
-
-
-
-  const handleSelectNotificationPerson = (personId: string) => {
-    centerOnPerson(personId);
-    setSelectedPersonId(personId);
-    setIsSidebarOpen(true);
-  };
-
-  const handleClearNotifications = () => {
-    setNotifications([]);
-  };
 
   // Guest / User Reactions State & Helper
   const [guestUserId] = useState<string>(() => {
@@ -864,25 +828,12 @@ export default function App() {
   // Selected person object
   const selectedPerson = selectedPersonId ? tree.persons[selectedPersonId] || null : null;
 
-  // Active person for patrilineal male line focus (persists even if empty canvas is clicked)
-  const activeFocusPersonId = isLineageFocus
-    ? (focusPersonId || selectedPersonId || Object.keys(tree.persons)[0] || null)
-    : null;
-
   // Compute clans map and list (settled outside active drag for 60fps drag)
   const clanMap = useMemo(
     () => buildClanMap(settledTree.persons, settledTree.clanCoatOfArms),
     [settledTree.persons, settledTree.clanCoatOfArms]
   );
   const clanList = useMemo(() => Array.from(clanMap.values()), [clanMap]);
-
-  // Compute active lineage IDs (strictly along male patrilineal line)
-  const lineageInfo = useMemo(() => {
-    if (!activeFocusPersonId || !settledTree.persons[activeFocusPersonId]) {
-      return { ancestorIds: new Set<string>(), descendantIds: new Set<string>(), allLineageIds: new Set<string>() };
-    }
-    return getPatrilinealLineageIds(activeFocusPersonId, settledTree.persons);
-  }, [activeFocusPersonId, settledTree.persons]);
 
   // All persons are visible without branch collapsing
   const visiblePersons = useMemo(() => {
@@ -1708,7 +1659,6 @@ export default function App() {
       editingConnectionId ||
       connectingPerson ||
       isShortcutsModalOpen ||
-      isMyTreesModalOpen ||
       isUserIdentityModalOpen ||
       metricModalTarget ||
       quickDraftModalState ||
@@ -1824,9 +1774,8 @@ export default function App() {
     setIsSidebarOpen(true);
   }, []);
 
-  const handleOpenLineConnection = useCallback((connId: string, coords: { x: number; y: number }) => {
+  const handleOpenLineConnection = useCallback((connId: string) => {
     setEditingConnectionId(connId);
-    setConnectionClickCoords(coords);
   }, []);
 
   const handleEditBranchLink = useCallback((sourceId: string, linkId: string) => {
@@ -2175,12 +2124,6 @@ export default function App() {
       if (!connectingPerson) return;
       const sourceId = connectingPerson.id;
       setTree((prev) => applyAddBranchLink(prev, sourceId, targetId, options));
-      setShowAllBranchArrows(true);
-      try {
-        localStorage.setItem('rodovid_show_all_branch_arrows', 'true');
-      } catch {
-        // ignore
-      }
       const targetP = tree.persons[targetId];
       const targetName = targetP ? `${targetP.firstName} ${targetP.lastName}`.trim() : 'картки';
       const isGodparent = options.linkKind === 'godparent';
@@ -2210,18 +2153,6 @@ export default function App() {
     },
     [setTree]
   );
-
-  const handleToggleShowAllBranchArrows = useCallback(() => {
-    setShowAllBranchArrows((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('rodovid_show_all_branch_arrows', String(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  }, []);
 
   const totalBranchLinksCount = useMemo(() => {
     let count = 0;
@@ -2416,6 +2347,28 @@ export default function App() {
     setTree((prev) => applyToggleRelationVerification(prev, personId, relativeId));
   };
 
+  // Batch update verification status for selected connections
+  const handleBatchSetConnectionStatus = useCallback(
+    (connectionIds: string[], verified: boolean) => {
+      if (connectionIds.length === 0) return;
+      setTree((prev) => applyBatchConnectionsVerification(prev, connectionIds, verified));
+      logTree(
+        `Пакетна зміна статусу зв’язків (${connectionIds.length}): ${
+          verified ? 'Перевірені' : 'Неперевірені'
+        }`,
+        { count: connectionIds.length, verified }
+      );
+      showToast({
+        type: 'success',
+        title: verified ? 'Зв’язки позначено перевіреними' : 'Зв’язки позначено неперевіреними',
+        message: `Оновлено ${connectionIds.length} зв’язків (${
+          verified ? 'суцільні лінії' : 'пунктирні лінії'
+        }).`,
+      });
+    },
+    [setTree, showToast]
+  );
+
 
   // Toggle chronological pin status for a person
   const handleToggleChronologicalPin = useCallback(
@@ -2463,16 +2416,6 @@ export default function App() {
   // Save edited person
   const handleSavePerson = (updated: Person) => {
     const prevPerson = treeRef.current.persons[updated.id];
-    const prevCount = prevPerson?.branchLinks?.length ?? 0;
-    const nextCount = updated.branchLinks?.length ?? 0;
-    if (nextCount > prevCount) {
-      setShowAllBranchArrows(true);
-      try {
-        localStorage.setItem('rodovid_show_all_branch_arrows', 'true');
-      } catch {
-        // ignore
-      }
-    }
     setTree((prev) => applySavePerson(prev, updated, startYear));
     logTree(`Збережено зміни в картці «${[updated.firstName, updated.lastName].filter(Boolean).join(' ')}»`, {
       personId: updated.id,
@@ -2623,7 +2566,7 @@ export default function App() {
       <TopNavbar
         isAdmin={isAdmin}
         onToggleAdminRole={handleToggleAdminRole}
-        onOpenMyTrees={() => setIsMyTreesModalOpen(true)}
+        onOpenVersionModal={isAdmin ? () => setIsVersionModalOpen(true) : undefined}
         currentTreeTitle={tree.title || (isMainTree ? 'Головне дерево' : 'Родове полотно')}
         currentTreeId={tree.id || 'my-family-tree'}
         treeVersion={tree.version || 'v0.1'}
@@ -2658,9 +2601,6 @@ export default function App() {
             setIsSidebarOpen(false);
           }
         }}
-        notifications={notifications}
-        onSelectNotificationPerson={handleSelectNotificationPerson}
-        onClearNotifications={handleClearNotifications}
         onOpenShortcutsModal={() => setIsShortcutsModalOpen(true)}
         userPersonName={isStrictReadOnlyGuest ? null : userPersonName}
         onOpenUserIdentity={isStrictReadOnlyGuest ? undefined : () => setIsUserIdentityModalOpen(true)}
@@ -2816,7 +2756,6 @@ export default function App() {
           <TreeConnections
             connections={connections}
             onLineClick={isAdmin ? handleOpenLineConnection : undefined}
-            activeLineageIds={isLineageFocus && activeFocusPersonId ? lineageInfo.allLineageIds : undefined}
             hoveredPersonId={hoveredPersonId}
             selectedPersonId={selectedPersonId}
             visibleBounds={visibleBounds}
@@ -2829,7 +2768,7 @@ export default function App() {
             connectionOverrides={tree.connectionOverrides}
             renderUnits={renderUnits}
             visibleBounds={visibleBounds}
-            showAll={showAllBranchArrows}
+            showAll={true}
             hoveredPersonId={hoveredPersonId}
             selectedPersonId={selectedPersonId}
             hoveredBranchLink={hoveredBranchLink}
@@ -2856,24 +2795,16 @@ export default function App() {
             const isClanDimmed1 = selectedClanFilter !== null && clan1 !== selectedClanFilter;
             const isClanDimmed2 = selectedClanFilter !== null && clan2 !== selectedClanFilter;
 
-            const isLineageDimmed1 = Boolean(isLineageFocus && activeFocusPersonId && !lineageInfo.allLineageIds.has(p1.id));
-            const isLineageDimmed2 = Boolean(isLineageFocus && activeFocusPersonId && !lineageInfo.allLineageIds.has(p2.id));
-
             const isDimmed1 = Boolean(
               isHouseDimmed1 ||
                 isClanDimmed1 ||
-                isLineageDimmed1 ||
                 (isAdmin && blindSpotFilter !== 'off' && !blindSpotHighlightedIds.has(p1.id))
             );
             const isDimmed2 = Boolean(
               isHouseDimmed2 ||
                 isClanDimmed2 ||
-                isLineageDimmed2 ||
                 (isAdmin && blindSpotFilter !== 'off' && !blindSpotHighlightedIds.has(p2.id))
             );
-
-            const isLineageActive1 = Boolean(isLineageFocus && activeFocusPersonId && lineageInfo.allLineageIds.has(p1.id));
-            const isLineageActive2 = Boolean(isLineageFocus && activeFocusPersonId && lineageInfo.allLineageIds.has(p2.id));
 
             const mKey = [p1.id, p2.id].sort().join('::');
             const marriageMeta = tree.connectionOverrides?.[`marriage:${mKey}`];
@@ -2895,8 +2826,6 @@ export default function App() {
                 isConnectingTarget2={connectingMode?.targetId === p2.id}
                 isDimmed1={isDimmed1}
                 isDimmed2={isDimmed2}
-                isLineageActive1={isLineageActive1}
-                isLineageActive2={isLineageActive2}
                 clanInfo1={clanInfo1}
                 clanInfo2={clanInfo2}
                 clanMap={clanRecord}
@@ -2952,16 +2881,11 @@ export default function App() {
             // Clan filter dimming
             const isClanDimmed = selectedClanFilter !== null && clan !== selectedClanFilter;
 
-            // Lineage focus dimming
-            const isLineageDimmed = isLineageFocus && activeFocusPersonId && !lineageInfo.allLineageIds.has(person.id);
-
             const isDimmed = Boolean(
               isHouseDimmed ||
                 isClanDimmed ||
-                isLineageDimmed ||
                 (isAdmin && blindSpotFilter !== 'off' && !blindSpotHighlightedIds.has(person.id))
             );
-            const isLineageActive = Boolean(isLineageFocus && activeFocusPersonId && lineageInfo.allLineageIds.has(person.id));
 
             return (
               <FamilyCard
@@ -2972,7 +2896,6 @@ export default function App() {
                 isConnectingSource={connectingMode?.sourceId === person.id}
                 isConnectingTarget={connectingMode?.targetId === person.id}
                 isDimmed={isDimmed}
-                isLineageActive={isLineageActive}
                 clanInfo={clanInfo}
                 isSimplified={viewport.zoom < 0.48}
                 onSelect={handleSelectPerson}
@@ -3210,27 +3133,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Multi-Selection Floating Info Pill */}
-        {isAdmin && selectedPersonIds.size > 1 && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-            <div className="bg-stone-900/95 text-stone-100 text-xs font-medium px-4 py-2 rounded-full shadow-xl border border-stone-700 flex items-center gap-3 backdrop-blur-md">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-400/40" />
-              <span>
-                Виділено: <strong className="text-white font-bold">{selectedPersonIds.size}</strong> карток (переміщуються разом)
-              </span>
-              <button
-                onClick={() => setSelectedPersonIds(new Set())}
-                className="ml-1 text-[11px] text-amber-300 hover:text-amber-200 underline font-bold cursor-pointer"
-                title="Натисніть Esc або сюди для скасування виділення"
-              >
-                Зняти виділення (Esc)
-              </button>
-            </div>
-          </div>
-        )}
-
-
-
         {/* Cross-Branch Links, Ghost Cards & Return Breadcrumb (Top-Left) */}
         {(() => {
           const hasCrossTreeReturn = Boolean(
@@ -3244,10 +3146,10 @@ export default function App() {
           const canShowReturnBreadcrumb = hasCrossTreeReturn || hasSameTreeReturn;
 
           if (
-            totalBranchLinksCount === 0 &&
             ghostPersons.length === 0 &&
             blankScreenshotPersons.length === 0 &&
-            !canShowReturnBreadcrumb
+            !canShowReturnBreadcrumb &&
+            selectedClanFilter === null
           ) {
             return null;
           }
@@ -3264,7 +3166,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setOpenHudTray((prev) => (prev === 'ghost' ? null : 'ghost'))}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-md backdrop-blur-md transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border shadow-md backdrop-blur-md transition-all cursor-pointer ${
                       openHudTray === 'ghost'
                         ? 'bg-amber-500 text-amber-950 border-amber-600 dark:bg-amber-400 dark:text-zinc-950 dark:border-amber-300'
                         : 'border-amber-300 dark:border-amber-700/80 bg-amber-50/95 dark:bg-zinc-900/95 text-amber-950 dark:text-amber-200 hover:border-amber-400 hover:bg-amber-100 dark:hover:bg-zinc-800'
@@ -3367,7 +3269,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setOpenHudTray((prev) => (prev === 'photo' ? null : 'photo'))}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-md backdrop-blur-md transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border shadow-md backdrop-blur-md transition-all cursor-pointer ${
                       openHudTray === 'photo'
                         ? 'bg-sky-700 text-white border-sky-800'
                         : 'border-sky-300 dark:border-sky-700/80 bg-white/95 dark:bg-zinc-900/95 text-sky-900 dark:text-sky-200 hover:border-sky-500 hover:bg-sky-50/70 dark:hover:bg-zinc-800'
@@ -3481,41 +3383,23 @@ export default function App() {
                 </div>
               )}
 
-              {totalBranchLinksCount > 0 && (
-                <div className="pointer-events-auto inline-flex items-center gap-1">
+              {selectedClanFilter !== null && (
+                <div className="pointer-events-auto inline-flex items-center gap-1.5 bg-amber-50/95 dark:bg-zinc-900/95 text-amber-950 dark:text-amber-200 text-xs font-semibold pl-2.5 pr-1.5 py-1.5 rounded-xl shadow-md border border-amber-300/90 dark:border-amber-700/80 backdrop-blur-md animate-in fade-in slide-in-from-left-1 duration-150">
+                  <Filter size={12.5} className="text-amber-700 dark:text-amber-400 shrink-0" />
+                  <span className="max-w-[200px] truncate">Рід: {selectedClanFilter}</span>
                   <button
                     type="button"
-                    onClick={handleToggleShowAllBranchArrows}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-md backdrop-blur-md transition-all cursor-pointer ${
-                      showAllBranchArrows
-                        ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700'
-                        : 'bg-white/95 dark:bg-zinc-900/95 text-stone-700 dark:text-zinc-200 border-stone-200/90 dark:border-zinc-700 hover:border-indigo-400'
-                    }`}
-                    title={
-                      showAllBranchArrows
-                        ? 'Сховати фонові стрілки зв’язків на полотні (залишаться при наведенні)'
-                        : 'Показати всі стрілки зв’язків на полотні'
-                    }
+                    onClick={() => setSelectedClanFilter(null)}
+                    className="p-0.5 rounded-lg text-amber-700 hover:text-amber-950 hover:bg-amber-200/70 dark:text-amber-300 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    title="Скинути фільтр роду"
                   >
-                    <ArrowUpRight size={13.5} className={showAllBranchArrows ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'} />
-                    <span>Стрілки на полотні ({totalBranchLinksCount})</span>
+                    <CloseIcon size={12} />
                   </button>
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => setEditingBranchLinkTarget('batch')}
-                      className="w-7 h-7 rounded-full bg-white/95 dark:bg-zinc-900/95 text-stone-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-stone-200/90 dark:border-zinc-700 hover:border-indigo-400 shadow-md backdrop-blur-md flex items-center justify-center transition-all cursor-pointer"
-                      title="Налаштувати стиль стрілок (товщина, колір, пряма/вигнута)"
-                      aria-label="Налаштування стилю стрілок"
-                    >
-                      <Settings size={13.5} />
-                    </button>
-                  )}
                 </div>
               )}
 
               {canShowReturnBreadcrumb && branchJumpReturn && (
-                <div className="pointer-events-auto inline-flex items-center gap-1 bg-emerald-950/95 text-white text-xs font-semibold pl-2.5 pr-1.5 py-1 rounded-full shadow-lg border border-emerald-500/50 animate-in fade-in slide-in-from-left-2 duration-150">
+                <div className="pointer-events-auto inline-flex items-center gap-1 bg-emerald-950/95 text-white text-xs font-semibold pl-2.5 pr-1.5 py-1.5 rounded-xl shadow-lg border border-emerald-500/50 animate-in fade-in slide-in-from-left-2 duration-150">
                   <button
                     type="button"
                     onClick={() => {
@@ -3543,7 +3427,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setBranchJumpReturn(null)}
-                    className="p-0.5 rounded-full text-emerald-300 hover:text-white hover:bg-emerald-800/70 transition-colors cursor-pointer"
+                    className="p-0.5 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/70 transition-colors cursor-pointer"
                     title="Сховати"
                   >
                     <CloseIcon size={12} />
@@ -3571,7 +3455,7 @@ export default function App() {
               onClick={() => {
                 centerOnPerson(nearestCalendarEvent.person.id);
               }}
-              className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-stone-200/90 dark:border-zinc-800 shadow-lg p-2.5 sm:p-3 flex items-center gap-3 cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-xl transition-all group max-w-[280px] sm:max-w-[320px]"
+              className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-xl border border-stone-200/90 dark:border-zinc-800 shadow-lg p-2.5 sm:p-3 flex items-center gap-3 cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-xl transition-all group max-w-[280px] sm:max-w-[320px]"
               title="Натисніть для переходу до особи на дереві"
             >
               <div
@@ -3658,14 +3542,11 @@ export default function App() {
           onToggleGrid={handleToggleCanvasGrid}
           persons={tree.persons}
           onSelectAndCenter={centerOnPerson}
-          onOpenMyTrees={isCanvasLockedGuest ? undefined : () => setIsMyTreesModalOpen(true)}
           onUndo={handleUndo}
           canUndo={historyStack.length > 0}
           selectedClanFilter={selectedClanFilter}
           onSelectClanFilter={setSelectedClanFilter}
           clanList={clanList}
-          selectedCount={selectedPersonIds.size}
-          onClearSelection={() => setSelectedPersonIds(new Set())}
           hasUserPerson={!!userPersonId}
           isLayoutLocked={isLayoutLocked}
           onToggleLockLayout={handleToggleLockLayout}
@@ -3673,6 +3554,7 @@ export default function App() {
           onToggleSnap={handleToggleSnap}
           currentTreeId={tree.id}
           currentTreeTitle={tree.title}
+          crossCanvasTrees={crossCanvasTrees}
           onSelectTreeAndPerson={(treeId, personId) => {
             if (isCanvasLockedGuest && !isSameCanvasId(treeId, tree.id)) {
               showToast({
@@ -3688,8 +3570,6 @@ export default function App() {
           blindSpotFilter={isAdmin ? blindSpotFilter : 'off'}
           onChangeBlindSpotFilter={isAdmin ? setBlindSpotFilter : undefined}
           onOpenArchiveRegistry={isAdmin ? () => setOverviewModalTab('archive') : undefined}
-          isChronologyOpen={isAdmin && overviewModalTab === 'chronology'}
-          onOpenChronology={isAdmin ? () => setOverviewModalTab('chronology') : undefined}
         />
 
         {/* Blocked / Invalid / Disabled / Expired Guest Share Link Overlay */}
@@ -3737,7 +3617,6 @@ export default function App() {
         onSetUserPersonId={isStrictReadOnlyGuest ? undefined : (id) => handleSaveUserIdentity(id)}
         onClose={() => setIsSidebarOpen(false)}
         onEdit={(p) => setEditingPerson(p)}
-        onDelete={handleDeletePerson}
         onAddRelative={(target, relationType) => {
           setAddingRelativeTarget({ target, initialType: relationType });
         }}
@@ -3841,6 +3720,7 @@ export default function App() {
             person={editingPerson}
             allPersons={tree.persons}
             currentTreeId={tree.id}
+            crossCanvasTrees={crossCanvasTrees}
             isOpen={!!editingPerson}
             connectionOverrides={tree.connectionOverrides}
             onDelete={handleDeletePerson}
@@ -3899,10 +3779,7 @@ export default function App() {
               return undefined;
             })()}
             isOpen={!!editingConnectionId}
-            onClose={() => {
-              setEditingConnectionId(null);
-              setConnectionClickCoords(null);
-            }}
+            onClose={() => setEditingConnectionId(null)}
             onSave={handleSaveConnectionMeta}
           />
         )}
@@ -4006,6 +3883,7 @@ export default function App() {
             allPersons={tree.persons}
             currentTreeId={tree.id}
             currentTreeTitle={tree.title}
+            crossCanvasTrees={crossCanvasTrees}
             isOpen={!!connectingPerson}
             initialTargetId={preselectedTargetId || undefined}
             initialMode={connectModalInitialMode}
@@ -4040,11 +3918,6 @@ export default function App() {
             onExportPng={handleExportPng}
             onExportSvg={handleExportSvg}
             onOpenPrintPreview={() => setIsPrintModalOpen(true)}
-            isAdmin={isAdmin}
-            onOpenImport={() => {
-              setDraggedJsonFile(null);
-              setIsImportModalOpen(true);
-            }}
           />
         )}
 
@@ -4215,30 +4088,6 @@ export default function App() {
           />
         )}
 
-        {/* 11. My Canvases & Branches Modal */}
-        {isMyTreesModalOpen && (
-          <MyTreesModal
-            isOpen={isMyTreesModalOpen}
-            onClose={() => setIsMyTreesModalOpen(false)}
-            currentTreeId={tree.id || 'default-tree'}
-            currentTree={tree}
-            onSelectTree={handleSelectTree}
-            onCreateNewTree={handleCreateNewTree}
-            onCloneTree={handleCloneTree}
-            isAdmin={isAdmin}
-            onRenameTree={handleRenameTree}
-            onDeleteTree={handleDeleteTree}
-            onOpenGuestShare={
-              isAdmin
-                ? (targetTreeId) => {
-                    setGuestShareInitialTreeId(targetTreeId);
-                    setIsGuestShareModalOpen(true);
-                  }
-                : undefined
-            }
-          />
-        )}
-
         {/* 11.2 Guest Share Link Generator Modal (Admin only) */}
         {isAdmin && isGuestShareModalOpen && (
           <GuestShareModal
@@ -4291,6 +4140,8 @@ export default function App() {
         selectedPersonIds={selectedPersonIds}
         clipboardCount={clipboardCount}
         persons={tree.persons}
+        connections={connections}
+        connectionOverrides={tree.connectionOverrides}
         onCopySelected={handleCopySelectedPersons}
         onSelectAll={() => setSelectedPersonIds(new Set(Object.keys(tree.persons)))}
         onDeleteSelected={() => {
@@ -4325,6 +4176,7 @@ export default function App() {
         onCancelClipboard={handleCancelCopyClipboard}
         onAlignSelected={handleManualAlign}
         onGroupByGenerations={handleGroupSelectedByGenerations}
+        onBatchSetConnectionStatus={handleBatchSetConnectionStatus}
       />
 
       {/* 12. Interactive Radar Mini-Map Navigation */}
@@ -4336,25 +4188,6 @@ export default function App() {
           onNavigate={handleMiniMapNavigate}
           onClose={handleCloseMiniMap}
         />
-      )}
-
-      {/* Site Version in Bottom-Right Corner (plain text, clickable for Admin only) */}
-      {isAdmin ? (
-        <button
-          type="button"
-          onClick={() => setIsVersionModalOpen(true)}
-          className="fixed bottom-3 right-3.5 sm:bottom-4 sm:right-5 z-30 bg-transparent border-0 p-0 font-mono tabular-nums text-[11px] font-medium text-stone-400/90 hover:text-stone-700 dark:text-zinc-500 dark:hover:text-zinc-200 transition-colors cursor-pointer select-none focus:outline-none"
-          title={`Натисніть, щоб змінити версію (поточна: ${tree.version || 'v0.1'})`}
-        >
-          {tree.version || 'v0.1'}
-        </button>
-      ) : (
-        <div
-          className="fixed bottom-3 right-3.5 sm:bottom-4 sm:right-5 z-30 pointer-events-none select-none font-mono tabular-nums text-[11px] font-medium text-stone-400/90 dark:text-zinc-500"
-          title={`Версія дерева: ${tree.version || 'v0.1'}`}
-        >
-          {tree.version || 'v0.1'}
-        </div>
       )}
 
       {/* 13. Toast Notifications Container */}

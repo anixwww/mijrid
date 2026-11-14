@@ -42,6 +42,7 @@ interface EditPersonModalProps {
   onSave: (updated: Person) => void;
   onDelete: (id: string) => void;
   connectionOverrides?: Record<string, ConnectionMeta>;
+  crossCanvasTrees?: CrossCanvasSearchTree[];
 }
 
 export const EditPersonModal: React.FC<EditPersonModalProps> = ({
@@ -53,6 +54,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
   onSave,
   onDelete,
   connectionOverrides,
+  crossCanvasTrees: initialCrossCanvasTrees,
 }) => {
   const [activeTab, setActiveTab] = useState<EditTabType>('basic');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -62,8 +64,12 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [isUploadingDocs, setIsUploadingDocs] = useState(false);
   const [isUploadingPet, setIsUploadingPet] = useState(false);
-  const [serverCanvases, setServerCanvases] = useState<{ id: string; title: string }[]>([]);
-  const [crossCanvasTrees, setCrossCanvasTrees] = useState<CrossCanvasSearchTree[]>([]);
+  const [serverCanvases, setServerCanvases] = useState<{ id: string; title: string }[]>(() =>
+    (initialCrossCanvasTrees || []).map((t) => ({ id: t.treeId, title: t.treeTitle }))
+  );
+  const [crossCanvasTrees, setCrossCanvasTrees] = useState<CrossCanvasSearchTree[]>(
+    () => initialCrossCanvasTrees || []
+  );
   const pendingCrossCanvasGetterRef = useRef<(() => CrossCanvasLink | null) | null>(null);
   const isUploadingAnyMedia = isUploadingAvatar || isUploadingScreenshot || isUploadingPhotos || isUploadingDocs || isUploadingPet;
 
@@ -86,6 +92,11 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    if (initialCrossCanvasTrees && initialCrossCanvasTrees.length > 0) {
+      setCrossCanvasTrees(initialCrossCanvasTrees);
+      setServerCanvases(initialCrossCanvasTrees.map((t) => ({ id: t.treeId, title: t.treeTitle })));
+      return;
+    }
     let cancelled = false;
     fetchServerTrees({ includeCloud: true })
       .then((list) => {
@@ -104,7 +115,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, initialCrossCanvasTrees]);
 
   const updateField = useCallback(
     <K extends keyof EditPersonDraft>(key: K, value: EditPersonDraft[K]) => {

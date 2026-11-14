@@ -39,7 +39,7 @@ import {
 } from './localTreeStorage';
 import { logDatabase, logError } from './logger';
 
-const CACHE_TTL_MS = 2500;
+const CACHE_TTL_MS = 15_000;
 const treesListCache = new Map<string, { ts: number; data: LocalTreeIndexItem[] }>();
 const inflightTreesList = new Map<string, Promise<LocalTreeIndexItem[]>>();
 
@@ -353,9 +353,18 @@ export function syncCrossCanvasLinkTitles(
 
 export async function fetchServerTrees(options?: { includeCloud?: boolean }): Promise<LocalTreeIndexItem[]> {
   const cacheKey = options?.includeCloud ? 'cloud' : 'local';
+  const now = Date.now();
   const cached = treesListCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+  if (cached && now - cached.ts < CACHE_TTL_MS) {
     return cached.data;
+  }
+  if (!options?.includeCloud) {
+    const cloudCached = treesListCache.get('cloud');
+    if (cloudCached && now - cloudCached.ts < CACHE_TTL_MS) {
+      return cloudCached.data;
+    }
+    const cloudInflight = inflightTreesList.get('cloud');
+    if (cloudInflight) return cloudInflight;
   }
 
   const inflight = inflightTreesList.get(cacheKey);
@@ -449,9 +458,18 @@ export async function fetchAllTreesSearchIndex(options?: {
   includeCloud?: boolean;
 }): Promise<CrossCanvasSearchTree[]> {
   const cacheKey = options?.includeCloud ? 'cloud' : 'local';
+  const now = Date.now();
   const cached = searchIndexCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+  if (cached && now - cached.ts < CACHE_TTL_MS) {
     return cached.data;
+  }
+  if (!options?.includeCloud) {
+    const cloudCached = searchIndexCache.get('cloud');
+    if (cloudCached && now - cloudCached.ts < CACHE_TTL_MS) {
+      return cloudCached.data;
+    }
+    const cloudInflight = inflightSearchIndex.get('cloud');
+    if (cloudInflight) return cloudInflight;
   }
 
   const inflight = inflightSearchIndex.get(cacheKey);

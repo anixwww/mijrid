@@ -115,7 +115,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-zinc-800 w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
         <div className="px-6 py-4 bg-gradient-to-r from-rose-700 via-rose-800 to-amber-800 text-white flex items-center justify-between">
@@ -141,15 +141,15 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
         </div>
 
         {/* Stats bar */}
-        <div className="px-6 py-3.5 bg-rose-50/60 border-b border-rose-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="px-6 py-3.5 bg-rose-50/60 dark:bg-rose-950/25 border-b border-rose-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-1.5 font-medium text-stone-700">
-              <MessageSquare size={15} className="text-rose-600" />
-              <span>Усього реакцій: <strong className="text-stone-900">{stats.total}</strong></span>
+            <div className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-zinc-300">
+              <MessageSquare size={15} className="text-rose-600 dark:text-rose-400" />
+              <span>Усього реакцій: <strong className="text-stone-900 dark:text-zinc-100">{stats.total}</strong></span>
             </div>
-            <div className="flex items-center gap-1.5 font-medium text-stone-700">
-              <UserCheck size={15} className="text-rose-600" />
-              <span>Реагували користувачів: <strong className="text-stone-900">{stats.uniqueUsersCount}</strong></span>
+            <div className="flex items-center gap-1.5 font-medium text-stone-700 dark:text-zinc-300">
+              <UserCheck size={15} className="text-rose-600 dark:text-rose-400" />
+              <span>Реагували користувачів: <strong className="text-stone-900 dark:text-zinc-100">{stats.uniqueUsersCount}</strong></span>
             </div>
           </div>
 
@@ -158,31 +158,31 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
             {Object.entries(stats.emojiCounts).map(([em, count]) => (
               <span
                 key={em}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-rose-200 text-stone-800 font-mono text-[11px] shadow-2xs"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800 border border-rose-200 dark:border-rose-900/60 text-stone-800 dark:text-zinc-100 font-mono text-[11px] shadow-2xs"
               >
                 <span>{em}</span>
-                <span className="font-bold text-rose-800">{count}</span>
+                <span className="font-bold text-rose-800 dark:text-rose-300">{count}</span>
               </span>
             ))}
           </div>
         </div>
 
         {/* Filters & Search Toolbar */}
-        <div className="px-6 py-3 bg-stone-50 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="px-6 py-3 bg-stone-50 dark:bg-zinc-950/60 border-b border-stone-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={15} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500" size={15} />
             <input
               type="text"
               placeholder="Пошук за ім'ям, email або карткою..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 text-stone-800"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-rose-500 text-stone-800 dark:text-zinc-100"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 hover:text-stone-600 dark:hover:text-zinc-300 text-xs cursor-pointer"
               >
                 ✕
               </button>
@@ -196,7 +196,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors cursor-pointer ${
                 selectedEmojiFilter === 'all'
                   ? 'bg-rose-700 text-white'
-                  : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
+                  : 'bg-white dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 border border-stone-200 dark:border-zinc-700 hover:bg-stone-100 dark:hover:bg-zinc-700'
               }`}
             >
               Усі
@@ -208,7 +208,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                 className={`px-2 py-1 text-xs rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1 ${
                   selectedEmojiFilter === emoji
                     ? 'bg-rose-700 text-white'
-                    : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
+                    : 'bg-white dark:bg-zinc-800 text-stone-600 dark:text-zinc-300 border border-stone-200 dark:border-zinc-700 hover:bg-stone-100 dark:hover:bg-zinc-700'
                 }`}
               >
                 <span>{emoji}</span>
@@ -223,7 +223,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
           {isAdmin && allReactions.length > 0 && onClearAllReactions && (
             <button
               onClick={() => setShowClearAllConfirm(true)}
-              className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-950/80 border border-rose-200 dark:border-rose-900/70 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               title="Очистити всі реакції родового дерева"
             >
               <Trash2 size={13} />
@@ -235,10 +235,10 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
         {/* Reactions List */}
         <div className="p-6 max-h-[440px] overflow-y-auto space-y-3">
           {filteredReactions.length === 0 ? (
-            <div className="py-12 text-center text-stone-500 space-y-2">
-              <Heart className="w-10 h-10 mx-auto text-stone-300 stroke-1" />
+            <div className="py-12 text-center text-stone-500 dark:text-zinc-400 space-y-2">
+              <Heart className="w-10 h-10 mx-auto text-stone-300 dark:text-zinc-700 stroke-1" />
               <p className="text-sm font-medium">Реакцій не знайдено</p>
-              <p className="text-xs text-stone-400">
+              <p className="text-xs text-stone-400 dark:text-zinc-500">
                 {allReactions.length === 0
                   ? 'Відвідувачі родового дерева ще не залишали вподобань.'
                   : 'Спробуйте змінити параметри пошуку або фільтри.'}
@@ -252,12 +252,12 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               return (
                 <div
                   key={itemKey}
-                  className="p-3.5 rounded-xl border border-stone-200 bg-stone-50/50 hover:bg-white hover:border-rose-200 transition-all shadow-2xs flex items-center justify-between gap-4"
+                  className="p-3.5 rounded-xl border border-stone-200 dark:border-zinc-800 bg-stone-50/50 dark:bg-zinc-950/50 hover:bg-white dark:hover:bg-zinc-800/80 hover:border-rose-200 dark:hover:border-rose-800/70 transition-all shadow-2xs flex items-center justify-between gap-4"
                 >
                   {/* Left: Person & Reaction detail */}
                   <div className="flex items-center gap-3.5 flex-1 min-w-0">
                     {/* Emoji Badge */}
-                    <div className="w-10 h-10 rounded-2xl bg-rose-100/80 border border-rose-200 flex items-center justify-center text-xl shrink-0 shadow-2xs">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-100/80 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/70 flex items-center justify-center text-xl shrink-0 shadow-2xs">
                       {reaction.emoji}
                     </div>
 
@@ -271,7 +271,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                               onClose();
                             }
                           }}
-                          className="font-bold text-sm text-stone-900 hover:text-rose-700 truncate text-left transition-colors cursor-pointer"
+                          className="font-bold text-sm text-stone-900 dark:text-zinc-100 hover:text-rose-700 dark:hover:text-rose-400 truncate text-left transition-colors cursor-pointer"
                           title="Відкрити картку особи"
                         >
                           {personName}
@@ -279,16 +279,16 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                       </div>
 
                       {/* Author & Timestamp info */}
-                      <div className="flex items-center gap-2 flex-wrap text-xs text-stone-500 mt-0.5">
-                        <span className="font-medium text-stone-700 flex items-center gap-1">
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-stone-500 dark:text-zinc-400 mt-0.5">
+                        <span className="font-medium text-stone-700 dark:text-zinc-300 flex items-center gap-1">
                           👤 {reaction.userName || 'Гість'}
                           {reaction.userEmail && (
-                            <span className="text-stone-400 text-[11px] font-normal">({reaction.userEmail})</span>
+                            <span className="text-stone-400 dark:text-zinc-500 text-[11px] font-normal">({reaction.userEmail})</span>
                           )}
                         </span>
 
                         {reaction.createdAt && (
-                          <span className="flex items-center gap-1 text-stone-400 text-[11px]">
+                          <span className="flex items-center gap-1 text-stone-400 dark:text-zinc-500 text-[11px]">
                             <Clock size={11} />
                             {reaction.createdAt}
                           </span>
@@ -305,7 +305,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                           onSelectPerson(personId);
                           onClose();
                         }}
-                        className="px-2.5 py-1 rounded-lg text-xs font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium text-stone-600 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                       >
                         Переглянути
                       </button>
@@ -323,7 +323,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                           </button>
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            className="px-2 py-1 rounded-lg bg-stone-200 text-stone-700 text-xs hover:bg-stone-300 transition-colors cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-zinc-700 text-stone-700 dark:text-zinc-200 text-xs hover:bg-stone-300 dark:hover:bg-zinc-600 transition-colors cursor-pointer"
                           >
                             Скасувати
                           </button>
@@ -331,7 +331,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
                       ) : (
                         <button
                           onClick={() => setDeleteConfirmId(itemKey)}
-                          className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/70 transition-all cursor-pointer"
                           title="Видалити цієї реакцію (тільки власник)"
                         >
                           <Trash2 size={16} />
@@ -346,14 +346,14 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 bg-stone-100 border-t border-stone-200 flex items-center justify-between">
-          <div className="text-xs text-stone-500 flex items-center gap-1.5">
-            <ShieldAlert size={14} className="text-amber-600" />
+        <div className="px-6 py-3.5 bg-stone-100 dark:bg-zinc-950/60 border-t border-stone-200 dark:border-zinc-800 flex items-center justify-between">
+          <div className="text-xs text-stone-500 dark:text-zinc-400 flex items-center gap-1.5">
+            <ShieldAlert size={14} className="text-amber-600 dark:text-amber-400" />
             <span>Видалити реакції має право лише власник або адміністратор дерева.</span>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-lg bg-stone-800 dark:bg-zinc-800 hover:bg-stone-900 dark:hover:bg-zinc-700 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
           >
             Закрити
           </button>
@@ -363,13 +363,13 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
       {/* Confirm Clear All Modal */}
       {showClearAllConfirm && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-stone-950/70 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 text-center shadow-2xl border border-stone-200 animate-in zoom-in-95">
-            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-sm w-full space-y-4 text-center shadow-2xl border border-stone-200 dark:border-zinc-800 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center">
               <AlertCircle size={28} />
             </div>
             <div className="space-y-1">
-              <h4 className="font-bold text-stone-900 text-base">Видалити всі реакції?</h4>
-              <p className="text-xs text-stone-600 leading-relaxed">
+              <h4 className="font-bold text-stone-900 dark:text-zinc-100 text-base">Видалити всі реакції?</h4>
+              <p className="text-xs text-stone-600 dark:text-zinc-300 leading-relaxed">
                 Ви дійсно бажаєте видалити усе вподобання ({allReactions.length} реакцій) з цього дерева? Цю дію неможливо скасувати.
               </p>
             </div>
@@ -385,7 +385,7 @@ export const ReactionsModal: React.FC<ReactionsModalProps> = ({
               </button>
               <button
                 onClick={() => setShowClearAllConfirm(false)}
-                className="flex-1 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-xs transition-colors cursor-pointer"
+                className="flex-1 py-2 rounded-xl bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200 dark:hover:bg-zinc-700 text-stone-700 dark:text-zinc-200 font-semibold text-xs transition-colors cursor-pointer"
               >
                 Скасувати
               </button>

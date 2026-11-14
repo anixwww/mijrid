@@ -89,20 +89,20 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-zinc-800 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 bg-[#f4f7f4] border-b border-[#d8e2d9] flex items-center justify-between gap-3">
+        <div className="px-5 py-4 bg-[#f4f7f4] dark:bg-zinc-950/60 border-b border-[#d8e2d9] dark:border-zinc-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-purple-700 text-white flex items-center justify-center shadow-xs shrink-0">
               <Printer size={18} />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-stone-900">
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-zinc-100">
                 Підготовка дерева до друку та PDF
               </h3>
-              <p className="text-[11px] text-stone-500">
+              <p className="text-[11px] text-stone-500 dark:text-zinc-400">
                 Світла архівна палітра, вбудовані фото та автоматичне масштабування під аркуш
               </p>
             </div>
@@ -111,27 +111,27 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-zinc-100 hover:bg-stone-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Optimization Controls */}
-        <div className="px-5 py-3 bg-stone-50 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="px-5 py-3 bg-stone-50 dark:bg-zinc-950/40 border-b border-stone-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             {/* Layout optimization toggle */}
-            <div className="flex items-center rounded-xl bg-stone-200/70 p-0.5 border border-stone-200">
+            <div className="flex items-center rounded-xl bg-stone-200/70 dark:bg-zinc-800 p-0.5 border border-stone-200 dark:border-zinc-700">
               <button
                 type="button"
                 onClick={() => setOptions((prev) => ({ ...prev, layoutMode: 'compact' }))}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   options.layoutMode === 'compact'
-                    ? 'bg-white text-stone-900 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
+                    ? 'bg-white dark:bg-zinc-700 text-stone-900 dark:text-zinc-100 shadow-xs'
+                    : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
                 }`}
               >
-                <Sparkles size={13} className="text-emerald-700" />
+                <Sparkles size={13} className="text-emerald-700 dark:text-emerald-400" />
                 <span>Оптимізувати компактно</span>
               </button>
               <button
@@ -139,8 +139,8 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
                 onClick={() => setOptions((prev) => ({ ...prev, layoutMode: 'preserve' }))}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   options.layoutMode === 'preserve'
-                    ? 'bg-white text-stone-900 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
+                    ? 'bg-white dark:bg-zinc-700 text-stone-900 dark:text-zinc-100 shadow-xs'
+                    : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
                 }`}
               >
                 Поточне положення
@@ -148,7 +148,7 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
             </div>
 
             {/* Orientation */}
-            <div className="flex items-center rounded-xl bg-stone-200/70 p-0.5 border border-stone-200">
+            <div className="flex items-center rounded-xl bg-stone-200/70 dark:bg-zinc-800 p-0.5 border border-stone-200 dark:border-zinc-700">
               {([
                 { id: 'auto', label: 'Авто' },
                 { id: 'landscape', label: 'Альбомна' },
@@ -160,8 +160,8 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
                   onClick={() => setOptions((prev) => ({ ...prev, orientation: item.id }))}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     options.orientation === item.id
-                      ? 'bg-white text-stone-900 shadow-xs'
-                      : 'text-stone-600 hover:text-stone-900'
+                      ? 'bg-white dark:bg-zinc-700 text-stone-900 dark:text-zinc-100 shadow-xs'
+                      : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   {item.label}
@@ -175,8 +175,8 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
               onClick={() => setOptions((prev) => ({ ...prev, showGrid: !prev.showGrid }))}
               className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                 options.showGrid
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                  : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
+                  : 'bg-white dark:bg-zinc-800 border-stone-200 dark:border-zinc-700 text-stone-600 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-700'
               }`}
             >
               <Grid size={13} />
@@ -188,8 +188,8 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
               onClick={() => setOptions((prev) => ({ ...prev, includeHeader: !prev.includeHeader }))}
               className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                 options.includeHeader
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
-                  : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-100'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
+                  : 'bg-white dark:bg-zinc-800 border-stone-200 dark:border-zinc-700 text-stone-600 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-700'
               }`}
             >
               <FileText size={13} />
@@ -198,8 +198,8 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
           </div>
 
           {prepared && (
-            <div className="flex items-center gap-2 text-[11px] font-medium text-stone-600">
-              <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-2 text-[11px] font-medium text-stone-600 dark:text-zinc-400">
+              <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
                 {prepared.personCount} осіб · {prepared.generationCount} пок. ·{' '}
                 {prepared.orientation === 'landscape' ? 'Альбомна' : 'Книжкова'}
@@ -209,10 +209,10 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
         </div>
 
         {/* Live Paper Preview */}
-        <div className="flex-1 overflow-auto bg-stone-200/70 p-4 sm:p-6 flex items-center justify-center min-h-[300px]">
+        <div className="flex-1 overflow-auto bg-stone-200/70 dark:bg-zinc-950 p-4 sm:p-6 flex items-center justify-center min-h-[300px]">
           {isPreparing || !prepared ? (
-            <div className="flex flex-col items-center gap-2 text-stone-600 py-12">
-              <RefreshCw size={28} className="animate-spin text-purple-700" />
+            <div className="flex flex-col items-center gap-2 text-stone-600 dark:text-zinc-300 py-12">
+              <RefreshCw size={28} className="animate-spin text-purple-700 dark:text-purple-400" />
               <span className="text-xs font-semibold">Оптимізація дерева та зображень для друку...</span>
             </div>
           ) : (
@@ -232,15 +232,15 @@ export const PrintTreeModal: React.FC<PrintTreeModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3.5 bg-stone-50 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[11px] text-stone-500">
+        <div className="px-5 py-3.5 bg-stone-50 dark:bg-zinc-950/60 border-t border-stone-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[11px] text-stone-500 dark:text-zinc-400">
             У вікні друку браузера оберіть «Зберегти у форматі PDF» — на аркуші буде лише чисте дерево.
           </p>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-stone-700 hover:bg-stone-200/60 rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-stone-700 dark:text-zinc-300 hover:bg-stone-200/60 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
             >
               Скасувати
             </button>

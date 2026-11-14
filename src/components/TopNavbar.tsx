@@ -41,7 +41,6 @@ import { fetchServerTrees, MAIN_TREE_ID, TREES_CHANGED_EVENT } from '../utils/fi
 interface TopNavbarProps {
   isAdmin: boolean;
   onToggleAdminRole?: () => void;
-  onOpenMyTrees?: () => void;
   currentTreeTitle?: string;
   currentTreeId?: string;
   treeVersion?: string;
@@ -69,9 +68,6 @@ interface TopNavbarProps {
   totalReactionsCount?: number;
   isCalendarOpen?: boolean;
   onToggleCalendar?: () => void;
-  notifications?: any[];
-  onSelectNotificationPerson?: (personId: string) => void;
-  onClearNotifications?: () => void;
   onOpenShortcutsModal?: () => void;
   userPersonName?: string | null;
   onOpenUserIdentity?: () => void;
@@ -83,6 +79,7 @@ interface TopNavbarProps {
   validationIssueCount?: number;
   validationErrorCount?: number;
   isVersionModalOpen?: boolean;
+  onOpenVersionModal?: () => void;
   onCloseVersionModal?: () => void;
   archiveGapCount?: number;
   onOpenGuestFeedback?: () => void;
@@ -108,7 +105,6 @@ const TAB_ORDER_STORAGE_KEY = 'rodovid_canvas_tab_order';
 export const TopNavbar: React.FC<TopNavbarProps> = ({
   isAdmin,
   onToggleAdminRole,
-  onOpenMyTrees,
   currentTreeTitle,
   currentTreeId,
   treeVersion = 'v0.1',
@@ -146,6 +142,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   validationIssueCount = 0,
   validationErrorCount = 0,
   isVersionModalOpen: externalVersionModalOpen = false,
+  onOpenVersionModal,
   onCloseVersionModal,
   archiveGapCount = 0,
   onOpenGuestFeedback,
@@ -985,21 +982,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                       Керування
                     </div>
 
-                    {onOpenGuestShare && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onOpenGuestShare();
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full h-8.5 px-2.5 rounded-lg hover:bg-emerald-50/90 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left"
-                      >
-                        <Link2 size={15} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
-                        <span className="flex-1 truncate">Гостьове посилання</span>
-                      </button>
-                    )}
-
-                    {onOpenGuestFeedback && (
+                    {onOpenGuestFeedback && pendingGuestFeedbackCount === 0 && (
                       <button
                         type="button"
                         onClick={() => {
@@ -1010,11 +993,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                       >
                         <MessageSquareHeart size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
                         <span className="flex-1 truncate">Пропозиції гостей</span>
-                        {pendingGuestFeedbackCount > 0 && (
-                          <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[10px] font-mono tabular-nums font-bold leading-none">
-                            {pendingGuestFeedbackCount}
-                          </span>
-                        )}
                       </button>
                     )}
 
@@ -1034,6 +1012,23 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                             {totalReactionsCount}
                           </span>
                         )}
+                      </button>
+                    )}
+
+                    {onOpenVersionModal && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onOpenVersionModal();
+                          setIsMenuOpen(false);
+                        }}
+                        className="w-full h-8.5 px-2.5 rounded-lg hover:bg-amber-50/80 dark:hover:bg-amber-950/40 text-stone-800 dark:text-zinc-200 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left"
+                      >
+                        <Tag size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span className="flex-1 truncate">Версія дерева</span>
+                        <span className="text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                          {treeVersion}
+                        </span>
                       </button>
                     )}
 

@@ -126,7 +126,6 @@ const CoupleCardComponent: React.FC<CoupleCardProps> = ({
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      setActiveReactionPersonId(person.id);
       if (onLongPress) onLongPress(e, person.id);
     }, 400);
 
@@ -273,6 +272,11 @@ const CoupleCardComponent: React.FC<CoupleCardProps> = ({
           onOpenClanCoatOfArmsModal={onOpenClanCoatOfArmsModal}
           onOpenMetricModal={onOpenMetricModal}
           onToggleReaction={onToggleReaction}
+          onOpenReactionPicker={
+            onToggleReaction
+              ? () => setActiveReactionPersonId((prev) => (prev === person1.id ? null : person1.id))
+              : undefined
+          }
           onSelectTree={onSelectTree}
           allPersons={allPersons}
           onJumpToBranchLink={onJumpToBranchLink}
@@ -415,6 +419,11 @@ const CoupleCardComponent: React.FC<CoupleCardProps> = ({
           onOpenClanCoatOfArmsModal={onOpenClanCoatOfArmsModal}
           onOpenMetricModal={onOpenMetricModal}
           onToggleReaction={onToggleReaction}
+          onOpenReactionPicker={
+            onToggleReaction
+              ? () => setActiveReactionPersonId((prev) => (prev === person2.id ? null : person2.id))
+              : undefined
+          }
           onSelectTree={onSelectTree}
           allPersons={allPersons}
           onJumpToBranchLink={onJumpToBranchLink}

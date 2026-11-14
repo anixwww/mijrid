@@ -4,20 +4,17 @@ import {
   LocateFixed,
   Undo2,
   Calendar,
-  GitFork,
   X,
-  BarChart3,
   Layers,
   ChevronDown,
   Check,
-  Shield,
   Map,
   Magnet,
   Grid,
   StickyNote,
   EyeOff,
   BookMarked,
-  CalendarRange,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Person } from '../types/tree';
 import { ClanInfo } from '../utils/lineageUtils';
@@ -39,7 +36,6 @@ interface CanvasControlsProps {
   onToggleGrid?: () => void;
   persons: Record<string, Person>;
   onSelectAndCenter: (personId: string) => void;
-  onOpenMyTrees?: () => void;
   // Undo action
   onUndo?: () => void;
   canUndo?: boolean;
@@ -59,6 +55,7 @@ interface CanvasControlsProps {
   // Cross-canvas search
   currentTreeId?: string;
   currentTreeTitle?: string;
+  crossCanvasTrees?: CrossCanvasSearchTree[];
   onSelectTreeAndPerson?: (treeId: string, personId: string) => void;
   // Create quick draft card (ghost note or screenshot)
   onOpenQuickDraft?: () => void;
@@ -66,9 +63,6 @@ interface CanvasControlsProps {
   blindSpotFilter?: BlindSpotFilterMode;
   onChangeBlindSpotFilter?: (mode: BlindSpotFilterMode) => void;
   onOpenArchiveRegistry?: () => void;
-  // Admin Birth/Death Chronology modal
-  isChronologyOpen?: boolean;
-  onOpenChronology?: () => void;
 }
 
 export const CanvasControls: React.FC<CanvasControlsProps> = ({
@@ -82,14 +76,11 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
   onToggleGrid,
   persons,
   onSelectAndCenter,
-  onOpenMyTrees,
   onUndo,
   canUndo,
   selectedClanFilter,
   onSelectClanFilter,
   clanList,
-  selectedCount = 0,
-  onClearSelection,
   hasUserPerson,
   isLayoutLocked,
   onToggleLockLayout,
@@ -97,25 +88,28 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
   onToggleSnap,
   currentTreeId,
   currentTreeTitle,
+  crossCanvasTrees,
   onSelectTreeAndPerson,
   onOpenQuickDraft,
   blindSpotFilter = 'off',
   onChangeBlindSpotFilter,
   onOpenArchiveRegistry,
-  isChronologyOpen = false,
-  onOpenChronology,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [isClanDropdownOpen, setIsClanDropdownOpen] = useState(false);
-  const [allCanvases, setAllCanvases] = useState<CrossCanvasSearchTree[]>([]);
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+  const [allCanvases, setAllCanvases] = useState<CrossCanvasSearchTree[]>(
+    () => crossCanvasTrees || []
+  );
   const [isLoadingCanvases, setIsLoadingCanvases] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchPopoverRef = useRef<HTMLDivElement>(null);
+  const viewButtonRef = useRef<HTMLButtonElement>(null);
+  const viewPopoverRef = useRef<HTMLDivElement>(null);
   const searchQueryRef = useRef(searchQuery);
   searchQueryRef.current = searchQuery;
 
@@ -124,9 +118,16 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
       ? MAIN_TREE_ID
       : currentTreeId;
 
+  useEffect(() => {
+    if (crossCanvasTrees && crossCanvasTrees.length > 0) {
+      setAllCanvases(crossCanvasTrees);
+    }
+  }, [crossCanvasTrees]);
+
   // Load cross-canvas search index whenever search opens
   useEffect(() => {
     if (!isSearchOpen && !isSearchExpanded) return;
+    if (crossCanvasTrees && crossCanvasTrees.length > 0) return;
     let cancelled = false;
     setIsLoadingCanvases(true);
     fetchAllTreesSearchIndex()
@@ -143,7 +144,7 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isSearchOpen, isSearchExpanded]);
+  }, [isSearchOpen, isSearchExpanded, crossCanvasTrees]);
 
   // Global hotkeys: / or Ctrl+F / Cmd+K to open search, Escape to close
   useEffect(() => {
@@ -153,6 +154,9 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
       const isInputFocused = activeTag === 'input' || activeTag === 'textarea';
 
       if (e.key === 'Escape') {
+        if (isViewMenuOpen) {
+          setIsViewMenuOpen(false);
+        }
         if (isSearchOpen || isSearchExpanded) {
           setIsSearchOpen(false);
           if (!searchQueryRef.current.trim()) setIsSearchExpanded(false);
@@ -163,6 +167,7 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
 
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'k')) {
         e.preventDefault();
+        setIsViewMenuOpen(false);
         setIsSearchExpanded(true);
         setIsSearchOpen(true);
         setTimeout(() => searchInputRef.current?.focus(), 50);
@@ -171,6 +176,7 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
 
       if (e.key === '/' && !isInputFocused) {
         e.preventDefault();
+        setIsViewMenuOpen(false);
         setIsSearchExpanded(true);
         setIsSearchOpen(true);
         setTimeout(() => searchInputRef.current?.focus(), 50);
@@ -179,9 +185,9 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSearchOpen, isSearchExpanded]);
+  }, [isSearchOpen, isSearchExpanded, isViewMenuOpen]);
 
-  // Click outside to dismiss search popover
+  // Click outside to dismiss search and view popovers
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -192,6 +198,12 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
         if (!searchQueryRef.current.trim()) {
           setIsSearchExpanded(false);
         }
+      }
+
+      const inViewBtn = viewButtonRef.current?.contains(target);
+      const inViewPopover = viewPopoverRef.current?.contains(target);
+      if (!inViewBtn && !inViewPopover) {
+        setIsViewMenuOpen(false);
       }
     };
 
@@ -430,170 +442,58 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
               )}
             </button>
 
-            {/* Timeline ruler toggle - Admin only */}
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={onToggleTimeline}
-                className={`group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap border snap-start focus-visible:outline-2 focus-visible:outline-emerald-600 ${
-                  showTimeline
-                    ? 'bg-stone-900 text-white border-stone-900 dark:bg-emerald-600 dark:border-emerald-500 shadow-2xs'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:hover:text-white border-transparent'
-                }`}
-                title={showTimeline ? 'Приховати шкалу років' : 'Показати шкалу років зліва'}
-                aria-label="Шкала часу"
-                aria-pressed={showTimeline}
-              >
-                <Calendar
-                  size={18}
-                  className={`transition-transform duration-200 group-hover:-translate-y-0.5 shrink-0 ${
-                    showTimeline ? 'text-emerald-300 dark:text-white' : 'text-stone-600 dark:text-zinc-300'
+            {/* View & Filters Popover Toggle */}
+            {(() => {
+              const hasActiveViewCustomization =
+                showTimeline ||
+                Boolean(showMiniMap) ||
+                !showGrid ||
+                Boolean(isLayoutLocked) ||
+                (isAdmin && !isSnapEnabled) ||
+                Boolean(selectedClanFilter);
+              return (
+                <button
+                  ref={viewButtonRef}
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    setIsViewMenuOpen((prev) => !prev);
+                  }}
+                  className={`relative group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap border snap-start focus-visible:outline-2 focus-visible:outline-emerald-600 ${
+                    isViewMenuOpen || selectedClanFilter
+                      ? 'bg-stone-900 text-white border-stone-900 dark:bg-emerald-600 dark:border-emerald-500 shadow-2xs'
+                      : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:hover:text-white border-transparent'
                   }`}
-                />
-                <span className="hidden xl:inline">Роки</span>
-              </button>
-            )}
-
-            {/* Birth & Death Chronology by Years - Admin only */}
-            {isAdmin && onOpenChronology && (
-              <button
-                type="button"
-                onClick={onOpenChronology}
-                className={`group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap border snap-start focus-visible:outline-2 focus-visible:outline-emerald-600 ${
-                  isChronologyOpen
-                    ? 'bg-stone-900 text-white border-stone-900 dark:bg-emerald-600 dark:border-emerald-500 shadow-2xs'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:hover:text-white border-transparent'
-                }`}
-                title="Хронологія народжень і смертей по роках"
-                aria-label="Хронологія народжень і смертей"
-                aria-pressed={isChronologyOpen}
-              >
-                <CalendarRange
-                  size={18}
-                  className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${
-                    isChronologyOpen ? 'text-emerald-300 dark:text-white' : 'text-stone-600 dark:text-zinc-300'
-                  }`}
-                />
-                <span className="hidden lg:inline">Хронологія</span>
-              </button>
-            )}
-
-            {/* MiniMap radar toggle button */}
-            {onToggleMiniMap && (
-              <button
-                type="button"
-                onClick={onToggleMiniMap}
-                className={`group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap border snap-start focus-visible:outline-2 focus-visible:outline-emerald-600 ${
-                  showMiniMap
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950 dark:bg-emerald-950/60 dark:border-emerald-700 dark:text-emerald-300 font-bold shadow-2xs'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:hover:text-white border-transparent'
-                }`}
-                title={showMiniMap ? 'Сховати міні-карту' : 'Показати міні-карту'}
-                aria-label="Міні-карта"
-                aria-pressed={showMiniMap}
-              >
-                <Map
-                  size={18}
-                  className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${
-                    showMiniMap ? 'text-emerald-700 dark:text-emerald-300' : 'text-stone-600 dark:text-zinc-300'
-                  }`}
-                />
-                {!isAdmin ? (
-                  <>
-                    <span className="sm:hidden">Карта</span>
-                    <span className="hidden sm:inline">Міні-карта</span>
-                  </>
-                ) : (
-                  <span className="hidden sm:inline">Міні-карта</span>
-                )}
-              </button>
-            )}
-
-            {/* Background grid toggle button - for both admin and guest */}
-            {onToggleGrid && (
-              <button
-                type="button"
-                onClick={onToggleGrid}
-                className={`group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap border snap-start focus-visible:outline-2 focus-visible:outline-emerald-600 ${
-                  showGrid
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950 dark:bg-emerald-950/60 dark:border-emerald-700 dark:text-emerald-300 font-bold shadow-2xs'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:hover:text-white border-transparent'
-                }`}
-                title={showGrid ? 'Приховати фонову сітку' : 'Увімкнути фонову сітку полотна'}
-                aria-label="Фонова сітка"
-                aria-pressed={showGrid}
-              >
-                <Grid
-                  size={18}
-                  className={`transition-transform duration-200 group-hover:scale-110 shrink-0 ${
-                    showGrid ? 'text-emerald-700 dark:text-emerald-300' : 'text-stone-600 dark:text-zinc-300'
-                  }`}
-                />
-                <span className={!isAdmin ? 'inline' : 'hidden sm:inline'}>Сітка</span>
-              </button>
-            )}
-
-            {/* Admin Canvas Tools Divider */}
-            {isAdmin && (onToggleLockLayout || onToggleSnap || onOpenQuickDraft) && (
-              <div className="h-6 w-px bg-stone-200 dark:bg-zinc-800 shrink-0 mx-0.5" />
-            )}
-
-            {/* Card Freeze / Lock Layout Protection Toggle - Admin only */}
-            {isAdmin && onToggleLockLayout && (
-              <button
-                type="button"
-                onClick={onToggleLockLayout}
-                className={`h-11 min-w-[44px] px-3 sm:h-10 sm:w-10 sm:min-w-[40px] sm:px-0 rounded-[14px] sm:rounded-xl transition-all cursor-pointer active:scale-90 flex items-center justify-center shrink-0 group border snap-start focus-visible:outline-2 focus-visible:outline-emerald-600 ${
-                  isLayoutLocked
-                    ? 'bg-stone-900 text-white border-stone-900 dark:bg-emerald-600 dark:border-emerald-500 shadow-2xs'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:hover:text-white border-transparent'
-                }`}
-                title={
-                  isLayoutLocked
-                    ? 'Положення карток заблоковано (натисніть, щоб розблокувати)'
-                    : 'Зафіксувати положення карток'
-                }
-                aria-label={isLayoutLocked ? 'Розблокувати розміщення карток' : 'Зафіксувати розміщення карток'}
-                aria-pressed={isLayoutLocked}
-              >
-                <AnimatedLockIcon
-                  locked={Boolean(isLayoutLocked)}
-                  size={18}
-                  className={
-                    isLayoutLocked
-                      ? 'text-white'
-                      : 'text-stone-600 group-hover:text-stone-900 dark:text-zinc-300 dark:group-hover:text-white'
-                  }
-                />
-              </button>
-            )}
-
-            {/* Magnetic Alignment Snap Toggle - Admin only */}
-            {isAdmin && onToggleSnap && (
-              <button
-                type="button"
-                onClick={onToggleSnap}
-                className={`h-11 min-w-[44px] px-3 sm:h-10 sm:w-10 sm:min-w-[40px] sm:px-0 rounded-[14px] sm:rounded-xl transition-all cursor-pointer active:scale-90 flex items-center justify-center shrink-0 group border snap-start focus-visible:outline-2 focus-visible:outline-emerald-600 ${
-                  isSnapEnabled
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shadow-2xs'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-400 dark:hover:text-white border-transparent'
-                }`}
-                title={
-                  isSnapEnabled
-                    ? 'Магнітне вирівнювання увімкнено (затисніть Alt під час перетягування для вільного руху)'
-                    : 'Магнітне вирівнювання вимкнено (вільне ручне розміщення)'
-                }
-                aria-label={isSnapEnabled ? 'Вимкнути магнітне вирівнювання' : 'Увімкнути магнітне вирівнювання'}
-                aria-pressed={isSnapEnabled}
-              >
-                <Magnet
-                  size={18}
-                  className={`transition-transform duration-200 group-hover:scale-110 ${
-                    isSnapEnabled ? 'text-emerald-700 dark:text-emerald-300' : ''
-                  }`}
-                />
-              </button>
-            )}
+                  title="Налаштування вигляду полотна та фільтр за родом"
+                  aria-label="Вигляд полотна"
+                  aria-expanded={isViewMenuOpen}
+                >
+                  <SlidersHorizontal
+                    size={16.5}
+                    className={`shrink-0 ${
+                      isViewMenuOpen || selectedClanFilter
+                        ? 'text-emerald-300 dark:text-white'
+                        : 'text-stone-600 dark:text-zinc-300'
+                    }`}
+                  />
+                  <span className="hidden sm:inline">
+                    {selectedClanFilter ? `Рід: ${selectedClanFilter}` : 'Вигляд'}
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    className={`hidden sm:inline shrink-0 transition-transform duration-150 ${
+                      isViewMenuOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                  {hasActiveViewCustomization && !isViewMenuOpen && (
+                    <span
+                      aria-hidden="true"
+                      className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-300 shrink-0"
+                    />
+                  )}
+                </button>
+              );
+            })()}
 
             {/* Create Quick Note (Sticker) / Screenshot Card - Admin only */}
             {isAdmin && onOpenQuickDraft && (
@@ -618,6 +518,7 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  setIsViewMenuOpen(false);
                   setIsSearchExpanded(true);
                   setIsSearchOpen(true);
                   setTimeout(() => searchInputRef.current?.focus(), 50);
@@ -628,9 +529,6 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
               >
                 <Search size={18} className="text-stone-600 dark:text-zinc-300 shrink-0" />
                 <span className={!isAdmin ? 'inline' : 'hidden lg:inline'}>Пошук</span>
-                <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium text-stone-500 bg-white border border-stone-200 dark:text-zinc-400 dark:bg-zinc-900 dark:border-zinc-700 rounded-md leading-none">
-                  /
-                </kbd>
               </button>
             ) : (
               <div className="relative flex items-center animate-in fade-in slide-in-from-right-2 duration-150">
@@ -799,6 +697,191 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
                   </button>
                 );
               })
+            )}
+          </div>
+        )}
+        {/* View & Clan Filter Popover — rendered OUTSIDE overflow-x-auto */}
+        {isViewMenuOpen && (
+          <div
+            ref={viewPopoverRef}
+            className="absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 w-[300px] sm:w-[320px] max-w-[calc(100vw-24px)] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-stone-200/90 dark:border-zinc-800 p-2.5 z-50 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="px-1.5 flex items-center justify-between">
+              <span className="text-[10.5px] uppercase tracking-wider font-bold text-stone-500 dark:text-zinc-400">
+                Вигляд полотна
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsViewMenuOpen(false)}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-stone-100 dark:hover:bg-zinc-800 cursor-pointer"
+                aria-label="Закрити меню вигляду"
+              >
+                <X size={13} />
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              {onToggleMiniMap && (
+                <button
+                  type="button"
+                  onClick={onToggleMiniMap}
+                  className={`w-full px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                    showMiniMap
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-200/90 dark:border-emerald-800'
+                      : 'hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-200 border border-transparent'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Map size={15} className={showMiniMap ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500 dark:text-zinc-400'} />
+                    <span>Міні-карта</span>
+                  </span>
+                  {showMiniMap && <Check size={14} className="text-emerald-700 dark:text-emerald-400" />}
+                </button>
+              )}
+
+              {onToggleGrid && (
+                <button
+                  type="button"
+                  onClick={onToggleGrid}
+                  className={`w-full px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                    showGrid
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-200/90 dark:border-emerald-800'
+                      : 'hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-200 border border-transparent'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Grid size={15} className={showGrid ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500 dark:text-zinc-400'} />
+                    <span>Фонова сітка</span>
+                  </span>
+                  {showGrid && <Check size={14} className="text-emerald-700 dark:text-emerald-400" />}
+                </button>
+              )}
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={onToggleTimeline}
+                  className={`w-full px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                    showTimeline
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-200/90 dark:border-emerald-800'
+                      : 'hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-200 border border-transparent'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Calendar size={15} className={showTimeline ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500 dark:text-zinc-400'} />
+                    <span>Шкала років зліва</span>
+                  </span>
+                  {showTimeline && <Check size={14} className="text-emerald-700 dark:text-emerald-400" />}
+                </button>
+              )}
+
+              {isAdmin && onToggleLockLayout && (
+                <button
+                  type="button"
+                  onClick={onToggleLockLayout}
+                  className={`w-full px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                    isLayoutLocked
+                      ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-950 dark:text-amber-200 border border-amber-200/90 dark:border-amber-800'
+                      : 'hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-200 border border-transparent'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <AnimatedLockIcon
+                      locked={Boolean(isLayoutLocked)}
+                      size={15}
+                      className={isLayoutLocked ? 'text-amber-700 dark:text-amber-400' : 'text-stone-500 dark:text-zinc-400'}
+                    />
+                    <span>Зафіксувати картки</span>
+                  </span>
+                  {isLayoutLocked && <Check size={14} className="text-amber-700 dark:text-amber-400" />}
+                </button>
+              )}
+
+              {isAdmin && onToggleSnap && (
+                <button
+                  type="button"
+                  onClick={onToggleSnap}
+                  className={`w-full px-2.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                    isSnapEnabled
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-200/90 dark:border-emerald-800'
+                      : 'hover:bg-stone-100 dark:hover:bg-zinc-800 text-stone-700 dark:text-zinc-200 border border-transparent'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Magnet size={15} className={isSnapEnabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500 dark:text-zinc-400'} />
+                    <span>Магнітне вирівнювання</span>
+                  </span>
+                  {isSnapEnabled && <Check size={14} className="text-emerald-700 dark:text-emerald-400" />}
+                </button>
+              )}
+            </div>
+
+            {clanList.length > 0 && (
+              <div className="pt-2 border-t border-stone-200/80 dark:border-zinc-800 space-y-1.5">
+                <div className="px-1.5 flex items-center justify-between">
+                  <span className="text-[10.5px] uppercase tracking-wider font-bold text-stone-500 dark:text-zinc-400">
+                    Фільтр за родом
+                  </span>
+                  {selectedClanFilter && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectClanFilter(null)}
+                      className="text-[10.5px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                    >
+                      Скинути
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-44 overflow-y-auto space-y-0.5 pr-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectClanFilter(null);
+                      setIsViewMenuOpen(false);
+                    }}
+                    className={`w-full px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                      selectedClanFilter === null
+                        ? 'bg-stone-100 dark:bg-zinc-800 text-stone-950 dark:text-zinc-100 font-semibold'
+                        : 'hover:bg-stone-50 dark:hover:bg-zinc-800/60 text-stone-700 dark:text-zinc-300'
+                    }`}
+                  >
+                    <span>Усі роди</span>
+                    {selectedClanFilter === null && <Check size={13} className="text-emerald-700 dark:text-emerald-400" />}
+                  </button>
+                  {clanList.map((clan) => {
+                    const isSelectedClan = selectedClanFilter === clan.name;
+                    return (
+                      <button
+                        key={clan.name}
+                        type="button"
+                        onClick={() => {
+                          onSelectClanFilter(isSelectedClan ? null : clan.name);
+                          setIsViewMenuOpen(false);
+                        }}
+                        className={`w-full px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                          isSelectedClan
+                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 font-semibold'
+                            : 'hover:bg-stone-50 dark:hover:bg-zinc-800/60 text-stone-700 dark:text-zinc-300'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/15"
+                            style={{ backgroundColor: clan.color }}
+                          />
+                          <span className="truncate">{clan.name}</span>
+                        </span>
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10.5px] font-mono text-stone-400 dark:text-zinc-500 tabular-nums">
+                            {clan.count}
+                          </span>
+                          {isSelectedClan && <Check size={13} className="text-emerald-700 dark:text-emerald-400" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         )}

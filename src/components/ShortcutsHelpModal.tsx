@@ -49,27 +49,27 @@ export const ShortcutsHelpModal: React.FC<ShortcutsHelpModalProps> = ({ isOpen, 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
+        <div className="px-5 py-4 bg-stone-50 dark:bg-zinc-950/60 border-b border-stone-200 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-xs">
               <Keyboard size={16} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-stone-900 leading-tight">
+              <h3 className="text-sm font-bold text-stone-900 dark:text-zinc-100 leading-tight">
                 Гарячі клавіші та керування
               </h3>
-              <p className="text-[11px] text-stone-500">
+              <p className="text-[11px] text-stone-500 dark:text-zinc-400">
                 Зручні комбінації для швидкої роботи з родоводом
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-zinc-100 hover:bg-stone-200/50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             aria-label="Закрити"
           >
             <X size={18} />
@@ -77,24 +77,24 @@ export const ShortcutsHelpModal: React.FC<ShortcutsHelpModalProps> = ({ isOpen, 
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto space-y-4 text-xs divide-y divide-stone-100">
+        <div className="p-5 overflow-y-auto space-y-4 text-xs divide-y divide-stone-100 dark:divide-zinc-800">
           {shortcuts.map((group, idx) => (
             <div key={group.category} className={idx > 0 ? 'pt-3 space-y-2' : 'space-y-2'}>
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-zinc-500">
                 {group.category}
               </h4>
               <div className="space-y-1.5">
                 {group.items.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-3 py-1 px-2 rounded-lg hover:bg-stone-50"
+                    className="flex items-center justify-between gap-3 py-1 px-2 rounded-lg hover:bg-stone-50 dark:hover:bg-zinc-800/70"
                   >
-                    <span className="text-stone-700 font-medium">{item.desc}</span>
+                    <span className="text-stone-700 dark:text-zinc-200 font-medium">{item.desc}</span>
                     <div className="flex items-center gap-1 shrink-0 font-mono">
                       {item.keys.map((k, ki) => (
                         <kbd
                           key={ki}
-                          className="px-2 py-0.5 rounded-md bg-stone-100 border border-stone-300 text-stone-800 text-[10.5px] font-semibold shadow-2xs"
+                          className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-zinc-800 border border-stone-300 dark:border-zinc-700 text-stone-800 dark:text-zinc-200 text-[10.5px] font-semibold shadow-2xs"
                         >
                           {k}
                         </kbd>
@@ -108,7 +108,7 @@ export const ShortcutsHelpModal: React.FC<ShortcutsHelpModalProps> = ({ isOpen, 
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 bg-stone-50 border-t border-stone-200 flex justify-end">
+        <div className="px-5 py-3 bg-stone-50 dark:bg-zinc-950/60 border-t border-stone-200 dark:border-zinc-800 flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"

@@ -51,6 +51,7 @@ interface ConnectPersonsModalProps {
   onConnectCrossCanvasLink?: (payload: CrossCanvasConnectPayload) => void;
   initialTargetId?: string;
   initialMode?: 'relation' | 'branch-link' | 'godparent';
+  crossCanvasTrees?: CrossCanvasSearchTree[];
 }
 
 /**
@@ -99,6 +100,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
   onConnectCrossCanvasLink,
   initialTargetId,
   initialMode = 'relation',
+  crossCanvasTrees: initialCrossCanvasTrees,
 }) => {
   const [selectedTargetId, setSelectedTargetId] = useState<string>(initialTargetId || '');
   const [connectionKind, setConnectionKind] = useState<'relation' | 'branch-link' | 'godparent' | 'note-link'>(initialMode);
@@ -108,7 +110,9 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
   const [selectedBranch, setSelectedBranch] = useState<string>('');
 
   // Cross-canvas state (between different canvases)
-  const [crossCanvasTrees, setCrossCanvasTrees] = useState<CrossCanvasSearchTree[]>([]);
+  const [crossCanvasTrees, setCrossCanvasTrees] = useState<CrossCanvasSearchTree[]>(
+    () => initialCrossCanvasTrees || []
+  );
   const [selectedTargetCanvasId, setSelectedTargetCanvasId] = useState<string>('');
   const [crossCanvasColor, setCrossCanvasColor] = useState<string>('#047857');
   const [crossCanvasBidirectional, setCrossCanvasBidirectional] = useState<boolean>(true);
@@ -193,6 +197,10 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    if (initialCrossCanvasTrees && initialCrossCanvasTrees.length > 0) {
+      setCrossCanvasTrees(initialCrossCanvasTrees);
+      return;
+    }
     let cancelled = false;
     fetchAllTreesSearchIndex({ includeCloud: true })
       .then((trees) => {
@@ -204,7 +212,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, initialCrossCanvasTrees]);
 
   useEffect(() => {
     if (isOpen) {
@@ -470,27 +478,27 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 bg-[#f4f7f4] border-b border-[#d8e2d9] flex items-center justify-between">
+        <div className="px-6 py-4 bg-[#f4f7f4] dark:bg-zinc-950/60 border-b border-[#d8e2d9] dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 flex items-center justify-center text-emerald-800 dark:text-emerald-300 shrink-0">
               <Link2 size={18} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-stone-900">
+              <h3 className="text-sm font-bold text-stone-900 dark:text-zinc-100">
                 Встановлення родинного зв'язку (лінії)
               </h3>
-              <p className="text-xs text-stone-600 mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <p className="text-xs text-stone-600 dark:text-zinc-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
                 <span>Вихідна особа:</span>
-                <span className="font-semibold text-emerald-900">{sourceFullName}</span>
-                <span className="px-1.5 py-0.2 rounded bg-emerald-100/90 border border-emerald-300/70 text-[10px] font-mono font-bold text-emerald-900">
+                <span className="font-semibold text-emerald-900 dark:text-emerald-300">{sourceFullName}</span>
+                <span className="px-1.5 py-0.2 rounded bg-emerald-100/90 dark:bg-emerald-950/80 border border-emerald-300/70 dark:border-emerald-800 text-[10px] font-mono font-bold text-emerald-900 dark:text-emerald-300">
                   {formatCardId(sourcePerson)}
                 </span>
               </p>
@@ -498,7 +506,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 transition-colors"
+            className="p-1 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-zinc-200 hover:bg-stone-200/50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -508,7 +516,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           {/* 1. Relation Type Selector with clear genealogical direction */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-stone-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
               Тип родинного зв'язку
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -518,28 +526,28 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   title: '💍 Подружжя / Пара',
                   desc: 'Шлюбний або цивільний союз обох осіб',
                   icon: Heart,
-                  color: 'text-rose-600',
+                  color: 'text-rose-600 dark:text-rose-400',
                 },
                 {
                   type: 'parent',
                   title: '⬆️ Батьки',
                   desc: `Обрана особа є батьком/матір'ю для ${sourceFullName}`,
                   icon: User,
-                  color: 'text-emerald-700',
+                  color: 'text-emerald-700 dark:text-emerald-400',
                 },
                 {
                   type: 'child',
                   title: '⬇️ Дитина',
                   desc: `Обрана особа є дитиною для ${sourceFullName}`,
                   icon: Users,
-                  color: 'text-amber-700',
+                  color: 'text-amber-700 dark:text-amber-400',
                 },
                 {
                   type: 'sibling',
                   title: '🤝 Брат / Сестра',
                   desc: `Рідний брат або сестра для ${sourceFullName}`,
                   icon: Users,
-                  color: 'text-sky-700',
+                  color: 'text-sky-700 dark:text-sky-400',
                 },
               ].map((item) => {
                 const isSelected = relationType === item.type;
@@ -557,15 +565,15 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     }}
                     className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                       connectionKind === 'relation' && isSelected
-                        ? 'border-emerald-700 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-600/30 font-semibold shadow-xs'
-                        : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                        ? 'border-emerald-700 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-600/30 font-semibold shadow-xs'
+                        : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-200 hover:bg-stone-50 dark:hover:bg-zinc-800'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 font-bold text-xs">
-                      <Icon size={14} className={connectionKind === 'relation' && isSelected ? 'text-emerald-800' : item.color} />
+                      <Icon size={14} className={connectionKind === 'relation' && isSelected ? 'text-emerald-800 dark:text-emerald-300' : item.color} />
                       <span>{item.title}</span>
                     </div>
-                    <span className="text-[10px] text-stone-500 font-normal leading-tight">
+                    <span className="text-[10px] text-stone-500 dark:text-zinc-400 font-normal leading-tight">
                       {item.desc}
                     </span>
                   </button>
@@ -580,8 +588,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       onClick={selectGodparentMode}
                       className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                         connectionKind === 'godparent'
-                          ? 'border-amber-600 bg-amber-50 text-amber-950 ring-2 ring-amber-500/30 font-semibold shadow-xs'
-                          : 'border-stone-200 bg-white text-stone-700 hover:bg-amber-50/40'
+                          ? 'border-amber-600 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200 ring-2 ring-amber-500/30 font-semibold shadow-xs'
+                          : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-200 hover:bg-amber-50/40 dark:hover:bg-amber-950/30'
                       }`}
                     >
                       <div className="flex items-center gap-1.5 font-bold text-xs">
@@ -596,7 +604,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                         </svg>
                         <span>✝️ Хресний / Хресна</span>
                       </div>
-                      <span className="text-[10px] text-stone-500 font-normal leading-tight">
+                      <span className="text-[10px] text-stone-500 dark:text-zinc-400 font-normal leading-tight">
                         Хвиляста лінія духовного зв&apos;язку від картки до картки
                       </span>
                     </button>
@@ -607,15 +615,15 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     onClick={selectBranchLinkMode}
                     className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                       connectionKind === 'branch-link'
-                        ? 'border-emerald-700 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-600/30 font-semibold shadow-xs'
-                        : 'border-stone-200 bg-white text-stone-700 hover:bg-emerald-50/40'
+                        ? 'border-emerald-700 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-600/30 font-semibold shadow-xs'
+                        : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-200 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/30'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 font-bold text-xs">
-                      <ExternalLink size={14} className="text-emerald-700 shrink-0" />
+                      <ExternalLink size={14} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
                       <span>↗ Міжгілковий зв&apos;язок</span>
                     </div>
-                    <span className="text-[10px] text-stone-500 font-normal leading-tight">
+                    <span className="text-[10px] text-stone-500 dark:text-zinc-400 font-normal leading-tight">
                       Перехід до картки на іншому полотні (або стрілка на цьому)
                     </span>
                   </button>
@@ -626,13 +634,13 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       onClick={selectNoteLinkMode}
                       className={`col-span-2 p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                         connectionKind === 'note-link'
-                          ? 'border-amber-600 bg-amber-50 text-amber-950 ring-2 ring-amber-500/30 font-semibold shadow-xs'
-                          : 'border-stone-200 bg-white text-stone-700 hover:bg-amber-50/40'
+                          ? 'border-amber-600 dark:border-amber-500 bg-amber-50 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200 ring-2 ring-amber-500/30 font-semibold shadow-xs'
+                          : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/70 text-stone-700 dark:text-zinc-200 hover:bg-amber-50/40 dark:hover:bg-amber-950/30'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 font-bold text-xs">
-                          <StickyNote size={14} className="text-amber-600 shrink-0" />
+                          <StickyNote size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
                           <span>Зв&apos;язок нотатки (пунктирна лінія)</span>
                         </div>
                         <svg className="w-10 h-2.5 shrink-0" viewBox="0 0 40 10">
@@ -647,7 +655,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                           />
                         </svg>
                       </div>
-                      <span className="text-[10px] text-stone-500 font-normal leading-tight">
+                      <span className="text-[10px] text-stone-500 dark:text-zinc-400 font-normal leading-tight">
                         Прикріпити нотатку-стікер до картки або до іншої нотатки пунктиром
                       </span>
                     </button>
@@ -659,8 +667,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
           {/* Union Type Selector when relation is Spouse */}
           {connectionKind === 'relation' && relationType === 'spouse' && (
-            <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/80 space-y-2 animate-in fade-in duration-150">
-              <label className="block text-xs font-semibold text-emerald-950 uppercase tracking-wider">
+            <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200/80 dark:border-emerald-800/70 space-y-2 animate-in fade-in duration-150">
+              <label className="block text-xs font-semibold text-emerald-950 dark:text-emerald-200 uppercase tracking-wider">
                 Тип союзу (пара)
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -669,8 +677,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   onClick={() => setUnionType('marriage')}
                   className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     unionType === 'marriage'
-                      ? 'border-emerald-700 bg-white text-emerald-950 ring-1 ring-emerald-600 font-semibold shadow-2xs'
-                      : 'border-emerald-200/60 bg-emerald-50/50 text-stone-700 hover:bg-white'
+                      ? 'border-emerald-700 dark:border-emerald-500 bg-white dark:bg-zinc-900 text-emerald-950 dark:text-emerald-200 ring-1 ring-emerald-600 font-semibold shadow-2xs'
+                      : 'border-emerald-200/60 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-zinc-800/60 text-stone-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
                   }`}
                 >
                   <span className="text-base">💍</span>
@@ -682,8 +690,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   onClick={() => setUnionType('divorce')}
                   className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     unionType === 'divorce'
-                      ? 'border-rose-600 bg-rose-50 text-rose-950 ring-1 ring-rose-500 font-semibold shadow-2xs'
-                      : 'border-emerald-200/60 bg-emerald-50/50 text-stone-700 hover:bg-white hover:text-rose-900'
+                      ? 'border-rose-600 dark:border-rose-500 bg-rose-50 dark:bg-rose-950/50 text-rose-950 dark:text-rose-200 ring-1 ring-rose-500 font-semibold shadow-2xs'
+                      : 'border-emerald-200/60 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-zinc-800/60 text-stone-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800 hover:text-rose-900 dark:hover:text-rose-300'
                   }`}
                 >
                   <span className="text-base">💔</span>
@@ -695,8 +703,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   onClick={() => setUnionType('cohabitation')}
                   className={`py-2 px-2.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     unionType === 'cohabitation'
-                      ? 'border-emerald-700 bg-white text-emerald-950 ring-1 ring-emerald-600 font-semibold shadow-2xs'
-                      : 'border-emerald-200/60 bg-emerald-50/50 text-stone-700 hover:bg-white'
+                      ? 'border-emerald-700 dark:border-emerald-500 bg-white dark:bg-zinc-900 text-emerald-950 dark:text-emerald-200 ring-1 ring-emerald-600 font-semibold shadow-2xs'
+                      : 'border-emerald-200/60 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-zinc-800/60 text-stone-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
                   }`}
                 >
                   <span className="text-base">💚</span>
@@ -709,14 +717,14 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
           {/* 2. Target Person Selector */}
           {isCrossCanvasPickerActive ? (
             <div className="space-y-2.5">
-              <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-stone-700 dark:text-zinc-300 uppercase tracking-wider">
                 Зв&apos;язок між полотнами (гілками):
               </label>
 
               {/* Step 1: Select Canvas / Branch */}
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-600">
-                  <ExternalLink size={12.5} className="text-emerald-700 shrink-0" />
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-600 dark:text-zinc-400">
+                  <ExternalLink size={12.5} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
                   <span>1. Спочатку оберіть гілку (полотно)</span>
                 </label>
                 <select
@@ -727,7 +735,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     setSelectedTargetId('');
                     setSearchQuery('');
                   }}
-                  className="w-full text-xs px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white font-medium text-stone-800 cursor-pointer"
+                  className="w-full text-xs px-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-800 font-medium text-stone-800 dark:text-zinc-100 cursor-pointer"
                 >
                   <option value="">— Оберіть інше полотно (гілку) —</option>
                   {otherCanvasTrees.map((t) => (
@@ -744,7 +752,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               </div>
 
               {otherCanvasTrees.length === 0 && (
-                <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-900 leading-snug">
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/70 text-[11px] text-amber-900 dark:text-amber-200 leading-snug">
                   Інших полотен (гілок) ще не створено. Ви можете створити нове полотно через меню «Полотна / гілки» або обрати «Поточне полотно» вище для стрілки на цьому полотні.
                 </div>
               )}
@@ -752,18 +760,18 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               {/* Step 2: Select Card on Chosen Canvas */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold text-stone-600">
+                  <span className="text-[11px] font-semibold text-stone-600 dark:text-zinc-400">
                     2. Оберіть картку
                     {selectedCrossCanvasTree ? ` (полотно «${selectedCrossCanvasTree.treeTitle}»)` : ''}
                   </span>
                   {(selectedCrossCanvasTree || searchQuery.trim()) && (
-                    <span className="text-[10px] font-mono text-stone-500">
+                    <span className="text-[10px] font-mono text-stone-500 dark:text-zinc-400">
                       {crossCanvasEntries.length} шт.
                     </span>
                   )}
                 </div>
                 <div className="relative">
-                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                  <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-500 pointer-events-none" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -783,16 +791,16 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                         ? 'Пошук за ID (#12), ПІБ, № дому...'
                         : 'Пошук за ID (#12) чи ПІБ по всіх інших полотнах...'
                     }
-                    className="w-full text-xs pl-8 pr-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-stone-50"
+                    className="w-full text-xs pl-8 pr-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-stone-50 dark:bg-zinc-800/80 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-500"
                   />
                 </div>
-                <div className="max-h-44 overflow-y-auto rounded-xl border border-stone-200 divide-y divide-stone-100 bg-white shadow-inner">
+                <div className="max-h-44 overflow-y-auto rounded-xl border border-stone-200 dark:border-zinc-700 divide-y divide-stone-100 dark:divide-zinc-800 bg-white dark:bg-zinc-900 shadow-inner">
                   {!selectedCrossCanvasTree && !searchQuery.trim() ? (
-                    <div className="p-4 text-center text-xs text-stone-500">
-                      Спочатку оберіть гілку (полотно) вище, щоб побачити картки, або введіть <code className="px-1 py-0.5 bg-stone-100 rounded font-mono text-[10.5px]">#ID</code> у пошук.
+                    <div className="p-4 text-center text-xs text-stone-500 dark:text-zinc-400">
+                      Спочатку оберіть гілку (полотно) вище, щоб побачити картки, або введіть <code className="px-1 py-0.5 bg-stone-100 dark:bg-zinc-800 rounded font-mono text-[10.5px]">#ID</code> у пошук.
                     </div>
                   ) : crossCanvasEntries.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-stone-500 italic">
+                    <div className="p-4 text-center text-xs text-stone-500 dark:text-zinc-400 italic">
                       Карток за запитом не знайдено
                     </div>
                   ) : (
@@ -810,27 +818,27 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                           }}
                           className={`px-3 py-2 text-xs flex items-center justify-between cursor-pointer transition-colors ${
                             isSelected
-                              ? 'bg-emerald-50 text-emerald-950 font-semibold'
-                              : 'hover:bg-stone-50 text-stone-800'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 font-semibold'
+                              : 'hover:bg-stone-50 dark:hover:bg-zinc-800/80 text-stone-800 dark:text-zinc-200'
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <span className="text-[10px] font-mono font-bold text-stone-700 bg-stone-100 border border-stone-200 px-1.5 py-0.2 rounded shrink-0">
+                            <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-zinc-300 bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 px-1.5 py-0.2 rounded shrink-0">
                               {formatCardId(p)}
                             </span>
                             <span className="font-medium truncate">{pName}</span>
                             {!selectedCrossCanvasTree && (
-                              <span className="text-[9.5px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.2 rounded shrink-0">
+                              <span className="text-[9.5px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/70 px-1.5 py-0.2 rounded shrink-0">
                                 {ct.treeTitle}
                               </span>
                             )}
                             {p.yearsDisplay && (
-                              <span className="text-[10px] text-stone-500 font-mono shrink-0">
+                              <span className="text-[10px] text-stone-500 dark:text-zinc-400 font-mono shrink-0">
                                 ({p.yearsDisplay})
                               </span>
                             )}
                             {p.houseNumber && (
-                              <span className="text-[9px] font-mono text-emerald-800 bg-emerald-100/70 px-1 py-0.2 rounded shrink-0">
+                              <span className="text-[9px] font-mono text-emerald-800 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 px-1 py-0.2 rounded shrink-0">
                                 №{p.houseNumber}
                               </span>
                             )}
@@ -855,7 +863,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
           ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <label className="block text-xs font-semibold text-stone-700 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-stone-700 dark:text-zinc-300 uppercase tracking-wider">
                   Вибір картки для з&apos;єднання:
                 </label>
                 {connectionKind === 'branch-link' && onConnectCrossCanvasLink && (
@@ -866,7 +874,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       setSelectedTargetId('');
                       setSearchQuery('');
                     }}
-                    className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                    className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 underline cursor-pointer"
                   >
                     ← Обрати інше полотно
                   </button>
@@ -875,8 +883,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
               {/* Step 1: Select Branch */}
               <div className="space-y-1">
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-600">
-                  <FolderTree size={12.5} className="text-emerald-700 shrink-0" />
+                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-600 dark:text-zinc-400">
+                  <FolderTree size={12.5} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
                   <span>1. Спочатку оберіть гілку (рід)</span>
                 </label>
                 <select
@@ -894,7 +902,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       setSelectedTargetId('');
                     }
                   }}
-                  className="w-full text-xs px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white font-medium text-stone-800 cursor-pointer"
+                  className="w-full text-xs px-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-800 font-medium text-stone-800 dark:text-zinc-100 cursor-pointer"
                 >
                   <option value="">— Оберіть гілку —</option>
                   <option value="__ALL__">
@@ -911,14 +919,14 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               {/* Step 2: Select Card */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold text-stone-600">
+                  <span className="text-[11px] font-semibold text-stone-600 dark:text-zinc-400">
                     2. Оберіть картку
                     {selectedBranch && selectedBranch !== '__ALL__'
                       ? ` (гілка «${selectedBranch}»)`
                       : ''}
                   </span>
                   {(selectedBranch || searchQuery.trim()) && (
-                    <span className="text-[10px] font-mono text-stone-500">
+                    <span className="text-[10px] font-mono text-stone-500 dark:text-zinc-400">
                       {availablePersons.length} шт.
                     </span>
                   )}
@@ -932,15 +940,15 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       ? 'Фільтр за ID (#12), іменем, номером дому...'
                       : 'Або швидкий пошук за ID (#12) чи іменем...'
                   }
-                  className="w-full text-xs px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-stone-50"
+                  className="w-full text-xs px-3 py-2 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-stone-50 dark:bg-zinc-800/80 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-500"
                 />
-                <div className="max-h-44 overflow-y-auto rounded-xl border border-stone-200 divide-y divide-stone-100 bg-white shadow-inner">
+                <div className="max-h-44 overflow-y-auto rounded-xl border border-stone-200 dark:border-zinc-700 divide-y divide-stone-100 dark:divide-zinc-800 bg-white dark:bg-zinc-900 shadow-inner">
                   {!selectedBranch && !searchQuery.trim() ? (
-                    <div className="p-4 text-center text-xs text-stone-500">
-                      Спочатку оберіть гілку вище, щоб переглянути її картки (або введіть <code className="px-1 py-0.5 bg-stone-100 rounded font-mono text-[10.5px]">#ID</code> у пошук).
+                    <div className="p-4 text-center text-xs text-stone-500 dark:text-zinc-400">
+                      Спочатку оберіть гілку вище, щоб переглянути її картки (або введіть <code className="px-1 py-0.5 bg-stone-100 dark:bg-zinc-800 rounded font-mono text-[10.5px]">#ID</code> у пошук).
                     </div>
                   ) : availablePersons.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-stone-500 italic">
+                    <div className="p-4 text-center text-xs text-stone-500 dark:text-zinc-400 italic">
                       Осіб за запитом не знайдено
                     </div>
                   ) : (
@@ -953,30 +961,30 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                           key={p.id}
                           onClick={() => setSelectedTargetId(p.id)}
                           className={`px-3 py-2 text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                            isSelected ? 'bg-emerald-50 text-emerald-950 font-semibold' : 'hover:bg-stone-50 text-stone-800'
+                            isSelected ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 font-semibold' : 'hover:bg-stone-50 dark:hover:bg-zinc-800/80 text-stone-800 dark:text-zinc-200'
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <span className="text-[10px] font-mono font-bold text-stone-700 bg-stone-100 border border-stone-200 px-1.5 py-0.2 rounded shrink-0">
+                            <span className="text-[10px] font-mono font-bold text-stone-700 dark:text-zinc-300 bg-stone-100 dark:bg-zinc-800 border border-stone-200 dark:border-zinc-700 px-1.5 py-0.2 rounded shrink-0">
                               {formatCardId(p)}
                             </span>
                             <span className="font-medium truncate">{pName}</span>
                             {(!selectedBranch || selectedBranch === '__ALL__') && (
-                              <span className="text-[9.5px] font-medium text-indigo-800 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.2 rounded shrink-0">
+                              <span className="text-[9.5px] font-medium text-indigo-800 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/70 px-1.5 py-0.2 rounded shrink-0">
                                 {pBranch}
                               </span>
                             )}
                             {p.isGhost && (
-                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.2 rounded-sm shrink-0">
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 px-1.5 py-0.2 rounded-sm shrink-0">
                                 <StickyNote size={9} />
                                 Нотатка
                               </span>
                             )}
                             {p.yearsDisplay && (
-                              <span className="text-[10px] text-stone-500 font-mono shrink-0">({p.yearsDisplay})</span>
+                              <span className="text-[10px] text-stone-500 dark:text-zinc-400 font-mono shrink-0">({p.yearsDisplay})</span>
                             )}
                             {p.houseNumber && (
-                              <span className="text-[9px] font-mono text-emerald-800 bg-emerald-100/70 px-1 py-0.2 rounded shrink-0">
+                              <span className="text-[9px] font-mono text-emerald-800 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 px-1 py-0.2 rounded shrink-0">
                                 №{p.houseNumber}
                               </span>
                             )}
@@ -999,32 +1007,32 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
           {/* Conflict / Cycle Warning Banner */}
           {cycleWarning && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-900 animate-in fade-in">
-              <ShieldAlert size={16} className="text-rose-600 shrink-0 mt-0.5" />
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-start gap-2.5 text-xs text-rose-900 dark:text-rose-200 animate-in fade-in">
+              <ShieldAlert size={16} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <div className="leading-tight">{cycleWarning}</div>
             </div>
           )}
 
           {/* 3. Options Card: Cross-Canvas vs Same-Canvas Branch/Godparent vs Genealogical Credibility */}
           {isCrossCanvasPickerActive ? (
-            <div className="p-3.5 rounded-xl border bg-emerald-50/70 border-emerald-200/80 space-y-3">
+            <div className="p-3.5 rounded-xl border bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/70 space-y-3">
               {selectedCrossCanvasEntry && (
-                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-emerald-200 text-xs">
-                  <ExternalLink size={13} className="text-emerald-700 shrink-0" />
-                  <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-900 text-[10px] font-bold shrink-0">
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800 text-xs">
+                  <ExternalLink size={13} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
+                  <span className="px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 text-[10px] font-bold shrink-0">
                     {selectedCrossCanvasEntry.tree.treeTitle}
                   </span>
-                  <span className="font-mono font-bold text-[10px] text-stone-700 bg-stone-100 px-1 rounded shrink-0">
+                  <span className="font-mono font-bold text-[10px] text-stone-700 dark:text-zinc-300 bg-stone-100 dark:bg-zinc-800 px-1 rounded shrink-0">
                     {formatCardId(selectedCrossCanvasEntry.person)}
                   </span>
-                  <span className="font-semibold text-stone-900 truncate">
+                  <span className="font-semibold text-stone-900 dark:text-zinc-100 truncate">
                     {targetFullName}
                   </span>
                 </div>
               )}
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-emerald-950">
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1 text-emerald-950 dark:text-emerald-200">
                   Підпис переходу (необов&apos;язково)
                 </label>
                 <input
@@ -1032,12 +1040,12 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   value={branchLabel}
                   onChange={(e) => setBranchLabel(e.target.value)}
                   placeholder="напр. Гілка батька / Продовження роду / Куми"
-                  className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-500"
                 />
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold text-emerald-950">Колір бейджа:</span>
+                <span className="text-[11px] font-semibold text-emerald-950 dark:text-emerald-200">Колір бейджа:</span>
                 <div className="flex items-center gap-1.5">
                   {['#047857', ...BRANCH_LINK_COLOR_PRESETS.slice(0, 5).map((c) => c.hex)].map((hex) => (
                     <button
@@ -1047,13 +1055,13 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       style={{ backgroundColor: hex }}
                       className={`w-5.5 h-5.5 rounded-full transition-transform hover:scale-110 cursor-pointer ${
                         crossCanvasColor.toLowerCase() === hex.toLowerCase()
-                          ? 'ring-2 ring-offset-1 ring-stone-800'
+                          ? 'ring-2 ring-offset-1 ring-stone-800 dark:ring-zinc-200 dark:ring-offset-zinc-900'
                           : 'opacity-80'
                       }`}
                     />
                   ))}
                   <label
-                    className="relative w-5.5 h-5.5 rounded-full border border-dashed border-emerald-400 bg-white flex items-center justify-center cursor-pointer hover:border-emerald-600 overflow-hidden"
+                    className="relative w-5.5 h-5.5 rounded-full border border-dashed border-emerald-400 dark:border-emerald-600 bg-white dark:bg-zinc-900 flex items-center justify-center cursor-pointer hover:border-emerald-600 overflow-hidden"
                     title="Обрати довільний колір"
                   >
                     <input
@@ -1062,19 +1070,19 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       onChange={(e) => setCrossCanvasColor(e.target.value)}
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                    <Palette size={11} className="text-emerald-700 pointer-events-none" />
+                    <Palette size={11} className="text-emerald-700 dark:text-emerald-400 pointer-events-none" />
                   </label>
                 </div>
               </div>
 
-              <label className="flex items-start gap-2 cursor-pointer pt-1.5 border-t border-emerald-200/70">
+              <label className="flex items-start gap-2 cursor-pointer pt-1.5 border-t border-emerald-200/70 dark:border-emerald-800/60">
                 <input
                   type="checkbox"
                   checked={crossCanvasBidirectional}
                   onChange={(e) => setCrossCanvasBidirectional(e.target.checked)}
                   className="mt-0.5 rounded text-emerald-700 focus:ring-emerald-600 accent-emerald-700 w-3.5 h-3.5 cursor-pointer"
                 />
-                <span className="text-xs font-medium text-stone-800 leading-snug">
+                <span className="text-xs font-medium text-stone-800 dark:text-zinc-200 leading-snug">
                   Створити зворотне посилання на картці у цільовому полотні (двосторонній перехід ↔)
                 </span>
               </label>
@@ -1083,13 +1091,13 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
             <div
               className={`p-3.5 rounded-xl border space-y-3 ${
                 connectionKind === 'godparent' || connectionKind === 'note-link'
-                  ? 'bg-amber-50/60 border-amber-200/90'
-                  : 'bg-indigo-50/60 border-indigo-200/80'
+                  ? 'bg-amber-50/60 dark:bg-amber-950/25 border-amber-200/90 dark:border-amber-800/70'
+                  : 'bg-indigo-50/60 dark:bg-indigo-950/25 border-indigo-200/80 dark:border-indigo-800/70'
               }`}
             >
               {connectionKind === 'godparent' && (
                 <div>
-                  <span className="block text-[11px] font-bold text-amber-950 uppercase tracking-wider mb-1.5">
+                  <span className="block text-[11px] font-bold text-amber-950 dark:text-amber-200 uppercase tracking-wider mb-1.5">
                     Швидкий вибір ролі
                   </span>
                   <div className="flex flex-wrap gap-1.5">
@@ -1101,7 +1109,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                         className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer ${
                           branchLabel === preset
                             ? 'border-amber-600 bg-amber-600 text-white shadow-2xs'
-                            : 'border-amber-200 bg-white text-amber-950 hover:bg-amber-50'
+                            : 'border-amber-200 dark:border-amber-800 bg-white dark:bg-zinc-900 text-amber-950 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50'
                         }`}
                       >
                         {preset}
@@ -1112,16 +1120,16 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               )}
 
               {(connectionKind === 'note-link' || (connectionKind === 'branch-link' && involvesNote)) && (
-                <div className="space-y-2 pb-1 border-b border-amber-200/70">
+                <div className="space-y-2 pb-1 border-b border-amber-200/70 dark:border-amber-800/60">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="block text-[11px] font-bold text-amber-950 uppercase tracking-wider">
+                    <span className="block text-[11px] font-bold text-amber-950 dark:text-amber-200 uppercase tracking-wider">
                       Вид ймовірного родинного зв&apos;язку
                     </span>
                     {probableRelation && (
                       <button
                         type="button"
                         onClick={() => setProbableRelation('')}
-                        className="text-[10.5px] font-semibold text-amber-800 hover:underline cursor-pointer"
+                        className="text-[10.5px] font-semibold text-amber-800 dark:text-amber-300 hover:underline cursor-pointer"
                       >
                         Очистити
                       </button>
@@ -1139,7 +1147,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                           className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer ${
                             active
                               ? 'border-amber-600 bg-amber-600 text-white shadow-2xs'
-                              : 'border-amber-200 bg-white text-amber-950 hover:bg-amber-50'
+                              : 'border-amber-200 dark:border-amber-800 bg-white dark:bg-zinc-900 text-amber-950 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50'
                           }`}
                         >
                           <span>{preset.icon}</span>
@@ -1153,7 +1161,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     value={probableRelation}
                     onChange={(e) => setProbableRelation(e.target.value)}
                     placeholder="Або введіть свій варіант: напр. Батьки, Подружжя, Брат..."
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-600 bg-white"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800 focus:outline-none focus:ring-1 focus:ring-amber-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-500"
                   />
                 </div>
               )}
@@ -1161,7 +1169,9 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               <div>
                 <label
                   className={`block text-[11px] font-bold uppercase tracking-wider mb-1 ${
-                    connectionKind === 'godparent' || connectionKind === 'note-link' ? 'text-amber-950' : 'text-indigo-950'
+                    connectionKind === 'godparent' || connectionKind === 'note-link'
+                      ? 'text-amber-950 dark:text-amber-200'
+                      : 'text-indigo-950 dark:text-indigo-200'
                   }`}
                 >
                   {connectionKind === 'godparent'
@@ -1181,10 +1191,10 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       ? 'напр. Згадка з метрики 1908 р.'
                       : 'напр. Споріднена гілка / Куми / Перехід до роду'
                   }
-                  className={`w-full text-xs px-2.5 py-1.5 rounded-lg border focus:outline-none focus:ring-1 bg-white ${
+                  className={`w-full text-xs px-2.5 py-1.5 rounded-lg border focus:outline-none focus:ring-1 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-500 ${
                     connectionKind === 'godparent' || connectionKind === 'note-link'
-                      ? 'border-amber-200 focus:ring-amber-600'
-                      : 'border-indigo-200 focus:ring-indigo-600'
+                      ? 'border-amber-200 dark:border-amber-800 focus:ring-amber-600'
+                      : 'border-indigo-200 dark:border-indigo-800 focus:ring-indigo-600'
                   }`}
                 />
               </div>
@@ -1193,7 +1203,9 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               <div className="space-y-1.5">
                 <span
                   className={`block text-[11px] font-semibold ${
-                    connectionKind === 'godparent' || connectionKind === 'note-link' ? 'text-amber-950' : 'text-indigo-950'
+                    connectionKind === 'godparent' || connectionKind === 'note-link'
+                      ? 'text-amber-950 dark:text-amber-200'
+                      : 'text-indigo-950 dark:text-indigo-200'
                   }`}
                 >
                   Форма пунктирної лінії:
@@ -1204,8 +1216,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     onClick={() => setBranchLineShape('curved')}
                     className={`px-2 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       branchLineShape === 'curved'
-                        ? 'border-indigo-600 bg-white text-indigo-950 ring-1 ring-indigo-500 shadow-2xs'
-                        : 'border-stone-200/80 bg-white/70 text-stone-600 hover:bg-white'
+                        ? 'border-indigo-600 dark:border-indigo-500 bg-white dark:bg-zinc-900 text-indigo-950 dark:text-indigo-200 ring-1 ring-indigo-500 shadow-2xs'
+                        : 'border-stone-200/80 dark:border-zinc-700 bg-white/70 dark:bg-zinc-800/70 text-stone-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
                     }`}
                   >
                     <svg className="w-5 h-3.5 overflow-visible shrink-0" viewBox="0 0 24 16">
@@ -1224,8 +1236,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     onClick={() => setBranchLineShape('straight')}
                     className={`px-2 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       branchLineShape === 'straight'
-                        ? 'border-indigo-600 bg-white text-indigo-950 ring-1 ring-indigo-500 shadow-2xs'
-                        : 'border-stone-200/80 bg-white/70 text-stone-600 hover:bg-white'
+                        ? 'border-indigo-600 dark:border-indigo-500 bg-white dark:bg-zinc-900 text-indigo-950 dark:text-indigo-200 ring-1 ring-indigo-500 shadow-2xs'
+                        : 'border-stone-200/80 dark:border-zinc-700 bg-white/70 dark:bg-zinc-800/70 text-stone-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
                     }`}
                   >
                     <svg className="w-5 h-3.5 overflow-visible shrink-0" viewBox="0 0 24 16">
@@ -1247,8 +1259,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       onClick={() => setBranchLineShape('wavy')}
                       className={`px-2 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         branchLineShape === 'wavy'
-                          ? 'border-amber-600 bg-white text-amber-950 ring-1 ring-amber-500 shadow-2xs'
-                          : 'border-stone-200/80 bg-white/70 text-stone-600 hover:bg-white'
+                          ? 'border-amber-600 dark:border-amber-500 bg-white dark:bg-zinc-900 text-amber-950 dark:text-amber-200 ring-1 ring-amber-500 shadow-2xs'
+                          : 'border-stone-200/80 dark:border-zinc-700 bg-white/70 dark:bg-zinc-800/70 text-stone-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800'
                       }`}
                     >
                       <svg className="w-5.5 h-3.5 overflow-visible shrink-0" viewBox="0 0 24 16">
@@ -1268,7 +1280,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
               {/* Color Swatches + Custom Color */}
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] font-semibold text-indigo-950">Колір стрілки:</span>
+                <span className="text-[11px] font-semibold text-indigo-950 dark:text-indigo-200">Колір стрілки:</span>
                 <div className="flex items-center gap-1.5">
                   {BRANCH_LINK_COLOR_PRESETS.map((preset) => (
                     <button
@@ -1278,14 +1290,14 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       style={{ backgroundColor: preset.hex }}
                       className={`w-5.5 h-5.5 rounded-full transition-transform hover:scale-110 cursor-pointer ${
                         branchColor.toLowerCase() === preset.hex.toLowerCase()
-                          ? 'ring-2 ring-offset-1 ring-stone-800'
+                          ? 'ring-2 ring-offset-1 ring-stone-800 dark:ring-zinc-200 dark:ring-offset-zinc-900'
                           : 'opacity-80'
                       }`}
                       title={preset.name}
                     />
                   ))}
                   <label
-                    className="relative w-5.5 h-5.5 rounded-full border border-dashed border-indigo-400 bg-white flex items-center justify-center cursor-pointer hover:border-indigo-600 overflow-hidden"
+                    className="relative w-5.5 h-5.5 rounded-full border border-dashed border-indigo-400 dark:border-indigo-600 bg-white dark:bg-zinc-900 flex items-center justify-center cursor-pointer hover:border-indigo-600 overflow-hidden"
                     title="Обрати довільний колір"
                   >
                     <input
@@ -1294,16 +1306,16 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       onChange={(e) => setBranchColor(e.target.value)}
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                    <Palette size={11} className="text-indigo-700 pointer-events-none" />
+                    <Palette size={11} className="text-indigo-700 dark:text-indigo-400 pointer-events-none" />
                   </label>
                 </div>
               </div>
 
               {/* Thickness Slider & Presets */}
-              <div className="space-y-1.5 pt-1 border-t border-indigo-200/60">
+              <div className="space-y-1.5 pt-1 border-t border-indigo-200/60 dark:border-indigo-800/60">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-indigo-950">Товщина лінії:</span>
-                  <span className="text-[10.5px] font-mono font-bold text-indigo-800 bg-white px-1.5 py-0.5 rounded border border-indigo-200">
+                  <span className="text-[11px] font-semibold text-indigo-950 dark:text-indigo-200">Товщина лінії:</span>
+                  <span className="text-[10.5px] font-mono font-bold text-indigo-800 dark:text-indigo-300 bg-white dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
                     {branchStrokeWidth} px
                   </span>
                 </div>
@@ -1315,7 +1327,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     step={1}
                     value={branchStrokeWidth}
                     onChange={(e) => setBranchStrokeWidth(Number(e.target.value))}
-                    className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-indigo-200/70 rounded-lg"
+                    className="w-full accent-indigo-600 cursor-pointer h-1.5 bg-indigo-200/70 dark:bg-indigo-950 rounded-lg"
                   />
                 </div>
                 <div className="flex items-center gap-1 flex-wrap">
@@ -1327,7 +1339,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border cursor-pointer transition-colors ${
                         branchStrokeWidth === w
                           ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white text-stone-700 border-indigo-200/80 hover:bg-indigo-50'
+                          : 'bg-white dark:bg-zinc-900 text-stone-700 dark:text-zinc-300 border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60'
                       }`}
                     >
                       {w}px
@@ -1450,9 +1462,9 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               </label>
             </div>
           ) : (
-            <div className="p-3.5 bg-[#fbfbfa] rounded-xl border border-stone-200 space-y-3">
+            <div className="p-3.5 bg-[#fbfbfa] dark:bg-zinc-950/60 rounded-xl border border-stone-200 dark:border-zinc-800 space-y-3">
               <div>
-                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-stone-800 dark:text-zinc-200 uppercase tracking-wider mb-1.5">
                   Рівень достовірності зв'язку
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1461,13 +1473,13 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       level: 'verified' as ConfidenceLevel,
                       label: '🟢 Перевірений',
                       sub: 'Є метрика / документ',
-                      color: 'border-emerald-600 bg-emerald-50 text-emerald-900 ring-1 ring-emerald-600',
+                      color: 'border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-600',
                     },
                     {
                       level: 'hypothetical' as ConfidenceLevel,
                       label: '⚪ Неперевірений',
                       sub: 'Версія / спогади (пунктир)',
-                      color: 'border-stone-500 bg-stone-100 text-stone-900 ring-1 ring-stone-400',
+                      color: 'border-stone-500 dark:border-zinc-500 bg-stone-100 dark:bg-zinc-800 text-stone-900 dark:text-zinc-100 ring-1 ring-stone-400 dark:ring-zinc-500',
                     },
                   ].map((item) => {
                     const isCur = confidenceLevel === item.level;
@@ -1476,14 +1488,14 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                         key={item.level}
                         type="button"
                         onClick={() => setConfidenceLevel(item.level)}
-                        className={`py-2 px-2 rounded-lg border text-left flex flex-col transition-all ${
+                        className={`py-2 px-2 rounded-lg border text-left flex flex-col transition-all cursor-pointer ${
                           isCur
                             ? `${item.color} font-semibold shadow-2xs`
-                            : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                            : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-stone-700 dark:text-zinc-300 hover:bg-stone-50 dark:hover:bg-zinc-800'
                         }`}
                       >
                         <span className="text-[11px] font-bold leading-tight">{item.label}</span>
-                        <span className="text-[9.5px] text-stone-500 font-normal leading-tight mt-0.5">{item.sub}</span>
+                        <span className="text-[9.5px] text-stone-500 dark:text-zinc-400 font-normal leading-tight mt-0.5">{item.sub}</span>
                       </button>
                     );
                   })}
@@ -1492,8 +1504,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
               {/* Archival Citation Input */}
               <div>
-                <label className="block text-[11px] font-medium text-stone-700 mb-1 flex items-center gap-1">
-                  <FileText size={12} className="text-emerald-700" />
+                <label className="block text-[11px] font-medium text-stone-700 dark:text-zinc-300 mb-1 flex items-center gap-1">
+                  <FileText size={12} className="text-emerald-700 dark:text-emerald-400" />
                   <span>Архівне джерело або запис метрики (необов'язково)</span>
                 </label>
                 <input
@@ -1501,7 +1513,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   value={archiveSource}
                   onChange={(e) => setArchiveSource(e.target.value)}
                   placeholder="напр. ЦДІАЛ, фонд 201, опис 4а, спр. 115, арк. 32"
-                  className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white"
+                  className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-emerald-600 bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-500"
                 />
               </div>
 
@@ -1513,22 +1525,22 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   onChange={(e) => setIsMainBranch(e.target.checked)}
                   className="rounded text-emerald-800 focus:ring-emerald-600 accent-emerald-800 w-3.5 h-3.5 cursor-pointer"
                 />
-                <span className="text-xs font-medium text-stone-800 flex items-center gap-1">
-                  <Flame size={13} className="text-amber-600" />
+                <span className="text-xs font-medium text-stone-800 dark:text-zinc-200 flex items-center gap-1">
+                  <Flame size={13} className="text-amber-600 dark:text-amber-400" />
                   <span>Пряма лінія роду (виділити лінію товстішим накресленням)</span>
                 </span>
               </label>
 
               {/* Spouse children option */}
               {relationType === 'spouse' && targetPerson && (targetPerson.children?.length ?? 0) > 0 && (
-                <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-stone-200/80">
+                <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-stone-200/80 dark:border-zinc-800">
                   <input
                     type="checkbox"
                     checked={linkExistingSpouseChildren}
                     onChange={(e) => setLinkExistingSpouseChildren(e.target.checked)}
                     className="rounded text-emerald-800 focus:ring-emerald-600 accent-emerald-800 w-3.5 h-3.5 cursor-pointer"
                   />
-                  <span className="text-xs text-stone-700">
+                  <span className="text-xs text-stone-700 dark:text-zinc-300">
                     Пов'язати з дітьми подружжя ({targetPerson.children.length} осіб)
                   </span>
                 </label>
@@ -1536,9 +1548,9 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
               {/* Auto-graduate sticky note card when relation is established */}
               {(sourcePerson.isGhost || targetPerson?.isGhost) && (
-                <div className="space-y-1.5 pt-1.5 border-t border-dashed border-amber-300">
+                <div className="space-y-1.5 pt-1.5 border-t border-dashed border-amber-300 dark:border-amber-800">
                   {!graduateGhostCards && (
-                    <p className="text-[11px] font-medium text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 leading-snug">
+                    <p className="text-[11px] font-medium text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg px-2.5 py-1.5 leading-snug">
                       Зв&apos;язок із нотаткою автоматично малюватиметься пунктирною лінією.
                     </p>
                   )}
@@ -1549,7 +1561,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       onChange={(e) => setGraduateGhostCards(e.target.checked)}
                       className="mt-0.5 rounded text-emerald-800 focus:ring-emerald-600 accent-emerald-800 w-3.5 h-3.5 cursor-pointer"
                     />
-                    <span className="text-xs text-stone-800 leading-snug">
+                    <span className="text-xs text-stone-800 dark:text-zinc-200 leading-snug">
                       Перетворити нотатку на звичайну картку особи після з&apos;єднання
                     </span>
                   </label>
@@ -1559,11 +1571,11 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
           )}
 
           {/* Footer */}
-          <div className="pt-3 flex items-center justify-end gap-3 border-t border-stone-100">
+          <div className="pt-3 flex items-center justify-end gap-3 border-t border-stone-100 dark:border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-medium text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
             >
               Скасувати
             </button>

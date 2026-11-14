@@ -92,7 +92,6 @@ const FamilyCardComponent: React.FC<FamilyCardProps> = ({
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      setShowReactionPicker(true);
       if (onLongPress) onLongPress(e, person.id);
     }, 400);
 
@@ -175,6 +174,9 @@ const FamilyCardComponent: React.FC<FamilyCardProps> = ({
         onOpenClanCoatOfArmsModal={onOpenClanCoatOfArmsModal}
         onOpenMetricModal={onOpenMetricModal}
         onToggleReaction={onToggleReaction}
+        onOpenReactionPicker={
+          onToggleReaction ? () => setShowReactionPicker((prev) => !prev) : undefined
+        }
         onSelectTree={onSelectTree}
         allPersons={allPersons}
         onJumpToBranchLink={onJumpToBranchLink}

@@ -82,19 +82,19 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-sm overflow-hidden flex flex-col"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-zinc-800 w-full max-w-sm overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-4 bg-[#f8faf8] border-b border-[#e2e8e2] flex items-center justify-between">
+        <div className="px-5 py-4 bg-[#f8faf8] dark:bg-zinc-950/60 border-b border-[#e2e8e2] dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800/70 flex items-center justify-center text-emerald-800 dark:text-emerald-300 shrink-0">
               <Link2 size={16} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-stone-900 leading-tight">Статус зв'язку</h3>
+              <h3 className="text-sm font-bold text-stone-900 dark:text-zinc-100 leading-tight">Статус зв'язку</h3>
               {connectionLabel && (
-                <p className="text-[11px] text-stone-500 truncate max-w-[220px]">
+                <p className="text-[11px] text-stone-500 dark:text-zinc-400 truncate max-w-[220px]">
                   {connectionLabel}
                 </p>
               )}
@@ -103,7 +103,7 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/50 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-stone-400 dark:text-zinc-400 hover:text-stone-700 dark:hover:text-zinc-100 hover:bg-stone-200/50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X size={17} />
           </button>
@@ -111,7 +111,7 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSave} className="p-5 space-y-3.5">
-          <div className="text-xs font-semibold text-stone-700 uppercase tracking-wider mb-1">
+          <div className="text-xs font-semibold text-stone-700 dark:text-zinc-300 uppercase tracking-wider mb-1">
             Оберіть статус перевірки
           </div>
 
@@ -121,13 +121,13 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
             onClick={() => setIsVerified(true)}
             className={`w-full p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
               isVerified
-                ? 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-600/30 font-semibold shadow-xs'
-                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-600/30 font-semibold shadow-xs'
+                : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 text-stone-700 dark:text-zinc-200 hover:bg-stone-50 dark:hover:bg-zinc-800'
             }`}
           >
             <div
               className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                isVerified ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-stone-400'
+                isVerified ? 'bg-emerald-600 text-white' : 'bg-stone-100 dark:bg-zinc-700 text-stone-400 dark:text-zinc-400'
               }`}
             >
               <CheckCircle2 size={17} />
@@ -135,9 +135,9 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold">Перевірено</span>
-                {isVerified && <Check size={16} className="text-emerald-700" strokeWidth={2.5} />}
+                {isVerified && <Check size={16} className="text-emerald-700 dark:text-emerald-400" strokeWidth={2.5} />}
               </div>
-              <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+              <p className="text-[11px] text-stone-500 dark:text-zinc-400 mt-0.5 leading-snug">
                 Суцільна лінія на схемі. Родинний зв'язок підтверджено документально.
               </p>
             </div>
@@ -149,13 +149,13 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
             onClick={() => setIsVerified(false)}
             className={`w-full p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all cursor-pointer ${
               !isVerified
-                ? 'border-amber-600 bg-amber-50/70 text-amber-950 ring-2 ring-amber-500/30 font-semibold shadow-xs'
-                : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-50'
+                ? 'border-amber-600 bg-amber-50/70 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 ring-2 ring-amber-500/30 font-semibold shadow-xs'
+                : 'border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 text-stone-700 dark:text-zinc-200 hover:bg-stone-50 dark:hover:bg-zinc-800'
             }`}
           >
             <div
               className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                !isVerified ? 'bg-amber-600 text-white' : 'bg-stone-100 text-stone-400'
+                !isVerified ? 'bg-amber-600 text-white' : 'bg-stone-100 dark:bg-zinc-700 text-stone-400 dark:text-zinc-400'
               }`}
             >
               <AlertCircle size={17} />
@@ -163,28 +163,28 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold">Не перевірено</span>
-                {!isVerified && <Check size={16} className="text-amber-700" strokeWidth={2.5} />}
+                {!isVerified && <Check size={16} className="text-amber-700 dark:text-amber-400" strokeWidth={2.5} />}
               </div>
-              <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+              <p className="text-[11px] text-stone-500 dark:text-zinc-400 mt-0.5 leading-snug">
                 Пунктирна лінія на схемі. Потребує підтвердження або додаткового дослідження.
               </p>
             </div>
           </button>
 
           {/* Section: Line Thickness (1-12 px) */}
-          <div className="pt-2 border-t border-stone-200/80 space-y-2.5">
+          <div className="pt-2 border-t border-stone-200/80 dark:border-zinc-800 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-700 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-stone-700 dark:text-zinc-300 uppercase tracking-wider">
                 Товщина лінії
               </span>
-              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md font-mono">
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/70 px-2 py-0.5 rounded-md font-mono">
                 {strokeWidth} px
               </span>
             </div>
 
             {/* Slider */}
             <div className="flex items-center gap-3">
-              <span className="text-[11px] text-stone-400 font-mono">1</span>
+              <span className="text-[11px] text-stone-400 dark:text-zinc-500 font-mono">1</span>
               <input
                 type="range"
                 min={1}
@@ -192,9 +192,9 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
                 step={1}
                 value={strokeWidth}
                 onChange={(e) => setStrokeWidth(Number(e.target.value))}
-                className="w-full accent-emerald-700 cursor-pointer h-2 bg-stone-200 rounded-lg"
+                className="w-full accent-emerald-700 cursor-pointer h-2 bg-stone-200 dark:bg-zinc-700 rounded-lg"
               />
-              <span className="text-[11px] text-stone-400 font-mono">12</span>
+              <span className="text-[11px] text-stone-400 dark:text-zinc-500 font-mono">12</span>
             </div>
 
             {/* Presets */}
@@ -207,7 +207,7 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
                   className={`px-2 py-1 rounded-lg text-[11px] font-mono font-semibold transition-all cursor-pointer border ${
                     strokeWidth === w
                       ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
-                      : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200'
+                      : 'bg-stone-50 dark:bg-zinc-800 hover:bg-stone-100 dark:hover:bg-zinc-700 text-stone-700 dark:text-zinc-300 border-stone-200 dark:border-zinc-700'
                   }`}
                 >
                   {w}px
@@ -216,8 +216,8 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
             </div>
 
             {/* Live Line Preview */}
-            <div className="p-2.5 bg-stone-100/80 rounded-xl border border-stone-200 flex flex-col items-center justify-center gap-1">
-              <div className="text-[10px] text-stone-400 uppercase font-semibold tracking-wider">
+            <div className="p-2.5 bg-stone-100/80 dark:bg-zinc-950/70 rounded-xl border border-stone-200 dark:border-zinc-800 flex flex-col items-center justify-center gap-1">
+              <div className="text-[10px] text-stone-400 dark:text-zinc-500 uppercase font-semibold tracking-wider">
                 Попередній перегляд лінії
               </div>
               <svg className="w-full h-8 overflow-visible">
@@ -240,7 +240,7 @@ export const EditConnectionModal: React.FC<EditConnectionModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 text-xs font-medium text-stone-600 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-2 text-xs font-medium text-stone-600 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
             >
               Скасувати
             </button>

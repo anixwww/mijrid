@@ -101,7 +101,7 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
+        className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-stone-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -128,7 +128,7 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
                   {clan.count} осіб
                 </span>
               </div>
-              <p className="text-xs text-stone-600">
+              <p className="text-xs text-stone-700">
                 Родинний герб та девіз для карток і бічної панелі
               </p>
             </div>
@@ -136,7 +136,7 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-stone-200/60 text-stone-500 hover:text-stone-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-black/10 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -145,7 +145,7 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-5">
           {/* Current Coat of Arms Preview */}
-          <div className="flex flex-col items-center justify-center p-5 rounded-2xl bg-stone-50/80 border border-stone-200/90 text-center relative">
+          <div className="flex flex-col items-center justify-center p-5 rounded-2xl bg-stone-50/80 dark:bg-zinc-950/60 border border-stone-200/90 dark:border-zinc-800 text-center relative">
             {previewUrl ? (
               <div className="relative group">
                 <img
@@ -166,26 +166,26 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center py-6 text-stone-400">
-                <Shield size={54} strokeWidth={1.2} className="mb-2 text-stone-300" />
-                <p className="text-xs font-semibold text-stone-600">
+              <div className="flex flex-col items-center py-6 text-stone-400 dark:text-zinc-500">
+                <Shield size={54} strokeWidth={1.2} className="mb-2 text-stone-300 dark:text-zinc-700" />
+                <p className="text-xs font-semibold text-stone-600 dark:text-zinc-300">
                   Герб для цього роду ще не завантажено
                 </p>
-                <p className="text-[11px] text-stone-400 max-w-xs mt-1">
+                <p className="text-[11px] text-stone-400 dark:text-zinc-500 max-w-xs mt-1">
                   Завантажте фото або готове зображення родинного герба з комп&apos;ютера
                 </p>
               </div>
             )}
 
             {motto && previewUrl && (
-              <div className="mt-3 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-amber-950 text-xs font-serif italic tracking-wide">
+              <div className="mt-3 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/70 text-amber-950 dark:text-amber-200 text-xs font-serif italic tracking-wide">
                 «{motto}»
               </div>
             )}
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/70 text-rose-800 dark:text-rose-200 text-xs">
               {errorMsg}
             </div>
           )}
@@ -196,7 +196,7 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
             <div className="space-y-4">
               {/* Motto Input */}
               <div>
-                <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-stone-700 dark:text-zinc-300 uppercase tracking-wider mb-1">
                   Родинне гасло / Девіз
                 </label>
                 <input
@@ -204,7 +204,7 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
                   value={motto}
                   onChange={(e) => setMotto(e.target.value)}
                   placeholder={`Рід ${clan.name}`}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-600/40 bg-stone-50/50"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-stone-300 dark:border-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-emerald-600/40 bg-stone-50/50 dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
                 />
               </div>
 
@@ -218,25 +218,25 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-2xl p-6 text-center transition-colors ${
                   isDragging
-                    ? 'border-emerald-600 bg-emerald-50/50'
-                    : 'border-stone-300 hover:border-emerald-500'
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30'
+                    : 'border-stone-300 dark:border-zinc-700 hover:border-emerald-500'
                 }`}
               >
                 {isUploading ? (
-                  <div className="py-3 flex flex-col items-center gap-2 text-stone-600">
-                    <RefreshCw size={26} className="animate-spin text-emerald-700" />
+                  <div className="py-3 flex flex-col items-center gap-2 text-stone-600 dark:text-zinc-300">
+                    <RefreshCw size={26} className="animate-spin text-emerald-700 dark:text-emerald-400" />
                     <span className="text-xs font-semibold">Завантаження фото...</span>
                   </div>
                 ) : (
                   <>
-                    <Upload size={30} className="mx-auto text-stone-400 mb-2" />
-                    <p className="text-xs font-bold text-stone-800">
+                    <Upload size={30} className="mx-auto text-stone-400 dark:text-zinc-500 mb-2" />
+                    <p className="text-xs font-bold text-stone-800 dark:text-zinc-200">
                       Перетягніть фото сюди або оберіть з комп&apos;ютера
                     </p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
+                    <p className="text-[11px] text-stone-500 dark:text-zinc-400 mt-0.5">
                       Підтримуються формати PNG, JPG, WebP, GIF
                     </p>
-                    <label className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold shadow-xs cursor-pointer transition-all">
+                    <label className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-900 dark:bg-emerald-700 hover:bg-stone-800 dark:hover:bg-emerald-600 text-white text-xs font-semibold shadow-xs cursor-pointer transition-all">
                       <Upload size={13} />
                       <span>{previewUrl ? 'Замінити фото герба' : 'Завантажити фото'}</span>
                       <input
@@ -251,18 +251,18 @@ export const ClanCoatOfArmsModal: React.FC<ClanCoatOfArmsModalProps> = ({
               </div>
             </div>
           ) : (
-            <p className="text-xs text-stone-500 text-center italic">
+            <p className="text-xs text-stone-500 dark:text-zinc-400 text-center italic">
               Завантаження та видалення гербів доступне в режимі Адміністратора.
             </p>
           )}
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end">
+        <div className="p-4 bg-stone-50 dark:bg-zinc-950/60 border-t border-stone-200 dark:border-zinc-800 flex items-center justify-end">
           <button
             type="button"
             onClick={handleDone}
-            className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
+            className="px-4 py-2 rounded-xl bg-stone-800 dark:bg-zinc-800 hover:bg-stone-900 dark:hover:bg-zinc-700 text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
           >
             Готово
           </button>
