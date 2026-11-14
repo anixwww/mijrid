@@ -28,7 +28,6 @@ import {
   fetchGlobalVersionFromServer,
   syncGlobalVersionToServer,
   pushAllTreesToFirestoreManual,
-  pullAllTreesFromFirestoreManual,
   hasUnsyncedFirebaseChangesStorage,
   setUnsyncedFirebaseChangesStorage,
   getLastFirebaseSyncTimeStorage,
@@ -661,137 +660,6 @@ export function useTreeSync({
     };
   }, [isAdmin, syncLatestTreeFromCloud]);
 
-  const executeForceRefreshFromCloud = useCallback(async () => {
-    setSyncStatus('syncing');
-    const startedAt = Date.now();
-    try {
-      const currentId = treeRef.current.id || MAIN_TREE_ID;
-      const [cloudTree, cloudGlobalVersion] = await Promise.all([
-        loadTreeById(currentId, {
-          allowEmpty: true,
-          preferServer: true,
-          forceRemote: true,
-          includeCloud: true,
-        }),
-        fetchGlobalVersionFromServer({ includeCloud: true }),
-      ]);
-      const elapsed = Date.now() - startedAt;
-      if (elapsed < 300) {
-        await new Promise((resolve) => setTimeout(resolve, 300 - elapsed));
-      }
-      if (cloudTree && cloudTree.persons && Object.keys(cloudTree.persons).length > 0) {
-        const cloudTreesList = await fetchServerTrees({ includeCloud: true });
-        const syncedTree = syncCrossCanvasLinkTitles(cloudTree, cloudTreesList);
-        const effectiveVersion = cloudGlobalVersion || syncedTree.version || 'v0.1';
-        setLocalGlobalVersion(effectiveVersion, false);
-        const normalized: FamilyTreeData = {
-          ...syncedTree,
-          version: effectiveVersion,
-          persons: normalizeCoupleCoordinates(syncedTree.persons, syncedTree.connectionOverrides),
-        };
-        skipNextAutoSaveRef.current = true;
-        isUndoActionRef.current = true;
-        treeRef.current = normalized;
-        setTree(normalized);
-        saveTreeLocally(normalized, false);
-        markFirebaseUnsynced(false);
-        setIsServerConnected(true);
-        setSyncStatus('synced');
-        setLastSavedTime(new Date(normalized.updatedAt || Date.now()));
-        showToast({
-          type: 'info',
-          title: `Оновлено з хмари (${normalized.version || 'v0.1'})`,
-          message: `Завантажено збережену копію родоводу з Firebase (${Object.keys(normalized.persons || {}).length} осіб).`,
-        });
-      } else {
-        const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
-        setIsServerConnected(online);
-        setSyncStatus(online ? 'synced' : 'offline');
-        showToast({
-          type: 'warning',
-          title: 'Дані відсутні',
-          message: online
-            ? 'У Firebase Firestore ще немає збереженої копії цього полотна.'
-            : 'Немає інтернету — використовується локальна копія.',
-        });
-      }
-    } catch (err) {
-      console.error('Force refresh failed:', err);
-      const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
-      setIsServerConnected(online);
-      setSyncStatus(online ? 'error' : 'offline');
-      showToast({
-        type: 'error',
-        title: 'Помилка оновлення',
-        message: 'Не вдалося завантажити родовід із Firebase Firestore.',
-      });
-    }
-  }, [isUndoActionRef, markFirebaseUnsynced, showToast]);
-
-  const executePullFromFirebase = useCallback(async () => {
-    if (isFirebaseSyncing) return;
-    setIsFirebaseSyncing(true);
-    setFirebaseSyncMode('pull');
-    const startedAt = Date.now();
-    try {
-      const currentId = treeRef.current.id || MAIN_TREE_ID;
-      const result = await pullAllTreesFromFirestoreManual(currentId);
-
-      const elapsed = Date.now() - startedAt;
-      if (elapsed < 320) {
-        await new Promise((resolve) => setTimeout(resolve, 320 - elapsed));
-      }
-
-      if (result.ok && result.activeTree) {
-        const effectiveVersion = result.version || result.activeTree.version || 'v0.1';
-        const normalized: FamilyTreeData = {
-          ...result.activeTree,
-          version: effectiveVersion,
-          persons: normalizeCoupleCoordinates(
-            result.activeTree.persons || {},
-            result.activeTree.connectionOverrides
-          ),
-        };
-        skipNextAutoSaveRef.current = true;
-        isUndoActionRef.current = true;
-        treeRef.current = normalized;
-        setTree(normalized);
-        saveTreeLocally(normalized, false);
-
-        const now = new Date();
-        setLastFirebaseSyncTime(now);
-        setLastFirebaseSyncTimeStorage(now);
-        markFirebaseUnsynced(false);
-        setLastSavedTime(new Date(normalized.updatedAt || Date.now()));
-
-        const mediaRestoredNote =
-          result.restoredMediaCount && result.restoredMediaCount > 0
-            ? ` Відновлено фото: ${result.restoredMediaCount}.`
-            : '';
-
-        showToast({
-          type: 'success',
-          title: `Відновлено з хмари (${effectiveVersion})`,
-          message: `Завантажено полотен: ${result.syncedCount}.${mediaRestoredNote} Поточне полотно оновлено.`,
-        });
-      } else {
-        await executeForceRefreshFromCloud();
-      }
-    } catch (err: any) {
-      const msg = err?.message || String(err);
-      showToast({
-        type: 'error',
-        title: 'Помилка відновлення з хмари',
-        message: msg.includes('Quota exceeded')
-          ? 'Денну квоту Firebase вичерпано. Спробуйте завтра.'
-          : 'Не вдалося завантажити полотна з Firebase Firestore.',
-      });
-    } finally {
-      setIsFirebaseSyncing(false);
-      setFirebaseSyncMode(null);
-    }
-  }, [executeForceRefreshFromCloud, isFirebaseSyncing, isUndoActionRef, markFirebaseUnsynced, showToast]);
-
   const handleUnifiedSync = useCallback(async () => {
     if (syncStatus === 'syncing' || isFirebaseSyncing) return;
 
@@ -902,20 +770,6 @@ export function useTreeSync({
     showToast,
     syncStatus,
   ]);
-
-  const handleRestoreFromCloud = useCallback(() => {
-    setConfirmDialog({
-      title: 'Відновити дані з Firebase?',
-      description:
-        'Буде завантажено збережені полотна з Firebase Firestore. Несинхронізовані локальні зміни можуть бути замінені.',
-      confirmLabel: 'Відновити',
-      variant: 'warning',
-      onConfirm: () => {
-        setConfirmDialog(null);
-        void executePullFromFirebase();
-      },
-    });
-  }, [executePullFromFirebase, setConfirmDialog]);
 
   const pendingDirtySnapshotRef = useRef<FamilyTreeData | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1507,7 +1361,6 @@ export function useTreeSync({
     ensureCloudPublishedForShare,
     handleUpdateVersion,
     handleUnifiedSync,
-    handleRestoreFromCloud,
     handleCreateNewTree,
     handleSelectTree,
     handleCloneTree,

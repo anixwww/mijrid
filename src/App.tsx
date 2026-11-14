@@ -261,7 +261,6 @@ export default function App() {
     ensureCloudPublishedForShare,
     handleUpdateVersion,
     handleUnifiedSync,
-    handleRestoreFromCloud,
     handleCreateNewTree,
     handleSelectTree,
     handleRenameTree,
@@ -2583,7 +2582,6 @@ export default function App() {
         personCount={personCount}
         generationCount={generationCount}
         onSyncNow={handleUnifiedSync}
-        onRestoreFromCloud={handleRestoreFromCloud}
         lastSavedTime={lastSavedTime}
         syncStatus={syncStatus}
         isServerConnected={isServerConnected}
@@ -3194,18 +3192,6 @@ export default function App() {
                           >
                             По колу →
                           </button>
-                          {isAdmin && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenHudTray(null);
-                                handleOpenQuickDraftAtViewportCenter('ghost');
-                              }}
-                              className="px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-amber-950 text-[10.5px] font-semibold cursor-pointer transition-colors"
-                            >
-                              + Нова
-                            </button>
-                          )}
                         </div>
                       </div>
                       <div className="max-h-64 overflow-y-auto divide-y divide-stone-100 dark:divide-zinc-800">
@@ -3566,7 +3552,6 @@ export default function App() {
             }
             void handleSelectTree(treeId, personId);
           }}
-          onOpenQuickDraft={isAdmin ? () => handleOpenQuickDraftAtViewportCenter('ghost') : undefined}
           blindSpotFilter={isAdmin ? blindSpotFilter : 'off'}
           onChangeBlindSpotFilter={isAdmin ? setBlindSpotFilter : undefined}
           onOpenArchiveRegistry={isAdmin ? () => setOverviewModalTab('archive') : undefined}

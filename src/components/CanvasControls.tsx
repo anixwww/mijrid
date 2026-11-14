@@ -11,7 +11,6 @@ import {
   Map,
   Magnet,
   Grid,
-  StickyNote,
   EyeOff,
   BookMarked,
   SlidersHorizontal,
@@ -57,8 +56,6 @@ interface CanvasControlsProps {
   currentTreeTitle?: string;
   crossCanvasTrees?: CrossCanvasSearchTree[];
   onSelectTreeAndPerson?: (treeId: string, personId: string) => void;
-  // Create quick draft card (ghost note or screenshot)
-  onOpenQuickDraft?: () => void;
   // Blind-spot highlighting filter (Admin)
   blindSpotFilter?: BlindSpotFilterMode;
   onChangeBlindSpotFilter?: (mode: BlindSpotFilterMode) => void;
@@ -90,7 +87,6 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
   currentTreeTitle,
   crossCanvasTrees,
   onSelectTreeAndPerson,
-  onOpenQuickDraft,
   blindSpotFilter = 'off',
   onChangeBlindSpotFilter,
   onOpenArchiveRegistry,
@@ -495,19 +491,6 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
               );
             })()}
 
-            {/* Create Quick Note (Sticker) / Screenshot Card - Admin only */}
-            {isAdmin && onOpenQuickDraft && (
-              <button
-                type="button"
-                onClick={onOpenQuickDraft}
-                className="group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 dark:text-amber-200 border border-amber-300/90 dark:border-amber-800/70 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap snap-start focus-visible:outline-2 focus-visible:outline-amber-500"
-                title="Створити нотатку (стікер) або картку-фото на полотні (Alt + подвійний клік)"
-                aria-label="Створити нотатку на полотні"
-              >
-                <StickyNote size={16.5} className="text-amber-600 dark:text-amber-400 transition-transform duration-200 group-hover:scale-110 shrink-0" />
-                <span className="hidden md:inline">+ Нотатка</span>
-              </button>
-            )}
           </div>
 
           <div className={`${isSearchExpanded || searchQuery ? 'hidden sm:block' : 'block'} h-6 w-px bg-stone-200 dark:bg-zinc-800 shrink-0`} />

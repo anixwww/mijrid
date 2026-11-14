@@ -55,7 +55,6 @@ interface TopNavbarProps {
   personCount: number;
   generationCount: number;
   onSyncNow?: () => void;
-  onRestoreFromCloud?: () => void;
   lastSavedTime?: Date | null;
   syncStatus?: 'synced' | 'syncing' | 'error' | 'offline';
   isServerConnected?: boolean;
@@ -118,7 +117,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onExportImage,
   personCount,
   onSyncNow,
-  onRestoreFromCloud,
   lastSavedTime,
   syncStatus = 'synced',
   isServerConnected = true,
@@ -790,7 +788,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               isServerConnected={isServerConnected}
               isAdmin={isAdmin}
               onSyncNow={onSyncNow}
-              onRestoreFromCloud={onRestoreFromCloud}
               lastSavedTime={lastSavedTime}
               isFirebaseSyncing={isFirebaseSyncing}
               firebaseSyncMode={firebaseSyncMode}

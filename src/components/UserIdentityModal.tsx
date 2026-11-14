@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Check, Search, X, Users, Sparkles, ShieldCheck, Paintbrush } from 'lucide-react';
+import { Check, Search, X, Users } from 'lucide-react';
 import { Person } from '../types/tree';
 import { SilhouetteAvatar } from './SilhouetteAvatar';
 
@@ -17,23 +17,21 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
   isOpen,
   onClose,
   allPersons,
-  currentUserPersonId,
   onSaveIdentity,
-  onOpenCustomize,
 }) => {
   const [query, setQuery] = useState('');
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(currentUserPersonId);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedPersonId(currentUserPersonId);
+      setSelectedPersonId(null);
       setQuery('');
       setTimeout(() => {
         inputRef.current?.focus();
       }, 120);
     }
-  }, [isOpen, currentUserPersonId]);
+  }, [isOpen]);
 
   const personsList = useMemo(() => {
     return Object.values(allPersons).sort((a, b) => {
@@ -58,53 +56,24 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
 
   const handleSelectPerson = (p: Person) => {
     setSelectedPersonId(p.id);
-    setQuery(`${p.firstName || ''} ${p.lastName || ''}`.trim());
   };
 
-  const resolveFinalPersonId = (): string | null => {
-    let finalPersonId = selectedPersonId;
-    if (!finalPersonId && matchingPersons.length === 1) {
-      finalPersonId = matchingPersons[0].id;
-    }
-    return finalPersonId;
-  };
-
-  const commitIdentity = (finalPersonId: string) => {
-    const person = allPersons[finalPersonId];
+  const handleConfirm = () => {
+    if (!selectedPersonId) return;
+    const person = allPersons[selectedPersonId];
     if (person) {
-      onSaveIdentity(finalPersonId, {
+      onSaveIdentity(selectedPersonId, {
         firstName: person.firstName || '',
         lastName: person.lastName || '',
       });
     } else {
-      onSaveIdentity(finalPersonId, undefined);
+      onSaveIdentity(selectedPersonId, undefined);
     }
     onClose();
   };
 
-  const handleConfirm = () => {
-    const finalPersonId = resolveFinalPersonId();
-    if (!finalPersonId) return;
-    commitIdentity(finalPersonId);
-  };
-
-  const handleConfirmAndCustomize = () => {
-    const finalPersonId = resolveFinalPersonId() || currentUserPersonId;
-    if (!finalPersonId || !allPersons[finalPersonId]) return;
-    commitIdentity(finalPersonId);
-    onOpenCustomize?.(finalPersonId);
-  };
-
-  const handleClear = () => {
-    setSelectedPersonId(null);
-    setQuery('');
-    onSaveIdentity(null, undefined);
-    onClose();
-  };
-
-  const selectedPerson = selectedPersonId ? allPersons[selectedPersonId] : null;
-  const currentIdentifiedPerson = currentUserPersonId ? allPersons[currentUserPersonId] : null;
-  const canConfirm = Boolean(selectedPersonId || matchingPersons.length === 1);
+  const hasQuery = query.trim().length > 0;
+  const canConfirm = Boolean(selectedPersonId && allPersons[selectedPersonId]);
 
   return (
     <div
@@ -125,13 +94,9 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
               <Users size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-stone-900 dark:text-zinc-100 tracking-tight flex items-center gap-1.5">
-                <span>Хто ви у цьому родовому дереві?</span>
-                <Sparkles size={16} className="text-amber-500 fill-amber-400 animate-pulse" />
+              <h3 className="text-lg font-extrabold text-stone-900 dark:text-zinc-100 tracking-tight">
+                Знайдіть себе у родовому дереві
               </h3>
-              <p className="text-xs text-stone-500 dark:text-zinc-400 mt-0.5">
-                Знайдіть себе у списку або вкажіть своє ім'я для персоналізації
-              </p>
             </div>
           </div>
           <button
@@ -145,40 +110,6 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
 
         {/* Content Body */}
         <div className="p-6 space-y-4">
-          {currentIdentifiedPerson && onOpenCustomize && (
-            <div className="p-3 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/70 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <SilhouetteAvatar
-                  gender={currentIdentifiedPerson.gender}
-                  avatarUrl={currentIdentifiedPerson.avatarUrl}
-                  name={`${currentIdentifiedPerson.firstName} ${currentIdentifiedPerson.lastName}`}
-                  size="sm"
-                />
-                <div className="min-w-0">
-                  <div className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                    Зараз ви позначені як:
-                  </div>
-                  <div className="text-xs font-bold text-stone-900 dark:text-zinc-100 truncate">
-                    {[currentIdentifiedPerson.firstName, currentIdentifiedPerson.lastName]
-                      .filter(Boolean)
-                      .join(' ')}
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenCustomize(currentIdentifiedPerson.id);
-                }}
-                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
-              >
-                <Paintbrush size={13} />
-                <span>Оформити картку</span>
-              </button>
-            </div>
-          )}
-
           {/* Search Input Box */}
           <div className="relative">
             <Search
@@ -191,12 +122,12 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
-                if (selectedPerson && `${selectedPerson.firstName} ${selectedPerson.lastName}` !== e.target.value) {
+                if (selectedPersonId) {
                   setSelectedPersonId(null);
                 }
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && canConfirm) {
                   e.preventDefault();
                   handleConfirm();
                 }
@@ -213,33 +144,18 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
                   inputRef.current?.focus();
                 }}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-zinc-200 p-1 cursor-pointer"
+                aria-label="Очистити пошук"
               >
                 <X size={16} />
               </button>
             )}
           </div>
 
-          {/* Persons Selector List */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-stone-500 dark:text-zinc-400 px-1 font-semibold">
-              <span>
-                {query.trim() ? `Знайдено (${matchingPersons.length})` : 'Список членів родини'}
-              </span>
-              {selectedPerson && (
-                <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  <ShieldCheck size={13} />
-                  Вибрано
-                </span>
-              )}
-            </div>
-
-            <div className="max-h-60 overflow-y-auto space-y-1.5 border border-stone-200 dark:border-zinc-800 rounded-2xl p-2 bg-stone-50/70 dark:bg-zinc-950/50 shadow-inner">
-              {!query.trim() ? (
-                <div className="py-8 px-4 text-center text-xs text-stone-400 dark:text-zinc-500 font-medium">
-                  Почніть вводити букви вашого імені або прізвища у полі вище...
-                </div>
-              ) : matchingPersons.length === 0 ? (
-                <div className="py-8 px-4 text-center text-xs text-stone-500 dark:text-zinc-400">
+          {/* Search Results (appears once user starts typing) */}
+          {hasQuery && (
+            <div className="max-h-60 overflow-y-auto space-y-1.5 border border-stone-200 dark:border-zinc-800 rounded-2xl p-2 bg-stone-50/70 dark:bg-zinc-950/50 shadow-inner animate-in fade-in slide-in-from-top-1 duration-150">
+              {matchingPersons.length === 0 ? (
+                <div className="py-6 px-4 text-center text-xs text-stone-500 dark:text-zinc-400">
                   Осіб із такими даними не знайдено. Перевірте правильність написання.
                 </div>
               ) : (
@@ -253,7 +169,7 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
                       onClick={() => handleSelectPerson(p)}
                       className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-3 transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-emerald-50 dark:bg-emerald-950/80 border-2 border-emerald-600 dark:border-emerald-500 text-emerald-950 dark:text-emerald-200 shadow-sm scale-[1.01]'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/80 border-2 border-emerald-600 dark:border-emerald-500 text-emerald-950 dark:text-emerald-200 shadow-sm'
                           : 'bg-white dark:bg-zinc-800/90 hover:bg-stone-100 dark:hover:bg-zinc-800 border border-stone-200/90 dark:border-zinc-700/80 text-stone-800 dark:text-zinc-200'
                       }`}
                     >
@@ -289,45 +205,19 @@ export const UserIdentityModal: React.FC<UserIdentityModalProps> = ({
                 })
               )}
             </div>
-          </div>
+          )}
 
-          {/* Action Buttons */}
-          <div className="pt-2 flex flex-col gap-2">
+          {/* Confirm Button (appears only after clicking a result row) */}
+          {canConfirm && (
             <button
               type="button"
-              disabled={!canConfirm}
               onClick={handleConfirm}
-              className={`w-full py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer ${
-                canConfirm
-                  ? 'bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white shadow-emerald-900/20 hover:scale-[1.01]'
-                  : 'bg-stone-200 dark:bg-zinc-800 text-stone-400 dark:text-zinc-600 cursor-not-allowed shadow-none'
-              }`}
+              className="w-full py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white shadow-emerald-900/20 animate-in fade-in slide-in-from-bottom-1 duration-150"
             >
               <Check size={16} strokeWidth={2.5} />
-              <span>Підтвердити вибір</span>
+              <span>Підтвердити</span>
             </button>
-
-            {onOpenCustomize && canConfirm && (
-              <button
-                type="button"
-                onClick={handleConfirmAndCustomize}
-                className="w-full py-2.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 border border-emerald-700/40 dark:border-emerald-500/40 bg-emerald-50/80 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 transition-colors cursor-pointer"
-              >
-                <Paintbrush size={15} />
-                <span>Підтвердити та оформити свою картку</span>
-              </button>
-            )}
-
-            {currentUserPersonId && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="text-xs text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300 hover:underline text-center cursor-pointer py-1 font-medium"
-              >
-                Скинути мій вибір
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
