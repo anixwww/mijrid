@@ -9,7 +9,7 @@ import { getPersonCrossCanvasLinks } from '../utils/crossCanvasLinks';
 import { CardFrameOverlay } from './CardFrameOverlay';
 import { handleUploadImageError } from '../utils/mediaSync';
 import { getPrimaryMetricExternalLink } from '../utils/metricLinks';
-import { Pin, Link2, Check, Home, Camera, ExternalLink, ArrowUpRight, Ghost, StickyNote, UserPlus, MessageSquareDot, ImagePlus, ZoomIn, Image as ImageIcon } from 'lucide-react';
+import { Pin, Link2, Check, Home, Camera, ExternalLink, ArrowUpRight, StickyNote, UserPlus, MessageSquareDot, ImagePlus, ZoomIn, Image as ImageIcon } from 'lucide-react';
 
 function normalizeHex(hex: string): string | null {
   let c = hex.replace('#', '').trim();
@@ -137,8 +137,12 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
 
   const rawBg =
     person.cardBgColor?.trim() ||
-    (isGhost ? '#f1f5f9' : isProposal ? '#e0f2fe' : clanInfo ? clanInfo.bgColor : '#f4f4f5');
-  const normalizedBg = normalizeHex(rawBg) || '#f4f4f5';
+    (isGhost ? '#fef3c7' : isProposal ? '#e0f2fe' : clanInfo ? clanInfo.bgColor : '#f4f4f5');
+  const effectiveGhostRawBg =
+    isGhost && (!person.cardBgColor?.trim() || person.cardBgColor.trim().toLowerCase() === '#f1f5f9')
+      ? '#fef3c7'
+      : rawBg;
+  const normalizedBg = normalizeHex(isGhost ? effectiveGhostRawBg : rawBg) || (isGhost ? '#fef3c7' : '#f4f4f5');
   const isNeutralBg =
     normalizedBg === '#ffffff' ||
     normalizedBg === '#f4f4f5' ||
@@ -154,7 +158,28 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
     ? clanInfo.color
     : '#71717a';
 
-  const defaultBorder = overrideBorderColor || (isProposal ? '#0284c7' : isNeutralBg ? undefined : clanBorderColor);
+  const stickyTheme = (() => {
+    const map: Record<string, { top: string; mid: string; bot: string; border: string; fold: string; tape: string }> = {
+      '#fef3c7': { top: '#fef9c3', mid: '#fef08a', bot: '#fde68a', border: '#eab308', fold: '#facc15', tape: 'rgba(255,255,255,0.62)' },
+      '#fef9c3': { top: '#fefce8', mid: '#fef9c3', bot: '#fef08a', border: '#ca8a04', fold: '#fde047', tape: 'rgba(255,255,255,0.65)' },
+      '#dcfce7': { top: '#f0fdf4', mid: '#dcfce7', bot: '#bbf7d0', border: '#22c55e', fold: '#86efac', tape: 'rgba(255,255,255,0.62)' },
+      '#e8efe9': { top: '#f2f7f3', mid: '#e2ece4', bot: '#cfe0d3', border: '#64748b', fold: '#b7cdbc', tape: 'rgba(255,255,255,0.62)' },
+      '#e0f2fe': { top: '#f0f9ff', mid: '#e0f2fe', bot: '#bae6fd', border: '#0ea5e9', fold: '#7dd3fc', tape: 'rgba(255,255,255,0.62)' },
+      '#f3e8ff': { top: '#faf5ff', mid: '#f3e8ff', bot: '#e9d5ff', border: '#a855f7', fold: '#d8b4fe', tape: 'rgba(255,255,255,0.62)' },
+      '#ffe4e6': { top: '#fff1f2', mid: '#ffe4e6', bot: '#fecdd3', border: '#f43f5e', fold: '#fda4af', tape: 'rgba(255,255,255,0.62)' },
+    };
+    if (map[normalizedBg]) return map[normalizedBg];
+    return {
+      top: normalizedBg,
+      mid: normalizedBg,
+      bot: normalizedBg,
+      border: deriveAccentHex(normalizedBg),
+      fold: deriveAccentHex(normalizedBg),
+      tape: 'rgba(255,255,255,0.58)',
+    };
+  })();
+
+  const defaultBorder = overrideBorderColor || (isGhost ? stickyTheme.border : isProposal ? '#0284c7' : isNeutralBg ? undefined : clanBorderColor);
   const topStripeColor = isProposal ? '#0284c7' : isNeutralBg && !clanInfo ? '#a1a1aa' : clanAccentColor;
 
   const cardBgGradient =
@@ -240,16 +265,22 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
       }
       style={{
         width: widthPx ? `${widthPx}px` : `${CARD_WIDTH}px`,
-        backgroundColor: isBlankScreenshot && person.screenshotUrl ? '#18181b' : 'var(--card-bg-base)',
+        backgroundColor: isBlankScreenshot && person.screenshotUrl ? '#18181b' : isGhost ? stickyTheme.mid : 'var(--card-bg-base)',
         borderColor:
           isSelected || isGroupSelected || isConnectingSource || isConnectingTarget || isBranchLinkHighlighted || isDroppingScreenshot
             ? undefined
             : isHovered
-            ? clanAccentColor
+            ? isGhost
+              ? stickyTheme.border
+              : clanAccentColor
             : defaultBorder,
       }}
-      className={`h-full cursor-pointer relative rounded-2xl transition-[transform,box-shadow,border-color,opacity] duration-150 ease-out flex flex-col items-center justify-between ${
-        isBlankScreenshot ? 'p-0' : 'p-1.5'
+      className={`h-full cursor-pointer relative transition-[transform,box-shadow,border-color,opacity] duration-150 ease-out flex flex-col items-center justify-between ${
+        isGhost
+          ? 'rounded-tl-[4px] rounded-tr-[4px] rounded-bl-[6px] rounded-br-[18px] p-2.5'
+          : isBlankScreenshot
+          ? 'rounded-2xl p-0'
+          : 'rounded-2xl p-1.5'
       } ${
         isDroppingScreenshot
           ? 'border-2 border-dashed border-amber-500 ring-4 ring-amber-400/40'
@@ -258,11 +289,11 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
           : isBlankScreenshot
           ? 'border border-stone-300/90 dark:border-zinc-700 shadow-[0_4px_14px_rgba(24,24,27,0.12)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.55)]'
           : isGhost
-          ? 'border-2 border-dashed border-slate-400/95 dark:border-zinc-500 shadow-[0_2px_10px_rgba(71,85,105,0.08)]'
+          ? 'border border-amber-400/70 shadow-[0_8px_18px_-5px_rgba(120,85,20,0.28),0_2px_4px_rgba(0,0,0,0.08)]'
           : isProposal
           ? 'border-2 border-sky-500/95 dark:border-sky-400 shadow-[0_4px_16px_rgba(2,132,199,0.16)]'
           : 'border border-stone-200/90 dark:border-zinc-700/80 shadow-[0_2px_10px_rgba(24,24,27,0.05),0_1px_2px_rgba(24,24,27,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.45)]'
-      } hover:shadow-[0_10px_24px_-6px_rgba(24,24,27,0.12),0_2px_6px_rgba(24,24,27,0.04)] dark:hover:shadow-[0_12px_28px_rgba(0,0,0,0.65)] hover:-translate-y-0.5 ${
+      } hover:shadow-[0_12px_26px_-6px_rgba(24,24,27,0.18),0_3px_8px_rgba(24,24,27,0.06)] dark:hover:shadow-[0_12px_28px_rgba(0,0,0,0.65)] hover:-translate-y-0.5 ${
         isConnectingSource
           ? 'border-stone-800 dark:border-emerald-400 ring-4 ring-stone-500/40 dark:ring-emerald-400/40 shadow-xl scale-105 z-40 animate-pulse'
           : isConnectingTarget
@@ -278,10 +309,43 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
           : isLineageActive
           ? 'ring-2 ring-stone-400/80 dark:ring-zinc-400/70 shadow-md z-20'
           : 'z-10'
-      } ${isDimmed ? 'opacity-20 saturate-50' : isGhost ? 'opacity-[0.86] hover:opacity-100' : 'opacity-100'}`}
+      } ${isDimmed ? 'opacity-20 saturate-50' : 'opacity-100'}`}
     >
-      {/* Clipped Modern Surface Layer: Soft tinted header wash + crisp top accent bar */}
-      {!isBlankScreenshot && (
+      {/* Clipped Surface Layer */}
+      {isGhost && !isBlankScreenshot ? (
+        <>
+          <div
+            className="absolute inset-0 rounded-tl-[3px] rounded-tr-[3px] rounded-bl-[5px] rounded-br-[17px] overflow-hidden pointer-events-none"
+            style={{
+              background: `linear-gradient(155deg, ${stickyTheme.top} 0%, ${stickyTheme.mid} 62%, ${stickyTheme.bot} 100%)`,
+            }}
+          >
+            {/* Subtle paper horizontal lines texture */}
+            <div
+              className="absolute inset-0 opacity-20 pointer-events-none"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(transparent, transparent 17px, rgba(120, 85, 20, 0.14) 18px)',
+                backgroundPositionY: '12px',
+              }}
+            />
+            {/* Bottom-right folded paper corner */}
+            <svg
+              className="absolute bottom-0 right-0 w-[18px] h-[18px] pointer-events-none"
+              viewBox="0 0 18 18"
+            >
+              <polygon points="0,18 18,0 18,18" fill="rgba(0,0,0,0.09)" />
+              <polygon points="0,18 0,3 15,3" fill={stickyTheme.fold} opacity="0.92" />
+            </svg>
+          </div>
+          {/* Top translucent washi tape strip */}
+          {!isSimplified && !person.isChronologicallyPinned && (
+            <div
+              className="absolute -top-1.5 left-1/2 -translate-x-1/2 -rotate-2 w-10 h-2.5 rounded-[2px] border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.08)] pointer-events-none z-25 backdrop-blur-[1px]"
+              style={{ backgroundColor: stickyTheme.tape }}
+            />
+          )}
+        </>
+      ) : !isBlankScreenshot ? (
         <div
           className="absolute inset-0 rounded-[15px] overflow-hidden pointer-events-none"
           style={{ background: cardBgGradient }}
@@ -291,7 +355,7 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
             style={{ backgroundColor: topStripeColor, opacity: isNeutralBg && !clanInfo ? 0.55 : 0.85 }}
           />
         </div>
-      )}
+      ) : null}
 
       {/* Decorative Outer Card Frame Overlay */}
       {!isBlankScreenshot && person.cardFrame && person.cardFrame !== 'none' && (
@@ -413,20 +477,7 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
         </div>
       )}
 
-      {/* Ghost / Note Card Corner Badge */}
-      {isGhost && !isSimplified && (
-        <div
-          className={`absolute -top-2.5 ${
-            person.isChronologicallyPinned ? 'left-5' : 'left-1.5'
-          } z-30 px-1.5 py-0.5 rounded-full bg-slate-700/95 dark:bg-zinc-700 text-white text-[8.5px] font-bold shadow-sm border border-white/75 dark:border-zinc-500 flex items-center gap-0.5 pointer-events-none`}
-          title="Примарна картка (нотатка) — зв'язок із родовим деревом ще не встановлено"
-        >
-          <Ghost size={9} className="shrink-0" />
-          <span>Примара</span>
-        </div>
-      )}
-
-      {/* Proposal Card Corner Badge (distinct sky-blue review card, NOT a ghost card) */}
+      {/* Proposal Card Corner Badge (distinct sky-blue review card, NOT a sticky note) */}
       {isProposal && !isSimplified && (
         <div
           className={`absolute -top-2.5 ${
@@ -717,6 +768,88 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
             </div>
           )}
         </div>
+      ) : isGhost ? (
+        isSimplified ? (
+          <div className="relative z-10 w-full h-full flex flex-col justify-center items-center text-center px-1">
+            <p className="text-[10px] font-bold text-stone-900 leading-tight line-clamp-2 w-full">
+              {person.firstName &&
+              person.firstName !== 'Примарна нотатка' &&
+              person.firstName !== 'Невідома особа'
+                ? [person.firstName, person.lastName].filter(Boolean).join(' ')
+                : ghostNoteText || 'Нотатка'}
+            </p>
+            {birthDisplay && (
+              <p className="text-[7.5px] tabular-nums text-stone-600 truncate mt-0.5">
+                {birthDisplay}
+              </p>
+            )}
+          </div>
+        ) : (
+          /* STICKY NOTE / STICKER SURFACE */
+          (() => {
+            const rawTitle = [person.firstName, person.lastName].filter(Boolean).join(' ').trim();
+            const isGenericTitle =
+              !rawTitle ||
+              rawTitle === 'Нотатка' ||
+              rawTitle === 'Примарна нотатка' ||
+              rawTitle === 'Невідома особа';
+            const showExplicitTitle = !isGenericTitle || !ghostNoteText;
+            const titleText = isGenericTitle ? 'Нотатка' : rawTitle;
+            return (
+              <div className="relative z-10 w-full h-full flex flex-col justify-between text-left pt-1">
+                <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                  {showExplicitTitle && (
+                    <div className="flex items-start justify-between gap-1 border-b border-black/10 pb-1 mb-1 shrink-0">
+                      <span
+                        className="text-[10.5px] font-bold text-stone-900 leading-[1.2] line-clamp-2 break-words"
+                        title={titleText}
+                      >
+                        {titleText}
+                      </span>
+                      {isGroupSelected && !isSelected && (
+                        <span className="w-3.5 h-3.5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px] font-bold shrink-0">
+                          ✓
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {ghostNoteText ? (
+                    <p
+                      className={`text-[9.8px] leading-[1.35] text-stone-800 font-medium whitespace-pre-wrap break-words overflow-hidden ${
+                        showExplicitTitle ? 'line-clamp-4' : 'line-clamp-6'
+                      }`}
+                      title={ghostNoteText}
+                    >
+                      {ghostNoteText}
+                    </p>
+                  ) : (
+                    <p className="text-[9.5px] italic text-stone-500 leading-snug mt-0.5">
+                      Клацніть двічі, щоб додати текст нотатки...
+                    </p>
+                  )}
+                </div>
+
+                {(birthDisplay || (!showExplicitTitle && isGroupSelected && !isSelected)) && (
+                  <div className="shrink-0 pt-1 pr-3 flex items-center justify-between gap-1">
+                    {birthDisplay ? (
+                      <span className="text-[8.5px] font-mono font-semibold text-stone-700/85 tabular-nums truncate">
+                        {birthDisplay}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    {!showExplicitTitle && isGroupSelected && !isSelected && (
+                      <span className="w-3.5 h-3.5 rounded-full bg-stone-800 text-white flex items-center justify-center text-[8px] font-bold shrink-0">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()
+        )
       ) : isSimplified ? (
         <div className="relative z-10 w-full h-full flex flex-col justify-center items-center text-center px-0.5">
           <p className="text-[10px] font-bold text-stone-900 leading-tight truncate w-full">
@@ -886,32 +1019,10 @@ const PersonCardSurfaceComponent: React.FC<PersonCardSurfaceProps> = ({
             )}
           </div>
 
-          {/* ROW 3: Crisp Hairline-Separated Date, Ghost Note, or Metric Strip */}
+          {/* ROW 3: Crisp Hairline-Separated Date or Metric Strip */}
           <div className="shrink-0 w-full pt-1 border-t border-black/[0.06] dark:border-white/[0.08] flex flex-col items-center justify-center gap-[2px]">
-            {isGhost && ghostNoteText ? (
-              <div className="w-full flex flex-col items-center gap-0.5">
-                {birthDisplay && (
-                  <span className="text-[8px] font-mono font-semibold text-slate-600 dark:text-zinc-300 leading-none tabular-nums">
-                    {birthDisplay}
-                  </span>
-                )}
-                <div
-                  className="w-full px-1.5 py-0.5 rounded bg-white/75 dark:bg-zinc-900/70 border border-dashed border-slate-300 dark:border-zinc-700 text-[8px] italic text-slate-700 dark:text-zinc-300 leading-tight line-clamp-2 text-center"
-                  title={ghostNoteText}
-                >
-                  <StickyNote size={8} className="inline-block mr-0.5 text-amber-600 dark:text-amber-400 align-[-1px]" />
-                  {ghostNoteText}
-                </div>
-              </div>
-            ) : !birthDisplay && !deathDisplay ? (
-              isGhost ? (
-                <div
-                  className="text-[8px] px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-600 dark:text-zinc-300 font-medium italic truncate max-w-full"
-                  title="Примарна картка — зв'язок ще не встановлено"
-                >
-                  Зв&apos;язок не встановлено
-                </div>
-              ) : canInteractAnyMetric ? (
+            {!birthDisplay && !deathDisplay ? (
+              canInteractAnyMetric ? (
                 (birthExternalLink || deathExternalLink) && !isAdmin && birthMetricCount + deathMetricCount === 1 ? (
                   <a
                     href={birthExternalLink || deathExternalLink || '#'}

@@ -10,16 +10,15 @@ import {
 import { FamilyTreeData } from '../types/tree';
 import {
   saveTreeLocally,
+  markTreeDirty,
   loadTreeFromLocalStorage,
   loadTreeFromServerOrStorage,
   loadTreeById,
-  checkServerHealth,
   MAIN_TREE_ID,
   renameTreeOnServerOrStorage,
   deleteTreeFromServerOrStorage,
   fetchServerTrees,
   fetchAllTreesSearchIndex,
-  fetchServerTreeMeta,
   syncCrossCanvasLinkTitles,
   syncTreeToServer,
   syncPendingDirtyTrees,
@@ -34,18 +33,20 @@ import {
   setUnsyncedFirebaseChangesStorage,
   getLastFirebaseSyncTimeStorage,
   setLastFirebaseSyncTimeStorage,
+  parseTimestamp,
   notifyTreesChanged,
 } from '../utils/fileStorage';
 import {
+  fetchGlobalVersionFromFirestore,
+  getTreeById as getTreeByIdFromFirestore,
   isCloudWriteAuthenticated,
-  renameTreeInFirestore,
   saveGlobalVersionToFirestore,
   saveTreeToFirestore,
 } from '../utils/firestoreTreeService';
 import { useAuth } from '../context/AuthContext';
 import { normalizeCoupleCoordinates } from '../utils/lineageUtils';
 import { ensureTreeCardIds } from '../utils/cardIdUtils';
-import { logDatabase, logServer, logTree, logUser } from '../utils/logger';
+import { logDatabase, logTree, logUser } from '../utils/logger';
 import { ToastMessage } from '../components/Toast';
 
 export interface ConfirmDialogRequest {
@@ -127,6 +128,7 @@ export function useTreeSync({
 
   const isInitialMount = useRef(true);
   const hasLoadedFromServer = useRef(false);
+  const skipNextAutoSaveRef = useRef(false);
   const hasCenteredTreeIdRef = useRef<string | null>(null);
   const pendingFocusPersonIdRef = useRef<string | null>(null);
 
@@ -145,8 +147,12 @@ export function useTreeSync({
 
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!hasCachedLocalTree);
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(new Date());
-  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error' | 'offline'>('synced');
-  const [isServerConnected, setIsServerConnected] = useState<boolean>(true);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error' | 'offline'>(() =>
+    typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'synced'
+  );
+  const [isServerConnected, setIsServerConnected] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
   const [isFirebaseSyncing, setIsFirebaseSyncing] = useState<boolean>(false);
   const [firebaseSyncMode, setFirebaseSyncMode] = useState<'push' | 'pull' | null>(null);
   const [lastFirebaseSyncTime, setLastFirebaseSyncTime] = useState<Date | null>(() =>
@@ -218,6 +224,8 @@ export function useTreeSync({
 
         if (targetTree && targetTree.persons && Object.keys(targetTree.persons).length > 0) {
           const syncedTree = syncCrossCanvasLinkTitles(targetTree, serverTrees);
+          skipNextAutoSaveRef.current = true;
+          isUndoActionRef.current = true;
           setTree({
             ...syncedTree,
             version: effectiveVersion,
@@ -229,12 +237,16 @@ export function useTreeSync({
             'info'
           );
         } else if (targetTree) {
+          skipNextAutoSaveRef.current = true;
+          isUndoActionRef.current = true;
           setTree({
             ...targetTree,
             version: effectiveVersion,
             persons: normalizeCoupleCoordinates(targetTree.persons || {}, targetTree.connectionOverrides),
           });
         } else if (effectiveVersion) {
+          skipNextAutoSaveRef.current = true;
+          isUndoActionRef.current = true;
           setTree((prev) => (prev.version === effectiveVersion ? prev : { ...prev, version: effectiveVersion }));
         }
       } catch (err) {
@@ -254,45 +266,157 @@ export function useTreeSync({
     };
   }, []);
 
-  const { currentUser, isCloudAuthenticated, signInWithGoogle } = useAuth();
+  const { currentUser, authReady, isCloudAuthenticated } = useAuth();
 
-  // Periodic heartbeat & connectivity detection
+  // Reconcile with Firebase Firestore once Firebase Auth finishes initializing or user signs in
+  const lastReconciledAuthKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    let isMounted = true;
+    if (!authReady) return;
+    const authKey = `${currentUser?.uid || 'anon'}:${isCloudAuthenticated ? '1' : '0'}:${isAdmin ? 'admin' : 'guest'}`;
+    if (lastReconciledAuthKeyRef.current === authKey) return;
+    lastReconciledAuthKeyRef.current = authKey;
 
-    const probeServer = async () => {
-      const ok = await checkServerHealth();
-      if (!isMounted) return;
-      const prevStatus = syncStatusRef.current;
-      setIsServerConnected(ok);
+    let cancelled = false;
+    const reconcileWithFirestore = async () => {
+      try {
+        const currentId = treeRef.current.id || MAIN_TREE_ID;
+        const [cloudTree, cloudVersion, serverTrees] = await Promise.all([
+          getTreeByIdFromFirestore(currentId).catch(() => null),
+          fetchGlobalVersionFromFirestore().catch(() => null),
+          fetchServerTrees({ includeCloud: true }).catch(() => []),
+        ]);
 
-      if (!ok) {
-        if (prevStatus !== 'offline') {
+        if (cancelled) return;
+
+        // Also refresh cross-canvas search index with authenticated Firestore user trees
+        void fetchAllTreesSearchIndex({ includeCloud: true }).then(() => {
+          notifyTreesChanged();
+        });
+
+        const currentLocal = treeRef.current;
+        const localPersonsCount = Object.keys(currentLocal.persons || {}).length;
+        const cloudPersonsCount = Object.keys(cloudTree?.persons || {}).length;
+        const localTime = parseTimestamp(currentLocal.updatedAt || currentLocal.createdAt);
+        const cloudTime = parseTimestamp(cloudTree?.updatedAt || cloudTree?.createdAt);
+        const hasUnsyncedLocal = hasUnsyncedFirebaseChangesStorage();
+
+        if (
+          cloudTree &&
+          cloudPersonsCount > 0 &&
+          (localPersonsCount === 0 || cloudTime > localTime + 1000)
+        ) {
+          const syncedTree = syncCrossCanvasLinkTitles(cloudTree, serverTrees);
+          const effectiveVersion =
+            (!hasDirtyGlobalVersion() && cloudVersion) ||
+            syncedTree.version ||
+            getLocalGlobalVersion() ||
+            'v0.1';
+          if (!hasDirtyGlobalVersion()) {
+            setLocalGlobalVersion(effectiveVersion, false);
+          }
+          const normalized: FamilyTreeData = {
+            ...syncedTree,
+            version: effectiveVersion,
+            persons: normalizeCoupleCoordinates(syncedTree.persons, syncedTree.connectionOverrides),
+          };
+          skipNextAutoSaveRef.current = true;
+          isUndoActionRef.current = true;
+          treeRef.current = normalized;
+          setTree(normalized);
+          saveTreeLocally(normalized, false);
+          markFirebaseUnsynced(false);
+          const now = new Date();
+          setLastFirebaseSyncTime(now);
+          setLastFirebaseSyncTimeStorage(now);
+          setLastSavedTime(new Date(normalized.updatedAt || Date.now()));
+          if (isAdminRef.current) {
+            void syncTreeToServer(normalized);
+          }
+          logDatabase(
+            `Синхронізовано з Firebase Firestore (${effectiveVersion}, ${cloudPersonsCount} осіб)`,
+            { treeId: normalized.id, version: effectiveVersion },
+            'success'
+          );
+          return;
+        }
+
+        if (
+          isAdmin &&
+          isCloudAuthenticated &&
+          isCloudWriteAuthenticated() &&
+          localPersonsCount > 0 &&
+          (!cloudTree || localTime > cloudTime + 1000 || (hasUnsyncedLocal && localTime >= cloudTime - 1000))
+        ) {
+          const activeVer = getLocalGlobalVersion() || currentLocal.version || 'v0.1';
+          if (hasDirtyGlobalVersion() || !cloudVersion) {
+            const verSaved = await saveGlobalVersionToFirestore(activeVer).catch(() => false);
+            if (verSaved) {
+              setLocalGlobalVersion(activeVer, false);
+            }
+          }
+          const targetId = currentLocal.id || MAIN_TREE_ID;
+          const pushed = await saveTreeToFirestore(
+            targetId,
+            { ...currentLocal, version: activeVer },
+            currentUser?.uid,
+            currentUser?.displayName || undefined,
+            true
+          ).catch(() => false);
+          if (!cancelled && pushed) {
+            markTreeDirty(targetId, false);
+            markFirebaseUnsynced(false);
+            const now = new Date();
+            setLastFirebaseSyncTime(now);
+            setLastFirebaseSyncTimeStorage(now);
+          }
+          return;
+        }
+
+        if (cloudTree && !hasUnsyncedLocal && Math.abs(cloudTime - localTime) <= 1000) {
+          if (cloudVersion && !hasDirtyGlobalVersion() && cloudVersion !== currentLocal.version) {
+            setLocalGlobalVersion(cloudVersion, false);
+            skipNextAutoSaveRef.current = true;
+            isUndoActionRef.current = true;
+            setTree((prev) => ({ ...prev, version: cloudVersion }));
+          }
+          const now = new Date();
+          setLastFirebaseSyncTime(now);
+          setLastFirebaseSyncTimeStorage(now);
+        }
+      } catch (err) {
+        console.warn('Firestore reconciliation skipped:', err);
+      }
+    };
+
+    void reconcileWithFirestore();
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, isCloudAuthenticated, currentUser?.uid, currentUser?.displayName, isAdmin, isAdminRef, isUndoActionRef, markFirebaseUnsynced]);
+
+  // Network online/offline connectivity detection (triggers pending Firestore sync when back online)
+  useEffect(() => {
+    const updateConnectivity = () => {
+      const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      setIsServerConnected(online);
+      if (!online) {
+        if (syncStatusRef.current !== 'offline') {
           setSyncStatus('offline');
         }
-      } else if (prevStatus === 'offline' || prevStatus === 'error') {
+      } else if (syncStatusRef.current === 'offline' || syncStatusRef.current === 'error') {
         setSyncStatus('synced');
-        if (isAdminRef.current) {
+        if (isAdminRef.current && isCloudWriteAuthenticated()) {
           void syncPendingDirtyTrees();
         }
       }
     };
 
-    void probeServer();
-    const interval = setInterval(probeServer, 60000);
-    const handleOnline = () => void probeServer();
-    const handleOffline = () => {
-      setIsServerConnected(false);
-      setSyncStatus('offline');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    updateConnectivity();
+    window.addEventListener('online', updateConnectivity);
+    window.addEventListener('offline', updateConnectivity);
     return () => {
-      isMounted = false;
-      clearInterval(interval);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', updateConnectivity);
+      window.removeEventListener('offline', updateConnectivity);
     };
   }, [isAdminRef]);
 
@@ -305,125 +429,128 @@ export function useTreeSync({
         version: cleanVersion,
         updatedAt: new Date().toISOString(),
       };
+      skipNextAutoSaveRef.current = true;
       treeRef.current = updatedTree;
       setTree(updatedTree);
+      saveTreeLocally(updatedTree, false);
       markFirebaseUnsynced(true);
-      setSyncStatus('syncing');
+      setLastSavedTime(new Date(updatedTree.updatedAt));
 
       logTree(`Оновлено глобальну версію родоводу на ${cleanVersion}`, {
         version: cleanVersion,
         treeId: updatedTree.id,
       });
 
-      const [versionSaved, treeSaved] = await Promise.all([
-        syncGlobalVersionToServer(cleanVersion),
-        syncTreeToServer(updatedTree),
-      ]);
-
       if (isCloudWriteAuthenticated()) {
         try {
-          await Promise.all([
+          setIsFirebaseSyncing(true);
+          setFirebaseSyncMode('push');
+          const [verOk, treeOk] = await Promise.all([
             saveGlobalVersionToFirestore(cleanVersion),
-            saveTreeToFirestore(updatedTree.id, updatedTree, undefined, undefined, true),
+            saveTreeToFirestore(updatedTree.id, updatedTree, currentUser?.uid, currentUser?.displayName || undefined, true),
           ]);
+          if (verOk && treeOk) {
+            setLocalGlobalVersion(cleanVersion, false);
+            markFirebaseUnsynced(false);
+            const now = new Date();
+            setLastFirebaseSyncTime(now);
+            setLastFirebaseSyncTimeStorage(now);
+            setSyncStatus('synced');
+            showToast({
+              type: 'success',
+              title: 'Версію оновлено у Firebase',
+              message: `Версію родоводу змінено на ${cleanVersion} та синхронізовано з Firebase Firestore.`,
+            });
+            return;
+          }
         } catch {
-          /* keep unsynced marker if cloud update failed */
+          /* keep unsynced marker for retry */
+        } finally {
+          setIsFirebaseSyncing(false);
+          setFirebaseSyncMode(null);
         }
       }
 
-      if (versionSaved && treeSaved) {
-        setIsServerConnected(true);
-        setSyncStatus('synced');
-        setLastSavedTime(new Date());
-        showToast({
-          type: 'success',
-          title: 'Версію оновлено для всіх полотен',
-          message: `Версію родоводу змінено на ${cleanVersion} для кожного полотна та збережено на сервері.`,
-        });
-      } else {
-        const serverAlive = await checkServerHealth();
-        setIsServerConnected(serverAlive);
-        setSyncStatus(serverAlive ? 'error' : 'offline');
-        setLastSavedTime(new Date());
-        showToast({
-          type: 'info',
-          title: 'Версію оновлено локально',
-          message: `Версію родоводу змінено на ${cleanVersion} для всіх полотен. Буде синхронізовано з сервером при відновленні зв'язку.`,
-        });
-      }
+      setSyncStatus(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'synced');
+      showToast({
+        type: 'info',
+        title: 'Версію оновлено локально',
+        message: isCloudWriteAuthenticated()
+          ? `Версію родоводу змінено на ${cleanVersion}. Буде синхронізовано з Firebase при наступному збереженні.`
+          : `Версію змінено на ${cleanVersion} локально. Підключіть Google, щоб зберегти у Firebase.`,
+      });
     },
-    [markFirebaseUnsynced, showToast]
+    [currentUser?.displayName, currentUser?.uid, markFirebaseUnsynced, showToast]
   );
 
-  const syncLatestTreeFromServer = useCallback(
+  const syncLatestTreeFromCloud = useCallback(
     async (isGuestMode = false) => {
       if (isAdmin && !isGuestMode) return;
       if (isGuestMode && document.visibilityState === 'hidden') return;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
       try {
         const currentId = treeRef.current.id || MAIN_TREE_ID;
         const currentVersion = treeRef.current.version || 'v0.1';
-        const currentUpdated = treeRef.current.updatedAt || '';
+        const localTime = parseTimestamp(treeRef.current.updatedAt || treeRef.current.createdAt);
+        const localCount = Object.keys(treeRef.current.persons || {}).length;
 
-        const meta = await fetchServerTreeMeta(currentId);
-        if (meta) {
-          const isMetaSame =
-            meta.version === currentVersion &&
-            meta.updatedAt === currentUpdated &&
-            meta.personCount === Object.keys(treeRef.current.persons || {}).length;
-          if (isMetaSame) return;
-        }
+        const [remoteTree, cloudVersion] = await Promise.all([
+          loadTreeById(currentId, { includeCloud: true }),
+          fetchGlobalVersionFromServer({ includeCloud: true }),
+        ]);
 
-        const serverTree = await loadTreeById(currentId, { preferServer: true });
-        if (serverTree && serverTree.persons && Object.keys(serverTree.persons).length > 0) {
-          const serverTreesList = await fetchServerTrees();
-          const syncedTree = syncCrossCanvasLinkTitles(serverTree, serverTreesList);
+        if (remoteTree && remoteTree.persons && Object.keys(remoteTree.persons).length > 0) {
+          const remoteTime = parseTimestamp(remoteTree.updatedAt || remoteTree.createdAt);
+          const resolvedVersion = cloudVersion || remoteTree.version || currentVersion;
+          const isRemoteNewer = remoteTime > localTime + 1000;
+          const isVersionChanged = resolvedVersion !== currentVersion;
+          const isRemoteSafeVersionBump = isVersionChanged && remoteTime >= localTime - 1000;
 
-          const serverVersion = meta?.version || syncedTree.version || 'v0.1';
-          const serverUpdated = syncedTree.updatedAt || '';
+          if (localCount === 0 || isRemoteNewer || isRemoteSafeVersionBump) {
+            const serverTreesList = await fetchServerTrees({ includeCloud: true });
+            const syncedTree = syncCrossCanvasLinkTitles(remoteTree, serverTreesList);
 
-          const isVersionChanged = serverVersion !== currentVersion;
-          const isTimestampChanged = serverUpdated > currentUpdated;
-
-          if (isVersionChanged || isTimestampChanged || (isGuestMode && meta !== null)) {
-            setLocalGlobalVersion(serverVersion, false);
+            setLocalGlobalVersion(resolvedVersion, false);
             const normalized = {
               ...syncedTree,
-              version: serverVersion,
+              version: resolvedVersion,
               persons: normalizeCoupleCoordinates(syncedTree.persons, syncedTree.connectionOverrides),
             };
+            skipNextAutoSaveRef.current = true;
+            isUndoActionRef.current = true;
             treeRef.current = normalized;
             setTree(normalized);
             setLastSavedTime(new Date(syncedTree.updatedAt || Date.now()));
 
-            if (isGuestMode && (isVersionChanged || isTimestampChanged)) {
+            if (isGuestMode && (isRemoteNewer || isVersionChanged) && localCount > 0) {
               showToast({
                 type: 'info',
-                title: `Синхронізовано (${serverVersion})`,
-                message: `Завантажено актуальну версію родоводу від адміністратора.`,
+                title: `Синхронізовано (${resolvedVersion})`,
+                message: 'Завантажено актуальну версію родоводу з Firebase.',
               });
             }
           }
         }
       } catch (err) {
-        console.warn('Sync tree check failed:', err);
+        console.warn('Cloud tree check failed:', err);
       }
     },
-    [isAdmin, showToast]
+    [isAdmin, isUndoActionRef, showToast]
   );
 
-  // Guest polling
+  // Guest polling against Firebase Firestore (no Express tree API)
   useEffect(() => {
     if (isAdmin) return;
-    void syncLatestTreeFromServer(true);
+    void syncLatestTreeFromCloud(true);
 
     const intervalTimer = setInterval(() => {
-      void syncLatestTreeFromServer(true);
-    }, 6000);
+      void syncLatestTreeFromCloud(true);
+    }, 35000);
 
     const handleWindowFocus = () => {
       if (document.visibilityState === 'visible') {
-        void syncLatestTreeFromServer(true);
+        void syncLatestTreeFromCloud(true);
       }
     };
 
@@ -434,226 +561,74 @@ export function useTreeSync({
       window.removeEventListener('visibilitychange', handleWindowFocus);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [isAdmin, syncLatestTreeFromServer]);
-
-  // Lightweight Admin polling to pull new guest suggestions / proposal cards from server safely
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    const checkIncomingGuestFeedback = async () => {
-      if (document.visibilityState === 'hidden') return;
-      if (!hasLoadedFromServer.current || isDraggingCardRef.current || pendingDirtySnapshotRef.current) return;
-
-      try {
-        const currentId = treeRef.current.id || MAIN_TREE_ID;
-        const meta = await fetchServerTreeMeta(currentId);
-        if (!meta?.updatedAt || meta.updatedAt <= (treeRef.current.updatedAt || '')) return;
-
-        const serverTree = await loadTreeById(currentId, { preferServer: true });
-        if (!serverTree?.persons) return;
-
-        let newSuggestionsCount = 0;
-        let newProposalsCount = 0;
-        let guestCustomizationsCount = 0;
-        const current = treeRef.current;
-        const mergedPersons = { ...current.persons };
-
-        // 1. Merge unseen guestSuggestions & guest self-customizations onto existing cards
-        Object.values(serverTree.persons).forEach((srvPerson) => {
-          const localP = mergedPersons[srvPerson.id];
-          if (localP) {
-            let updatedLocal = localP;
-            let localChanged = false;
-
-            if (Array.isArray(srvPerson.guestSuggestions) && srvPerson.guestSuggestions.length > 0) {
-              const existingSugs = localP.guestSuggestions || [];
-              const unseen = srvPerson.guestSuggestions.filter(
-                (s) => s.status === 'pending' && !existingSugs.some((ex) => ex.id === s.id)
-              );
-              if (unseen.length > 0) {
-                newSuggestionsCount += unseen.length;
-                updatedLocal = {
-                  ...updatedLocal,
-                  guestSuggestions: [...existingSugs, ...unseen],
-                };
-                localChanged = true;
-              }
-            }
-
-            if (
-              srvPerson.selfCustomizedAt &&
-              srvPerson.selfCustomizedAt > (localP.selfCustomizedAt || '')
-            ) {
-              guestCustomizationsCount += 1;
-              updatedLocal = {
-                ...updatedLocal,
-                avatarUrl: srvPerson.avatarUrl,
-                cardBgColor: srvPerson.cardBgColor,
-                cardFrame: srvPerson.cardFrame,
-                selfCustomizedAt: srvPerson.selfCustomizedAt,
-              };
-              localChanged = true;
-            }
-
-            if (localChanged) {
-              mergedPersons[srvPerson.id] = updatedLocal;
-            }
-          }
-
-          // 2. Merge unseen proposal cards created by guests
-          if (srvPerson.isProposal && !mergedPersons[srvPerson.id]) {
-            newProposalsCount += 1;
-            mergedPersons[srvPerson.id] = srvPerson;
-
-            const appendId = (arr: string[] | undefined, id: string) =>
-              Array.isArray(arr) ? (arr.includes(id) ? arr : [...arr, id]) : [id];
-
-            // Ensure reciprocal arrays on existing cards include the new proposal ID
-            (srvPerson.parents || []).forEach((pid) => {
-              if (mergedPersons[pid]) {
-                mergedPersons[pid] = {
-                  ...mergedPersons[pid],
-                  children: appendId(mergedPersons[pid].children, srvPerson.id),
-                };
-              }
-            });
-            (srvPerson.children || []).forEach((cid) => {
-              if (mergedPersons[cid]) {
-                mergedPersons[cid] = {
-                  ...mergedPersons[cid],
-                  parents: appendId(mergedPersons[cid].parents, srvPerson.id),
-                };
-              }
-            });
-            (srvPerson.spouses || []).forEach((sid) => {
-              if (mergedPersons[sid]) {
-                mergedPersons[sid] = {
-                  ...mergedPersons[sid],
-                  spouses: appendId(mergedPersons[sid].spouses, srvPerson.id),
-                };
-              }
-            });
-            (srvPerson.siblings || []).forEach((sibId) => {
-              if (mergedPersons[sibId]) {
-                mergedPersons[sibId] = {
-                  ...mergedPersons[sibId],
-                  siblings: appendId(mergedPersons[sibId].siblings, srvPerson.id),
-                };
-              }
-            });
-          }
-        });
-
-        if (newSuggestionsCount > 0 || newProposalsCount > 0 || guestCustomizationsCount > 0) {
-          const mergedOverrides = { ...(current.connectionOverrides || {}) };
-          if (serverTree.connectionOverrides) {
-            Object.entries(serverTree.connectionOverrides).forEach(([k, v]) => {
-              if (!mergedOverrides[k]) mergedOverrides[k] = v;
-            });
-          }
-          const updatedTree: FamilyTreeData = {
-            ...current,
-            persons: normalizeCoupleCoordinates(mergedPersons, mergedOverrides),
-            connectionOverrides: mergedOverrides,
-            updatedAt: serverTree.updatedAt || new Date().toISOString(),
-          };
-          isUndoActionRef.current = true;
-          treeRef.current = updatedTree;
-          setTree(updatedTree);
-          saveTreeLocally(updatedTree, false);
-
-          if (newSuggestionsCount > 0 || newProposalsCount > 0) {
-            const parts: string[] = [];
-            if (newSuggestionsCount > 0) parts.push(`уточнень: ${newSuggestionsCount}`);
-            if (newProposalsCount > 0) parts.push(`карток-пропозицій: ${newProposalsCount}`);
-            showToast({
-              type: 'info',
-              title: 'Нові пропозиції від родичів',
-              message: `Надійшли нові пропозиції від гостей (${parts.join(', ')}).`,
-            });
-          } else if (guestCustomizationsCount > 0) {
-            showToast({
-              type: 'info',
-              title: 'Оновлено оформлення картки',
-              message:
-                guestCustomizationsCount === 1
-                  ? 'Гість оновив оформлення своєї картки (аватар/колір/рамку).'
-                  : `Гості оновили оформлення карток (${guestCustomizationsCount}).`,
-            });
-          }
-        }
-      } catch {
-        /* ignore background polling errors */
-      }
-    };
-
-    const timer = setInterval(() => void checkIncomingGuestFeedback(), 18000);
-    const onFocus = () => void checkIncomingGuestFeedback();
-    window.addEventListener('focus', onFocus);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('focus', onFocus);
-    };
-  }, [isAdmin, isDraggingCardRef, isUndoActionRef, showToast]);
+  }, [isAdmin, syncLatestTreeFromCloud]);
 
   const executeForceRefreshFromCloud = useCallback(async () => {
     setSyncStatus('syncing');
     const startedAt = Date.now();
     try {
       const currentId = treeRef.current.id || MAIN_TREE_ID;
-      const [serverTree, serverGlobalVersion] = await Promise.all([
-        loadTreeById(currentId, { allowEmpty: true, preferServer: true }),
-        fetchGlobalVersionFromServer(),
+      const [cloudTree, cloudGlobalVersion] = await Promise.all([
+        loadTreeById(currentId, {
+          allowEmpty: true,
+          preferServer: true,
+          forceRemote: true,
+          includeCloud: true,
+        }),
+        fetchGlobalVersionFromServer({ includeCloud: true }),
       ]);
       const elapsed = Date.now() - startedAt;
       if (elapsed < 300) {
         await new Promise((resolve) => setTimeout(resolve, 300 - elapsed));
       }
-      if (serverTree && serverTree.persons && Object.keys(serverTree.persons).length > 0) {
-        const serverTreesList = await fetchServerTrees();
-        const syncedTree = syncCrossCanvasLinkTitles(serverTree, serverTreesList);
-        const effectiveVersion = serverGlobalVersion || syncedTree.version || 'v0.1';
+      if (cloudTree && cloudTree.persons && Object.keys(cloudTree.persons).length > 0) {
+        const cloudTreesList = await fetchServerTrees({ includeCloud: true });
+        const syncedTree = syncCrossCanvasLinkTitles(cloudTree, cloudTreesList);
+        const effectiveVersion = cloudGlobalVersion || syncedTree.version || 'v0.1';
         setLocalGlobalVersion(effectiveVersion, false);
         const normalized: FamilyTreeData = {
           ...syncedTree,
           version: effectiveVersion,
           persons: normalizeCoupleCoordinates(syncedTree.persons, syncedTree.connectionOverrides),
         };
+        skipNextAutoSaveRef.current = true;
+        isUndoActionRef.current = true;
         treeRef.current = normalized;
         setTree(normalized);
         saveTreeLocally(normalized, false);
+        markFirebaseUnsynced(false);
         setIsServerConnected(true);
         setSyncStatus('synced');
         setLastSavedTime(new Date(normalized.updatedAt || Date.now()));
         showToast({
           type: 'info',
-          title: `Оновлено із сервера (${normalized.version || 'v0.1'})`,
-          message: `Завантажено збережену копію родоводу з сервера (${Object.keys(normalized.persons || {}).length} осіб).`,
+          title: `Оновлено з хмари (${normalized.version || 'v0.1'})`,
+          message: `Завантажено збережену копію родоводу з Firebase (${Object.keys(normalized.persons || {}).length} осіб).`,
         });
       } else {
-        const serverAlive = await checkServerHealth();
-        setIsServerConnected(serverAlive);
-        setSyncStatus(serverAlive ? 'error' : 'offline');
+        const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+        setIsServerConnected(online);
+        setSyncStatus(online ? 'synced' : 'offline');
         showToast({
           type: 'warning',
           title: 'Дані відсутні',
-          message: serverAlive
-            ? 'На сервері немає збереженої копії цього полотна.'
-            : 'Немає зв’язку із сервером — використовується локальна копія.',
+          message: online
+            ? 'У Firebase Firestore ще немає збереженої копії цього полотна.'
+            : 'Немає інтернету — використовується локальна копія.',
         });
       }
     } catch (err) {
       console.error('Force refresh failed:', err);
-      const serverAlive = await checkServerHealth();
-      setIsServerConnected(serverAlive);
-      setSyncStatus(serverAlive ? 'error' : 'offline');
+      const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      setIsServerConnected(online);
+      setSyncStatus(online ? 'error' : 'offline');
       showToast({
         type: 'error',
         title: 'Помилка оновлення',
-        message: 'Не вдалося завантажити родовід із сервера.',
+        message: 'Не вдалося завантажити родовід із Firebase Firestore.',
       });
     }
-  }, [showToast]);
+  }, [isUndoActionRef, markFirebaseUnsynced, showToast]);
 
   const executePullFromFirebase = useCallback(async () => {
     if (isFirebaseSyncing) return;
@@ -679,6 +654,7 @@ export function useTreeSync({
             result.activeTree.connectionOverrides
           ),
         };
+        skipNextAutoSaveRef.current = true;
         isUndoActionRef.current = true;
         treeRef.current = normalized;
         setTree(normalized);
@@ -721,9 +697,7 @@ export function useTreeSync({
   const handleUnifiedSync = useCallback(async () => {
     if (syncStatus === 'syncing' || isFirebaseSyncing) return;
 
-    setSyncStatus('syncing');
     const startedAt = Date.now();
-    let serverOk = false;
     let activeTreeSnapshot = treeRef.current;
 
     try {
@@ -739,32 +713,14 @@ export function useTreeSync({
         updatedAt: nowIso,
       };
       activeTreeSnapshot = treeToSave;
+      skipNextAutoSaveRef.current = true;
       treeRef.current = treeToSave;
       setTree(treeToSave);
       saveTreeLocally(treeToSave, false);
-
-      serverOk = await syncTreeToServer(treeToSave);
-      if (serverOk) {
-        setIsServerConnected(true);
-        setSyncStatus('synced');
-        setLastSavedTime(new Date(nowIso));
-        logServer(
-          `Синхронізація полотна «${treeToSave.title}» на сервер успішна`,
-          {
-            treeId: treeToSave.id,
-            personCount: Object.keys(treeToSave.persons || {}).length,
-          },
-          'success'
-        );
-      } else {
-        const serverAlive = await checkServerHealth();
-        setIsServerConnected(serverAlive);
-        setSyncStatus(serverAlive ? 'error' : 'offline');
-      }
+      setLastSavedTime(new Date(nowIso));
+      setSyncStatus(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'synced');
     } catch (err) {
-      console.error('handleUnifiedSync server phase error:', err);
-      setIsServerConnected(false);
-      setSyncStatus('offline');
+      console.error('handleUnifiedSync local save error:', err);
     }
 
     const hasCloudUser = Boolean(isCloudAuthenticated && currentUser && currentUser.emailVerified);
@@ -790,14 +746,16 @@ export function useTreeSync({
           setLastFirebaseSyncTime(now);
           setLastFirebaseSyncTimeStorage(now);
           markFirebaseUnsynced(false);
+          setIsServerConnected(true);
+          setSyncStatus('synced');
           const mediaNote =
             result.uploadedMediaCount && result.uploadedMediaCount > 0
               ? ` Нових фото: ${result.uploadedMediaCount}.`
               : '';
           showToast({
             type: 'success',
-            title: 'Синхронізовано',
-            message: `${serverOk ? 'Сервер і хмара Firebase' : 'Хмара Firebase'} оновлені (${result.syncedCount} полотен, ${result.version}).${mediaNote}`,
+            title: 'Синхронізовано з Firebase',
+            message: `Локальне сховище та хмара Firebase оновлені (${result.syncedCount} полотен, ${result.version}).${mediaNote}`,
           });
         } else if (result.syncedCount > 0 && result.failedCount > 0) {
           showToast({
@@ -806,20 +764,20 @@ export function useTreeSync({
             message: `Збережено ${result.syncedCount} полотен у хмарі, не вдалося: ${result.failedCount} (${result.skippedTitles.join(', ')}).`,
           });
         } else {
+          setSyncStatus('error');
           showToast({
-            type: serverOk ? 'warning' : 'error',
-            title: serverOk ? 'Збережено на сервері, помилка хмари' : 'Помилка синхронізації',
+            type: 'error',
+            title: 'Помилка синхронізації хмари',
             message: result.error || 'Не вдалося записати дані у Firebase Firestore.',
           });
         }
       } catch (err: any) {
         const msg = err?.message || String(err);
+        setSyncStatus('error');
         showToast({
-          type: serverOk ? 'warning' : 'error',
+          type: 'error',
           title: msg.includes('Quota exceeded') ? 'Перевищено квоту Firebase' : 'Помилка синхронізації хмари',
-          message: serverOk
-            ? 'Дані збережено локально та на сервері, але хмара тимчасово недоступна.'
-            : 'Не вдалося синхронізувати дані з Firebase.',
+          message: 'Зміни збережено локально у браузері, але Firebase тимчасово недоступний.',
         });
       } finally {
         setIsFirebaseSyncing(false);
@@ -829,23 +787,15 @@ export function useTreeSync({
     }
 
     const elapsed = Date.now() - startedAt;
-    if (elapsed < 300) {
-      await new Promise((resolve) => setTimeout(resolve, 300 - elapsed));
+    if (elapsed < 220) {
+      await new Promise((resolve) => setTimeout(resolve, 220 - elapsed));
     }
 
-    if (serverOk) {
-      showToast({
-        type: 'success',
-        title: 'Синхронізовано з сервером',
-        message: `Полотно «${activeTreeSnapshot.title}» (${activeTreeSnapshot.version || 'v0.1'}) збережено локально та на сервері.`,
-      });
-    } else {
-      showToast({
-        type: 'warning',
-        title: 'Збережено лише локально',
-        message: 'Сервер недоступний — зміни збережено у браузері.',
-      });
-    }
+    showToast({
+      type: 'info',
+      title: 'Збережено локально',
+      message: `Полотно «${activeTreeSnapshot.title}» збережено в браузері. Увійдіть через Google (іконка статусу → «Підключити Google»), щоб синхронізувати з Firebase.`,
+    });
   }, [
     currentUser,
     isCloudAuthenticated,
@@ -857,22 +807,17 @@ export function useTreeSync({
 
   const handleRestoreFromCloud = useCallback(() => {
     setConfirmDialog({
-      title: 'Відновити дані з хмари / сервера?',
-      description: isCloudAuthenticated
-        ? 'Буде завантажено збережені полотна з Firebase Firestore (або із сервера). Несинхронізовані локальні зміни можуть бути замінені.'
-        : 'Усі незбережені локальні зміни на цьому полотні буде замінено останньою збереженою версією із сервера.',
+      title: 'Відновити дані з Firebase?',
+      description:
+        'Буде завантажено збережені полотна з Firebase Firestore. Несинхронізовані локальні зміни можуть бути замінені.',
       confirmLabel: 'Відновити',
       variant: 'warning',
       onConfirm: () => {
         setConfirmDialog(null);
-        if (isCloudAuthenticated) {
-          void executePullFromFirebase();
-        } else {
-          void executeForceRefreshFromCloud();
-        }
+        void executePullFromFirebase();
       },
     });
-  }, [executeForceRefreshFromCloud, executePullFromFirebase, isCloudAuthenticated, setConfirmDialog]);
+  }, [executePullFromFirebase, setConfirmDialog]);
 
   const pendingDirtySnapshotRef = useRef<FamilyTreeData | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -887,7 +832,7 @@ export function useTreeSync({
         clearTimeout(autoSaveTimerRef.current);
         autoSaveTimerRef.current = null;
       }
-      void syncTreeToServer(snapshot, { keepalive: true });
+      saveTreeLocally(snapshot, true);
     };
 
     const handleVisibilityChange = () => {
@@ -909,6 +854,10 @@ export function useTreeSync({
       isInitialMount.current = false;
       return;
     }
+    if (skipNextAutoSaveRef.current) {
+      skipNextAutoSaveRef.current = false;
+      return;
+    }
     if (!isAdmin) return;
     if (!hasLoadedFromServer.current) return;
     if (isDraggingCardRef.current) return;
@@ -924,6 +873,7 @@ export function useTreeSync({
       updatedAt: new Date().toISOString(),
     };
 
+    treeRef.current = stampedSnapshot;
     saveTreeLocally(stampedSnapshot, true);
     pendingDirtySnapshotRef.current = stampedSnapshot;
     markFirebaseUnsynced(true);
@@ -940,40 +890,13 @@ export function useTreeSync({
       const target = pendingDirtySnapshotRef.current || stampedSnapshot;
       pendingDirtySnapshotRef.current = null;
 
-      if (typeof navigator !== 'undefined' && !navigator.onLine) {
-        setIsServerConnected(false);
-        setSyncStatus('offline');
-        setLastSavedTime(new Date(target.updatedAt));
-        return;
-      }
-
-      // Show server-syncing indicator only if the actual HTTP save takes >= 160ms
-      // so fast local saves never cause icon flickering.
-      let syncVisualStartedAt = 0;
-      const syncVisualTimer = window.setTimeout(() => {
-        syncVisualStartedAt = Date.now();
-        setSyncStatus('syncing');
-      }, 160);
-
-      const ok = await syncTreeToServer(target);
-      window.clearTimeout(syncVisualTimer);
-
-      if (syncVisualStartedAt > 0) {
-        const elapsed = Date.now() - syncVisualStartedAt;
-        if (elapsed < 350) {
-          await new Promise((resolve) => setTimeout(resolve, 350 - elapsed));
-        }
-      }
-
-      if (ok) {
-        setIsServerConnected(true);
-        setSyncStatus('synced');
-      } else {
-        const serverAlive = await checkServerHealth();
-        setIsServerConnected(serverAlive);
-        setSyncStatus(serverAlive ? 'error' : 'offline');
-      }
+      saveTreeLocally(target, false);
+      const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      setIsServerConnected(online);
+      setSyncStatus(online ? 'synced' : 'offline');
       setLastSavedTime(new Date(target.updatedAt));
+
+      if (!online) return;
 
       // Automatically sync settled edits (including cross-canvas links) to Firebase if signed in
       if (isCloudWriteAuthenticated()) {
@@ -981,14 +904,23 @@ export function useTreeSync({
           firebaseAutoSyncTimerRef.current = null;
           if (!isCloudWriteAuthenticated() || isDraggingCardRef.current) return;
           try {
+            if (hasDirtyGlobalVersion()) {
+              const ver = getLocalGlobalVersion() || target.version || 'v0.1';
+              const verSaved = await saveGlobalVersionToFirestore(ver).catch(() => false);
+              if (verSaved) {
+                setLocalGlobalVersion(ver, false);
+              }
+            }
+            const targetId = target.id || MAIN_TREE_ID;
             const saved = await saveTreeToFirestore(
-              target.id || MAIN_TREE_ID,
+              targetId,
               target,
               currentUser?.uid,
               currentUser?.displayName || undefined,
               true
             );
             if (saved) {
+              markTreeDirty(targetId, false);
               const now = new Date();
               setLastFirebaseSyncTime(now);
               setLastFirebaseSyncTimeStorage(now);
@@ -997,7 +929,7 @@ export function useTreeSync({
           } catch {
             /* keep unsynced badge true for manual retry */
           }
-        }, 2800);
+        }, 2200);
       }
     }, 600);
 
@@ -1031,6 +963,8 @@ export function useTreeSync({
       };
 
       hasCenteredTreeIdRef.current = null;
+      skipNextAutoSaveRef.current = true;
+      treeRef.current = newTreeData;
       setTree(newTreeData);
       setSelectedPersonId(null);
       setSelectedPersonIds(new Set());
@@ -1042,7 +976,18 @@ export function useTreeSync({
 
       logTree(`Створено нове полотно «${newTreeData.title}»`, { treeId: newTreeData.id }, 'success');
       if (isCloudWriteAuthenticated()) {
-        void saveTreeToFirestore(newTreeData.id, newTreeData, currentUser?.uid, currentUser?.displayName || undefined, true);
+        void saveTreeToFirestore(
+          newTreeData.id,
+          newTreeData,
+          currentUser?.uid,
+          currentUser?.displayName || undefined,
+          true
+        ).then((savedCloud) => {
+          if (savedCloud) {
+            markTreeDirty(newTreeData.id, false);
+            markFirebaseUnsynced(false);
+          }
+        });
       }
 
       showToast({
@@ -1083,6 +1028,7 @@ export function useTreeSync({
           version: effectiveVersion,
           persons: normalizeCoupleCoordinates(syncedTree.persons || {}, syncedTree.connectionOverrides),
         };
+        skipNextAutoSaveRef.current = true;
         treeRef.current = normalized;
         isUndoActionRef.current = true;
         setTree(normalized);
@@ -1180,11 +1126,8 @@ export function useTreeSync({
 
       const ok = await renameTreeOnServerOrStorage(treeId, cleanTitle);
       if (ok) {
-        markFirebaseUnsynced(true);
+        markFirebaseUnsynced(!isCloudWriteAuthenticated());
         notifyTreesChanged();
-        if (isCloudWriteAuthenticated()) {
-          void renameTreeInFirestore(treeId, cleanTitle).catch(() => {});
-        }
         setTree((prev) => {
           const isCurrentTarget = prev.id === treeId;
           const updatedPersons = { ...prev.persons };
@@ -1289,7 +1232,7 @@ export function useTreeSync({
       const wasCurrentTree = treeRef.current.id === treeId;
       const ok = await deleteTreeFromServerOrStorage(treeId);
       if (ok) {
-        markFirebaseUnsynced(true);
+        markFirebaseUnsynced(!isCloudWriteAuthenticated());
         notifyTreesChanged();
         logTree(`Видалено полотно «${title || treeId}»`, { treeId, title }, 'info');
         showToast({
@@ -1347,7 +1290,6 @@ export function useTreeSync({
           targetTree.selectedPersonId || Object.keys(targetTree.persons)[0] || null
         );
 
-        setSyncStatus('syncing');
         const saved = await syncTreeToServer(targetTree);
         markFirebaseUnsynced(true);
         notifyTreesChanged();
@@ -1359,22 +1301,21 @@ export function useTreeSync({
         );
 
         if (saved) {
-          setIsServerConnected(true);
-          setSyncStatus('synced');
+          const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+          setIsServerConnected(online);
+          setSyncStatus(online ? 'synced' : 'offline');
           setLastSavedTime(new Date());
           showToast({
             type: 'success',
             title: 'Імпорт успішно завершено',
-            message: `Родовід "${targetTree.title}" (${Object.keys(targetTree.persons || {}).length} осіб) збережено локально та на сервері.`,
+            message: `Родовід "${targetTree.title}" (${Object.keys(targetTree.persons || {}).length} осіб) збережено локально${isCloudWriteAuthenticated() ? ' та буде синхронізовано з Firebase' : ''}.`,
           });
         } else {
-          const serverAlive = await checkServerHealth();
-          setIsServerConnected(serverAlive);
-          setSyncStatus(serverAlive ? 'error' : 'offline');
+          setSyncStatus('error');
           showToast({
             type: 'warning',
-            title: 'Збережено локально',
-            message: 'Дані збережено локально у браузері, але не вдалося синхронізувати з сервером.',
+            title: 'Помилка локального збереження',
+            message: 'Не вдалося зберегти імпортоване полотно в пам’яті браузера.',
           });
         }
 

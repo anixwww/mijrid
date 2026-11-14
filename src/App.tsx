@@ -129,7 +129,6 @@ const GuestFeedbackModal = lazy(() => import('./components/GuestFeedbackModal').
 const ExportModal = lazy(() => import('./components/ExportModal').then((m) => ({ default: m.ExportModal })));
 const PrintTreeModal = lazy(() => import('./components/PrintTreeModal').then((m) => ({ default: m.PrintTreeModal })));
 const ImportJsonModal = lazy(() => import('./components/ImportJsonModal').then((m) => ({ default: m.ImportJsonModal })));
-const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
 const UserIdentityModal = lazy(() => import('./components/UserIdentityModal').then((m) => ({ default: m.UserIdentityModal })));
 const GuestCustomizeModal = lazy(() => import('./components/GuestCustomizeModal').then((m) => ({ default: m.GuestCustomizeModal })));
 const ClanCoatOfArmsModal = lazy(() => import('./components/ClanCoatOfArmsModal').then((m) => ({ default: m.ClanCoatOfArmsModal })));
@@ -142,7 +141,7 @@ const ShortcutsHelpModal = lazy(() => import('./components/ShortcutsHelpModal').
 const DocumentLightboxModal = lazy(() => import('./components/DocumentLightboxModal').then((m) => ({ default: m.DocumentLightboxModal })));
 import { AlignmentGuidesOverlay } from './components/AlignmentGuidesOverlay';
 import { useAuth } from './context/AuthContext';
-import { Cake, Flame, X as CloseIcon, FolderTree, Upload, ArrowUpRight, ArrowLeft, Settings, Ghost, Image as ImageIcon, ChevronDown, ZoomIn } from 'lucide-react';
+import { Cake, Flame, X as CloseIcon, FolderTree, Upload, ArrowUpRight, ArrowLeft, Settings, StickyNote, Image as ImageIcon, ChevronDown, ZoomIn } from 'lucide-react';
 
 interface ConnectingMode {
   sourceId: string;
@@ -171,8 +170,7 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Auth & Shortcuts Modal State
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  // Modals State
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isReactionsModalOpen, setIsReactionsModalOpen] = useState(false);
 
@@ -207,12 +205,9 @@ export default function App() {
   const {
     isAdmin,
     isAdminRef,
-    handleLoginAsAdmin,
-    handleSwitchToGuest,
     handleToggleAdminRole,
   } = useAdminRole({
     showToast,
-    onOpenAuthModal: () => setIsAuthModalOpen(true),
     onGuestCleanup: handleGuestCleanup,
   });
 
@@ -649,6 +644,7 @@ export default function App() {
       }
       return {
         ...prev,
+        updatedAt: new Date().toISOString(),
         persons: {
           ...prev.persons,
           [personId]: {
@@ -673,6 +669,7 @@ export default function App() {
       }
       return {
         ...prev,
+        updatedAt: new Date().toISOString(),
         persons: {
           ...prev.persons,
           [personId]: {
@@ -693,7 +690,7 @@ export default function App() {
           newPersons[id] = { ...newPersons[id], reactions: [] };
         }
       });
-      return { ...prev, persons: newPersons };
+      return { ...prev, updatedAt: new Date().toISOString(), persons: newPersons };
     });
   }, []);
 
@@ -713,6 +710,7 @@ export default function App() {
         }
         return {
           ...prev,
+          updatedAt: new Date().toISOString(),
           clanCoatOfArms: current,
         };
       });
@@ -890,6 +888,7 @@ export default function App() {
       });
       return {
         ...prev,
+        updatedAt: new Date().toISOString(),
         persons: {
           ...prev.persons,
           [personId]: {
@@ -1135,7 +1134,7 @@ export default function App() {
         showToast({
           type: 'error',
           title: 'Помилка збереження',
-          message: res.error || 'Не вдалося зберегти оформлення картки на сервері.',
+          message: res.error || 'Не вдалося зберегти оформлення картки.',
         });
         return false;
       }
@@ -1168,11 +1167,13 @@ export default function App() {
       setTree(nextTree);
       saveTreeLocally(nextTree, false);
 
-      logUser(`Гість оформив свою картку «${existing.firstName} ${existing.lastName}»`, { targetPersonId });
+      logUser(`Гість оформив свою картку «${existing.firstName} ${existing.lastName}»`, { targetPersonId, localOnly: Boolean(res.localOnly) });
       showToast({
         type: 'success',
         title: 'Оформлення збережено',
-        message: 'Ваша картка оновлена для всіх відвідувачів дерева.',
+        message: res.localOnly
+          ? 'Оформлення картки збережено локально у вашому браузері.'
+          : 'Ваша картка оновлена.',
       });
       return true;
     },
@@ -1489,13 +1490,13 @@ export default function App() {
         }));
       }
       logTree(
-        `Створено примарну картку «${[data.firstName, data.lastName].filter(Boolean).join(' ')}»`,
+        `Створено нотатку-стікер «${[data.firstName, data.lastName].filter(Boolean).join(' ')}»`,
         { newId: result.newId }
       );
       showToast({
         type: 'info',
-        title: 'Примарну картку створено',
-        message: `Нотатку «${[data.firstName, data.lastName].filter(Boolean).join(' ')}» додано на полотно.`,
+        title: 'Нотатку (стікер) створено',
+        message: `Стікер «${[data.firstName, data.lastName].filter(Boolean).join(' ')}» додано на полотно.`,
       });
     },
     [tree, startYear, isAdmin, pushHistorySnapshot, setTree, showToast]
@@ -1514,17 +1515,17 @@ export default function App() {
         });
       }
       logTree(
-        isGhost ? `Картку переведено в примарну: «${p.firstName} ${p.lastName}»` : `Примарну картку підтверджено: «${p.firstName} ${p.lastName}»`,
+        isGhost ? `Картку переведено в нотатку-стікер: «${p.firstName} ${p.lastName}»` : `Нотатку перетворено на картку особи: «${p.firstName} ${p.lastName}»`,
         { personId }
       );
       showToast({
         type: isGhost ? 'info' : 'success',
-        title: isGhost ? 'Позначено як примарну картку' : 'Статус примарної картки знято',
+        title: isGhost ? 'Переведено у стікер-нотатку' : 'Перетворено на картку особи',
         message: isGhost
-          ? `Картка «${[p.firstName, p.lastName].filter(Boolean).join(' ')}» тепер відображається як нотатка.`
+          ? `Картка «${[p.firstName, p.lastName].filter(Boolean).join(' ')}» тепер відображається як стікер-нотатка.`
           : openEditAfter
-          ? `Картку «${[p.firstName, p.lastName].filter(Boolean).join(' ')}» підтверджено — заповніть повні дані.`
-          : `Картка «${[p.firstName, p.lastName].filter(Boolean).join(' ')}» переведена у звичайну картку.`,
+          ? `Нотатку «${[p.firstName, p.lastName].filter(Boolean).join(' ')}» переведено в картку особи — заповніть деталі.`
+          : `Нотатку «${[p.firstName, p.lastName].filter(Boolean).join(' ')}» переведено у звичайну картку.`,
       });
     },
     [tree, pushHistorySnapshot, setTree, showToast]
@@ -1684,7 +1685,6 @@ export default function App() {
       isLogsModalOpen ||
       editingConnectionId ||
       connectingPerson ||
-      isAuthModalOpen ||
       isShortcutsModalOpen ||
       isMyTreesModalOpen ||
       isUserIdentityModalOpen ||
@@ -1863,6 +1863,7 @@ export default function App() {
       saveTreeLocally(nextTree, false);
       setGuestSuggestionTarget(null);
 
+      let isLocalOnly = false;
       if (!isAdminRef.current) {
         const res = await submitGuestSuggestionToServer(nextTree.id || 'my-family-tree', {
           kind: 'note',
@@ -1873,10 +1874,11 @@ export default function App() {
           showToast({
             type: 'warning',
             title: 'Збережено локально',
-            message: res.error || 'Не вдалося доставити уточнення на сервер.',
+            message: res.error || 'Не вдалося зберегти уточнення.',
           });
           return;
         }
+        isLocalOnly = Boolean(res.localOnly);
         if (res.updatedAt) {
           const syncedTree: FamilyTreeData = { ...treeRef.current, updatedAt: res.updatedAt };
           isUndoActionRef.current = true;
@@ -1889,11 +1891,14 @@ export default function App() {
       logUser(`Гість надіслав уточнення до картки «${target.firstName} ${target.lastName}»`, {
         personId: payload.personId,
         category: payload.category,
+        localOnly: isLocalOnly,
       });
       showToast({
         type: 'success',
-        title: 'Нотатку / уточнення надіслано',
-        message: `Повідомлення до картки «${[target.firstName, target.lastName].filter(Boolean).join(' ')}» передано адміністратору на розгляд.`,
+        title: isLocalOnly ? 'Нотатку збережено локально' : 'Нотатку / уточнення збережено',
+        message: isLocalOnly
+          ? `Повідомлення до картки «${[target.firstName, target.lastName].filter(Boolean).join(' ')}» збережено локально у вашому браузері.`
+          : `Повідомлення до картки «${[target.firstName, target.lastName].filter(Boolean).join(' ')}» збережено.`,
       });
     },
     [currentUser, guestUserId, getResolvedDisplayName, setTree, showToast]
@@ -2002,6 +2007,7 @@ export default function App() {
         }));
       }
 
+      let isLocalOnly = false;
       if (!isAdminRef.current) {
         const res = await submitGuestSuggestionToServer(currentTree.id || 'my-family-tree', {
           kind: 'proposal-card',
@@ -2018,10 +2024,11 @@ export default function App() {
           showToast({
             type: 'warning',
             title: 'Картку створено локально',
-            message: res.error || 'Не вдалося надіслати пропозицію на сервер.',
+            message: res.error || 'Не вдалося зберегти пропозицію.',
           });
           return;
         }
+        isLocalOnly = Boolean(res.localOnly);
         if (res.updatedAt) {
           const syncedTree: FamilyTreeData = { ...treeRef.current, updatedAt: res.updatedAt };
           isUndoActionRef.current = true;
@@ -2034,11 +2041,14 @@ export default function App() {
       logUser(`Гість запропонував нового родича: «${proposalPerson.firstName} ${proposalPerson.lastName}»`, {
         proposalPersonId: proposalPerson.id,
         targetPersonId: target.id,
+        localOnly: isLocalOnly,
       });
       showToast({
         type: 'success',
-        title: 'Картку-пропозицію додано',
-        message: `«${[proposalPerson.firstName, proposalPerson.lastName].filter(Boolean).join(' ')}» надіслано адміністратору на перевірку.`,
+        title: isLocalOnly ? 'Картку-пропозицію збережено локально' : 'Картку-пропозицію додано',
+        message: isLocalOnly
+          ? `«${[proposalPerson.firstName, proposalPerson.lastName].filter(Boolean).join(' ')}» збережено локально у вашому браузері.`
+          : `«${[proposalPerson.firstName, proposalPerson.lastName].filter(Boolean).join(' ')}» збережено.`,
       });
     },
     [proposeRelativeTarget, getResolvedDisplayName, currentUser, guestUserId, startYear, setTree, showToast]
@@ -2581,7 +2591,6 @@ export default function App() {
       {/* 1. Top Navbar */}
       <TopNavbar
         isAdmin={isAdmin}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onToggleAdminRole={handleToggleAdminRole}
         onOpenMyTrees={() => setIsMyTreesModalOpen(true)}
         currentTreeTitle={tree.title || (isMainTree ? 'Головне дерево' : 'Родове полотно')}
@@ -3103,34 +3112,28 @@ export default function App() {
                 <p className="text-xs sm:text-[13px] text-stone-600 dark:text-zinc-400 mt-1.5 leading-relaxed">
                   {isAdmin
                     ? 'Додайте першу особу або імпортуйте готовий файл родоводу, щоб розпочати.'
-                    : 'Це полотно ще не заповнене. Увійдіть як адміністратор, щоб додати перші картки.'}
+                    : 'Це полотно ще не заповнене.'}
                 </p>
               </div>
 
-              <div className="pt-1 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!isAdmin) {
-                      setIsAuthModalOpen(true);
-                    } else {
-                      setAddingRelativeTarget({ target: null, initialType: 'child' });
-                    }
-                  }}
-                  className="w-full h-11 px-5 rounded-2xl bg-stone-900 hover:bg-stone-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-md shadow-stone-900/10 transition-all cursor-pointer"
-                >
-                  <span>{isAdmin ? 'Додати першу особу' : 'Увійти для редагування'}</span>
-                </button>
+              {isAdmin && (
+                <div className="pt-1 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setAddingRelativeTarget({ target: null, initialType: 'child' })}
+                    className="w-full h-11 px-5 rounded-2xl bg-stone-900 hover:bg-stone-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-md shadow-stone-900/10 transition-all cursor-pointer"
+                  >
+                    <span>Додати першу особу</span>
+                  </button>
 
-                {isAdmin && (
                   <div className="space-y-2.5 pt-1">
                     <button
                       type="button"
                       onClick={() => setQuickDraftModalState({ mode: 'ghost', coords: null })}
-                      className="w-full h-10 px-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50/80 hover:bg-slate-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      className="w-full h-10 px-4 rounded-2xl border border-amber-300 dark:border-amber-800/70 bg-amber-50/90 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 text-amber-950 dark:text-amber-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                     >
-                      <Ghost size={15} />
-                      <span>Додати примарну картку (нотатку)</span>
+                      <StickyNote size={15} className="text-amber-600 dark:text-amber-400" />
+                      <span>Додати нотатку (стікер)</span>
                     </button>
 
                     <div className="flex items-center justify-center gap-3">
@@ -3154,8 +3157,8 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -3214,31 +3217,31 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setOpenHudTray((prev) => (prev === 'ghost' ? null : 'ghost'))}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-dashed shadow-md backdrop-blur-md transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border shadow-md backdrop-blur-md transition-all cursor-pointer ${
                       openHudTray === 'ghost'
-                        ? 'bg-slate-800 text-white border-slate-700 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-200'
-                        : 'border-slate-400 dark:border-zinc-500 bg-white/95 dark:bg-zinc-900/95 text-slate-800 dark:text-zinc-100 hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                        ? 'bg-amber-500 text-amber-950 border-amber-600 dark:bg-amber-400 dark:text-zinc-950 dark:border-amber-300'
+                        : 'border-amber-300 dark:border-amber-700/80 bg-amber-50/95 dark:bg-zinc-900/95 text-amber-950 dark:text-amber-200 hover:border-amber-400 hover:bg-amber-100 dark:hover:bg-zinc-800'
                     }`}
-                    title="Список примарних карток-нотаток на полотні"
+                    title="Список нотаток (стікерів) на полотні"
                   >
-                    <Ghost size={13.5} className={openHudTray === 'ghost' ? 'text-current' : 'text-slate-600 dark:text-zinc-300'} />
-                    <span>Примарні картки ({ghostPersons.length})</span>
+                    <StickyNote size={13.5} className={openHudTray === 'ghost' ? 'text-current' : 'text-amber-600 dark:text-amber-400'} />
+                    <span>Нотатки ({ghostPersons.length})</span>
                     <ChevronDown size={12.5} className={`transition-transform ${openHudTray === 'ghost' ? 'rotate-180' : ''}`} />
                   </button>
 
                   {openHudTray === 'ghost' && (
-                    <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white/98 dark:bg-zinc-900/98 border border-stone-200/90 dark:border-zinc-700/90 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden z-40 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <div className="px-3.5 py-2.5 border-b border-stone-100 dark:border-zinc-800 flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
-                          <Ghost size={13} />
-                          Примарні картки ({ghostPersons.length})
+                    <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white/98 dark:bg-zinc-900/98 border border-amber-200/90 dark:border-zinc-700/90 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden z-40 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="px-3.5 py-2.5 border-b border-amber-100 dark:border-zinc-800 bg-amber-50/50 dark:bg-amber-950/20 flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                          <StickyNote size={13} />
+                          Нотатки ({ghostPersons.length})
                         </span>
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={handleCycleGhostCards}
-                            className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-[10.5px] font-semibold cursor-pointer transition-colors"
-                            title="Переходити по черзі між примарними картками"
+                            className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-amber-900 dark:text-zinc-200 text-[10.5px] font-semibold cursor-pointer transition-colors"
+                            title="Переходити по черзі між нотатками"
                           >
                             По колу →
                           </button>
@@ -3249,7 +3252,7 @@ export default function App() {
                                 setOpenHudTray(null);
                                 handleOpenQuickDraftAtViewportCenter('ghost');
                               }}
-                              className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10.5px] font-semibold cursor-pointer transition-colors"
+                              className="px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-amber-950 text-[10.5px] font-semibold cursor-pointer transition-colors"
                             >
                               + Нова
                             </button>
@@ -3258,7 +3261,7 @@ export default function App() {
                       </div>
                       <div className="max-h-64 overflow-y-auto divide-y divide-stone-100 dark:divide-zinc-800">
                         {ghostPersons.map((gp) => {
-                          const gName = [gp.firstName, gp.lastName].filter(Boolean).join(' ').trim() || 'Примарна нотатка';
+                          const gName = [gp.firstName, gp.lastName].filter(Boolean).join(' ').trim() || 'Нотатка';
                           const gNote = gp.ghostNote || gp.interestingStories || gp.notes || '';
                           return (
                             <button
@@ -3275,12 +3278,12 @@ export default function App() {
                                   setPulsingBranchTargetId(null);
                                 }, 2200);
                               }}
-                              className={`w-full px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer flex items-start gap-2.5 ${
-                                selectedPersonId === gp.id ? 'bg-slate-100/80 dark:bg-zinc-800/90' : ''
+                              className={`w-full px-3.5 py-2.5 text-left hover:bg-amber-50/70 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer flex items-start gap-2.5 ${
+                                selectedPersonId === gp.id ? 'bg-amber-50 dark:bg-zinc-800/90' : ''
                               }`}
                             >
-                              <div className="w-7 h-7 rounded-lg border border-dashed border-slate-400 dark:border-zinc-500 bg-slate-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 mt-0.5">
-                                <Ghost size={13} className="text-slate-600 dark:text-zinc-300" />
+                              <div className="w-7 h-7 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center shrink-0 mt-0.5">
+                                <StickyNote size={13} className="text-amber-700 dark:text-amber-400" />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-1.5">
@@ -3294,7 +3297,7 @@ export default function App() {
                                   )}
                                 </div>
                                 {gNote ? (
-                                  <p className="text-[11px] text-slate-600 dark:text-zinc-400 line-clamp-2 mt-0.5 leading-snug">
+                                  <p className="text-[11px] text-stone-600 dark:text-zinc-400 line-clamp-2 mt-0.5 leading-snug">
                                     {gNote}
                                   </p>
                                 ) : (
@@ -4061,17 +4064,6 @@ export default function App() {
             initialTab={metricModalTarget.tab || 'birth'}
             onClose={() => setMetricModalTarget(null)}
             onSave={handleSaveMetricPerson}
-          />
-        )}
-
-        {/* 6. Admin Authentication Modal */}
-        {isAuthModalOpen && (
-          <AuthModal
-            isOpen={isAuthModalOpen}
-            onClose={() => setIsAuthModalOpen(false)}
-            isAdmin={isAdmin}
-            onLoginAsAdmin={handleLoginAsAdmin}
-            onSwitchToGuest={handleSwitchToGuest}
           />
         )}
 

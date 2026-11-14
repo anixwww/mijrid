@@ -37,7 +37,6 @@ import { fetchServerTrees, MAIN_TREE_ID, TREES_CHANGED_EVENT } from '../utils/fi
 
 interface TopNavbarProps {
   isAdmin: boolean;
-  onOpenAuthModal: () => void;
   onToggleAdminRole?: () => void;
   onOpenMyTrees?: () => void;
   currentTreeTitle?: string;
@@ -99,7 +98,6 @@ const TAB_ORDER_STORAGE_KEY = 'rodovid_canvas_tab_order';
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
   isAdmin,
-  onOpenAuthModal,
   onToggleAdminRole,
   onOpenMyTrees,
   currentTreeTitle,
@@ -719,9 +717,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           {isAdmin && (
             <button
               type="button"
-              onClick={onOpenAuthModal}
+              onClick={onToggleAdminRole}
               className="h-8.5 px-2.5 sm:px-3 rounded-lg border flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 shrink-0 whitespace-nowrap bg-emerald-50/90 hover:bg-emerald-100 text-emerald-900 border-emerald-200/90 dark:bg-emerald-950/50 dark:hover:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/70"
-              title="Ви увійшли як Адміністратор (натисніть для налаштування або переходу в режим гостя)"
+              title="Ви увійшли як Адміністратор (натисніть, щоб перейти в режим гостя)"
             >
               <ShieldCheck size={14} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
               <span className="hidden sm:inline text-xs">Адмін</span>
@@ -992,22 +990,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                         <span className="flex-1 truncate">Системний журнал</span>
                       </button>
                     )}
-                  </div>
-                )}
-
-                {!isAdmin && (
-                  <div className="pt-1 border-t border-stone-100 dark:border-zinc-800 space-y-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onOpenAuthModal();
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full h-8.5 px-2.5 rounded-lg hover:bg-emerald-50/90 dark:hover:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left"
-                    >
-                      <ShieldCheck size={15} className="text-emerald-700 dark:text-emerald-400 shrink-0" />
-                      <span className="flex-1 truncate">Вхід адміністратора</span>
-                    </button>
                   </div>
                 )}
               </div>
@@ -1309,7 +1291,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               </div>
 
               <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed">
-                Збережена версія буде застосована до кожного полотна родоводу та негайно відправлена на сервер. Усі користувачі в режимі гостя миттєво підтягнуть її при синхронізації.
+                Збережена версія буде застосована до кожного полотна родоводу та синхронізована з Firebase Firestore. Користувачі в режимі гостя отримають її при оновленні з хмари.
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-1">

@@ -24,7 +24,6 @@ import {
   Trash2,
   Home,
   ArrowUpRight,
-  Ghost,
   StickyNote,
 } from 'lucide-react';
 
@@ -98,6 +97,76 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
             )}
           </div>
 
+          {draft.isGhost && !draft.isBlankScreenshot ? (
+            <div
+              style={{
+                background: `linear-gradient(155deg, #fef9c3 0%, ${
+                  draft.cardBgColor && draft.cardBgColor !== '#f1f5f9' && draft.cardBgColor !== '#e8efe9'
+                    ? draft.cardBgColor
+                    : '#fef08a'
+                } 100%)`,
+                borderColor: '#eab308',
+                clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%)',
+              }}
+              className="relative rounded-sm border p-3.5 pt-4 min-h-[155px] flex flex-col justify-between shadow-md text-stone-900"
+            >
+              {/* Washi tape */}
+              <div
+                className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-12 h-3 rounded-xs pointer-events-none"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.65)',
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  transform: 'rotate(-1.5deg)',
+                }}
+              />
+              <div className="space-y-1.5 text-left">
+                {(() => {
+                  const rawT = fullName;
+                  const noteStr = draft.ghostNote.trim();
+                  const showT =
+                    rawT &&
+                    rawT !== 'Нотатка' &&
+                    rawT !== 'Примарна нотатка' &&
+                    rawT !== 'Невідома особа' &&
+                    rawT !== 'Нова особа';
+                  return (
+                    <>
+                      {(showT || !noteStr) && (
+                        <div className="text-xs font-bold text-stone-900 leading-snug break-words">
+                          {showT ? rawT : 'Нотатка'}
+                        </div>
+                      )}
+                      {noteStr ? (
+                        <div className="text-[11.5px] leading-relaxed text-stone-800 whitespace-pre-wrap break-words line-clamp-5">
+                          {noteStr}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] italic text-stone-600">
+                          Введіть текст нотатки...
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+
+              {(datesInfo.displayLine1 || datesInfo.displayLine2) && (
+                <div className="mt-2 pt-1.5 border-t border-black/10 text-[10px] font-mono text-stone-700">
+                  {datesInfo.displayLine1 || datesInfo.displayLine2}
+                </div>
+              )}
+
+              {/* Dog-ear fold */}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                className="absolute bottom-0 right-0 pointer-events-none"
+              >
+                <polygon points="0,16 0,0 16,0" fill="#facc15" opacity="0.88" />
+              </svg>
+            </div>
+          ) : (
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -109,11 +178,11 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
             className={`relative rounded-xl transition-all shadow-xs ${
               draft.isBlankScreenshot && draft.screenshotUrl ? 'p-0 min-h-[175px]' : 'p-3.5'
             } ${
-              draft.isGhost || (draft.isBlankScreenshot && !draft.screenshotUrl) ? 'border-2 border-dashed' : 'border'
+              draft.isBlankScreenshot && !draft.screenshotUrl ? 'border-2 border-dashed' : 'border'
             } ${
               isDraggingPhoto
                 ? 'border-emerald-600 ring-2 ring-emerald-500/30'
-                : draft.isGhost || (draft.isBlankScreenshot && !draft.screenshotUrl)
+                : draft.isBlankScreenshot && !draft.screenshotUrl
                 ? 'border-slate-400 dark:border-zinc-500 opacity-90'
                 : 'border-stone-300/80 dark:border-zinc-700'
             }`}
@@ -144,12 +213,6 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
             ) : (
               <>
             <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
-              {draft.isGhost && (
-                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-700 text-white text-[9.5px] font-bold shadow-2xs">
-                  <Ghost size={9.5} />
-                  <span>Примара</span>
-                </div>
-              )}
               <span
                 className="inline-flex items-center px-1.5 py-0.5 rounded bg-white/85 border border-stone-300/80 text-[10px] font-mono font-bold text-stone-700"
                 title={`ID картки: ${cardIdLabel}`}
@@ -221,13 +284,6 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
                 </div>
               )}
 
-              {draft.isGhost && draft.ghostNote.trim() && (
-                <div className="mt-2 w-full px-2 py-1 rounded-lg bg-white/75 border border-dashed border-slate-300 text-[10px] italic text-slate-700 line-clamp-2">
-                  <StickyNote size={9.5} className="inline-block mr-1 text-amber-600 align-[-1px]" />
-                  {draft.ghostNote.trim()}
-                </div>
-              )}
-
               {(draft.crossCanvasLinks.length > 0 || draft.targetCanvasId) && (
                 <div
                   className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-white px-2 py-0.5 rounded-full shadow-2xs max-w-full truncate"
@@ -258,8 +314,10 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
               </>
             )}
           </div>
+          )}
 
-          {/* Photo controls */}
+          {/* Photo controls (hidden for pure sticky notes) */}
+          {!(draft.isGhost && !draft.isBlankScreenshot) && (
           <div className="mt-2 flex items-center gap-1.5">
             <label className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-stone-50 dark:hover:bg-zinc-700/80 text-xs font-medium text-stone-800 dark:text-zinc-200 transition-colors">
               <Upload size={13} className="text-emerald-700 dark:text-emerald-400" />
@@ -290,6 +348,7 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
               </button>
             )}
           </div>
+          )}
         </div>
 
         {/* Card Color Swatches */}
@@ -412,16 +471,25 @@ export const PersonSummaryRail: React.FC<PersonSummaryRailProps> = ({
             <input
               type="checkbox"
               checked={draft.isGhost}
-              onChange={(e) => onUpdateField('isGhost', e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-stone-300 text-slate-700 focus:ring-slate-600 accent-slate-700 cursor-pointer"
+              onChange={(e) => {
+                const checked = e.target.checked;
+                onUpdateField('isGhost', checked);
+                if (checked && draft.isBlankScreenshot) {
+                  onUpdateField('isBlankScreenshot', false);
+                }
+                if (checked && (!draft.cardBgColor || draft.cardBgColor === '#e8efe9' || draft.cardBgColor === '#f1f5f9')) {
+                  onUpdateField('cardBgColor', '#fef3c7');
+                }
+              }}
+              className="mt-0.5 w-4 h-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer"
             />
             <div className="min-w-0">
               <div className="text-xs font-medium text-stone-800 dark:text-zinc-200 flex items-center gap-1">
-                <Ghost size={12} className="text-slate-600 dark:text-zinc-400 shrink-0" />
-                <span>Примарна картка</span>
+                <StickyNote size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Нотатка (стікер)</span>
               </div>
               <p className="text-[10.5px] text-stone-500 dark:text-zinc-400 leading-snug">
-                Нотатка (зв&apos;язок ще не встановлено)
+                Стікер на полотні з пунктирними зв&apos;язками
               </p>
             </div>
           </label>

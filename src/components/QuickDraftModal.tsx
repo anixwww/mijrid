@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Person, Gender, BRANCH_LINK_COLOR_PRESETS } from '../types/tree';
+import { Person, BRANCH_LINK_COLOR_PRESETS } from '../types/tree';
 import { CreateGhostCardInput, CreateBlankScreenshotCardInput } from '../utils/treeMutations';
 import { uploadFileToServerDetailed } from '../utils/fileStorage';
 import { formatCardId, getPersonIdMatchScore } from '../utils/cardIdUtils';
@@ -7,7 +7,6 @@ import { buildBranchOptions, getClanName } from '../utils/lineageUtils';
 import { CARD_WIDTH, CARD_HEIGHT } from '../utils/treeLayout';
 import {
   X,
-  Ghost,
   ImagePlus,
   StickyNote,
   ArrowUpRight,
@@ -33,11 +32,11 @@ interface QuickDraftModalProps {
 }
 
 const GHOST_COLOR_PRESETS = [
-  { name: 'Туманний сланець', hex: '#f1f5f9' },
-  { name: 'Тепла нотатка', hex: '#fef3c7' },
+  { name: 'Жовтий стікер', hex: '#fef3c7' },
+  { name: 'Кремовий', hex: '#fef9c3' },
+  { name: 'Мʼятний', hex: '#dcfce7' },
   { name: 'Блакитний', hex: '#e0f2fe' },
   { name: 'Бузковий', hex: '#f3e8ff' },
-  { name: 'Чебрецевий', hex: '#e8efe9' },
   { name: 'Рожевий', hex: '#ffe4e6' },
 ] as const;
 
@@ -62,12 +61,10 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
 
   // Shared fields
   const [titleOrFirstName, setTitleOrFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [birthYear, setBirthYear] = useState('');
   const [notes, setNotes] = useState('');
 
-  // Ghost-specific fields
-  const [gender, setGender] = useState<Gender>('unknown');
+  // Sticky note fields
   const [cardBgColor, setCardBgColor] = useState<string>(GHOST_COLOR_PRESETS[0].hex);
 
   // Screenshot-specific fields
@@ -92,10 +89,8 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
     if (isOpen) {
       setMode(initialMode);
       setTitleOrFirstName('');
-      setLastName('');
       setBirthYear('');
       setNotes('');
-      setGender('unknown');
       setCardBgColor(GHOST_COLOR_PRESETS[0].hex);
       setScreenshotUrl('');
       setScreenshotFit('cover');
@@ -208,15 +203,15 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
       return;
     }
 
-    if (!titleOrFirstName.trim() && !lastName.trim() && !notes.trim()) {
-      setError('Введіть хоча б ім’я, заголовок або текст нотатки.');
+    if (!titleOrFirstName.trim() && !notes.trim()) {
+      setError('Введіть текст нотатки або заголовок стікера.');
       return;
     }
 
     onCreateGhost({
-      firstName: titleOrFirstName.trim() || 'Невідома особа',
-      lastName: lastName.trim() || undefined,
-      gender,
+      firstName: titleOrFirstName.trim() || 'Нотатка',
+      lastName: undefined,
+      gender: 'unknown',
       birthYear: /^\d{4}$/.test(birthYear.trim()) ? birthYear.trim() : undefined,
       yearsDisplay: birthYear.trim() || undefined,
       ghostNote: notes.trim() || undefined,
@@ -225,7 +220,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
       y: initialCoords?.y,
       hintTargetPersonId: hintTargetId || undefined,
       hintLabel: hintLabel.trim() || undefined,
-      hintColor,
+      hintColor: mode === 'ghost' ? '#d97706' : hintColor,
     });
     onClose();
   };
@@ -254,22 +249,18 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <div
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
-                  mode === 'screenshot'
-                    ? 'bg-amber-100 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                    : 'bg-slate-200/80 dark:bg-zinc-800 border-dashed border-slate-400 dark:border-zinc-600 text-slate-700 dark:text-zinc-200'
-                }`}
+                className="w-9 h-9 rounded-xl border bg-amber-100 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0"
               >
-                {mode === 'screenshot' ? <ImagePlus size={18} /> : <Ghost size={18} />}
+                {mode === 'screenshot' ? <ImagePlus size={18} /> : <StickyNote size={18} />}
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-bold text-stone-900 dark:text-zinc-100 leading-tight">
-                  Швидка чернетка на полотні
+                  {mode === 'screenshot' ? 'Картка-фото на полотні' : 'Нотатка (стікер) на полотні'}
                 </h3>
                 <p className="text-[11px] text-stone-500 dark:text-zinc-400 mt-0.5 leading-snug">
                   {mode === 'screenshot'
                     ? 'Картка для архівного фото чи нерозшифрованого запису'
-                    : 'Примарна нотатка для факту або особи без встановлених звʼязків'}
+                    : 'Стікер для факту, гіпотези чи згадки — звʼязки малюються пунктиром'}
                 </p>
               </div>
             </div>
@@ -292,12 +283,12 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
               }}
               className={`py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 mode === 'ghost'
-                  ? 'bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 shadow-xs'
+                  ? 'bg-amber-50 dark:bg-zinc-900 text-amber-950 dark:text-amber-300 shadow-xs'
                   : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
               }`}
             >
-              <Ghost size={14} />
-              <span>Примара (нотатка)</span>
+              <StickyNote size={14} />
+              <span>Нотатка (стікер)</span>
             </button>
             <button
               type="button"
@@ -447,80 +438,37 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
             </div>
           )}
 
-          {/* Identity Fields */}
+          {/* Identity / Sticker Title & Period Fields */}
           {mode === 'ghost' ? (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-stone-700 dark:text-zinc-300 mb-1">
-                    Ім&apos;я або заголовок нотатки
-                  </label>
-                  <input
-                    type="text"
-                    autoFocus
-                    value={titleOrFirstName}
-                    onChange={(e) => {
-                      setTitleOrFirstName(e.target.value);
-                      setError(null);
-                    }}
-                    placeholder="напр. Брат Івана? / Марія"
-                    className="w-full h-10 text-xs px-3 py-2 rounded-xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-stone-700 dark:text-zinc-300 mb-1">
-                    Прізвище (якщо відомо)
-                  </label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="напр. Коваленко"
-                    className="w-full h-10 text-xs px-3 py-2 rounded-xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
-                  />
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_150px] gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-stone-700 dark:text-zinc-300 mb-1">
+                  Заголовок стікера (необов&apos;язково)
+                </label>
+                <input
+                  type="text"
+                  value={titleOrFirstName}
+                  onChange={(e) => {
+                    setTitleOrFirstName(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="напр. Згадка 1908 р. або Брат Івана?"
+                  className="w-full h-10 text-xs px-3 py-2 rounded-xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
+                />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-stone-700 dark:text-zinc-300 mb-1">
-                    Стать
-                  </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[
-                      { value: 'unknown' as Gender, label: 'Невідомо' },
-                      { value: 'male' as Gender, label: 'Чоловік' },
-                      { value: 'female' as Gender, label: 'Жінка' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setGender(opt.value)}
-                        className={`py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer ${
-                          gender === opt.value
-                            ? 'bg-slate-800 dark:bg-zinc-100 text-white dark:text-zinc-900 border-slate-800 dark:border-zinc-100'
-                            : 'bg-white dark:bg-zinc-950 text-stone-600 dark:text-zinc-300 border-stone-200 dark:border-zinc-700 hover:bg-stone-50'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-stone-700 dark:text-zinc-300 mb-1">
-                    Приблизний рік / період
-                  </label>
-                  <input
-                    type="text"
-                    value={birthYear}
-                    onChange={(e) => setBirthYear(e.target.value)}
-                    placeholder="напр. 1898 або бл. 1910"
-                    className="w-full h-10 text-xs px-3 py-2 rounded-xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
-                  />
-                </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-stone-700 dark:text-zinc-300 mb-1">
+                  Рік / період (необов&apos;язково)
+                </label>
+                <input
+                  type="text"
+                  value={birthYear}
+                  onChange={(e) => setBirthYear(e.target.value)}
+                  placeholder="напр. бл. 1910"
+                  className="w-full h-10 text-xs px-3 py-2 rounded-xl border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100"
+                />
               </div>
-            </>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_130px] gap-3">
               <div>
@@ -557,7 +505,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
               <span>
                 {mode === 'screenshot'
                   ? 'Нотатка / звідки фото (необовʼязково)'
-                  : 'Нотатка (згадка, гіпотеза, що перевірити)'}
+                  : 'Текст нотатки на стікері'}
               </span>
             </label>
             {mode === 'ghost' && (
@@ -575,7 +523,8 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
               </div>
             )}
             <textarea
-              rows={mode === 'screenshot' ? 2 : 3}
+              autoFocus={mode === 'ghost'}
+              rows={mode === 'screenshot' ? 2 : 4}
               value={notes}
               onChange={(e) => {
                 setNotes(e.target.value);
@@ -590,17 +539,21 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
               placeholder={
                 mode === 'screenshot'
                   ? 'Напр.: Метрична книга 1906 р., аркуш 14 — розшифрувати свідків.'
-                  : 'Напр.: Згаданий як хрещений батько у метриці 1908 р.'
+                  : 'Напр.: Згаданий як хрещений батько у метриці 1908 р., перевірити с. Заріччя.'
               }
-              className="w-full text-xs px-3 py-2 rounded-xl border border-dashed border-stone-300 dark:border-zinc-700 bg-stone-50/60 dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 resize-y"
+              className={`w-full text-xs px-3 py-2.5 rounded-xl border text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 resize-y ${
+                mode === 'ghost'
+                  ? 'border-amber-300/90 dark:border-amber-800/70 bg-amber-50/75 dark:bg-zinc-950'
+                  : 'border-dashed border-stone-300 dark:border-zinc-700 bg-stone-50/60 dark:bg-zinc-950'
+              }`}
             />
           </div>
 
-          {/* Ghost Color Picker */}
+          {/* Sticky Note Color Picker */}
           {mode === 'ghost' && (
             <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-[11px] font-semibold text-stone-700 dark:text-zinc-300">
-                Колір нотатки:
+                Колір стікера:
               </span>
               <div className="flex items-center gap-2">
                 {GHOST_COLOR_PRESETS.map((c) => {
@@ -611,9 +564,9 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                       type="button"
                       onClick={() => setCardBgColor(c.hex)}
                       style={{ backgroundColor: c.hex }}
-                      className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 cursor-pointer ${
+                      className={`w-6 h-6 rounded-md border transition-transform hover:scale-110 cursor-pointer ${
                         active
-                          ? 'ring-2 ring-slate-700 dark:ring-zinc-300 ring-offset-1 border-slate-800'
+                          ? 'ring-2 ring-amber-600 dark:ring-amber-400 ring-offset-1 border-amber-700'
                           : 'border-stone-300 dark:border-zinc-600'
                       }`}
                       title={c.name}
@@ -627,11 +580,11 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
 
           {/* Shared Optional Link Arrow Picker */}
           {Object.keys(allPersons).length > 0 && (
-            <div className="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-dashed border-indigo-200 dark:border-indigo-900/60 space-y-2">
+            <div className="p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-dashed border-amber-300 dark:border-amber-900/60 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-950 dark:text-indigo-200">
-                  <ArrowUpRight size={13} className="text-indigo-600 dark:text-indigo-400" />
-                  <span>Прив&apos;язати стрілкою до картки (необов&apos;язково)</span>
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-950 dark:text-amber-200">
+                  <ArrowUpRight size={13} className="text-amber-600 dark:text-amber-400" />
+                  <span>Прив&apos;язати пунктирною лінією до картки (необов&apos;язково)</span>
                 </div>
                 {hintTargetId && (
                   <button
@@ -740,15 +693,19 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
               <button
                 type="submit"
                 disabled={isUploading}
-                className="px-4 py-2 text-xs font-semibold text-white bg-stone-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-50 active:scale-95 rounded-xl shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                className={`px-4 py-2 text-xs font-semibold disabled:opacity-50 active:scale-95 rounded-xl shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer ${
+                  mode === 'screenshot'
+                    ? 'text-white bg-stone-900 hover:bg-black dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                    : 'text-amber-950 bg-amber-400 hover:bg-amber-500'
+                }`}
               >
-                {mode === 'screenshot' ? <ImagePlus size={14} /> : <Ghost size={14} />}
+                {mode === 'screenshot' ? <ImagePlus size={14} /> : <StickyNote size={14} />}
                 <span>
                   {mode === 'screenshot'
                     ? screenshotUrl
                       ? 'Створити картку-фото'
                       : 'Створити порожню картку'
-                    : 'Створити примарну картку'}
+                    : 'Додати стікер на полотно'}
                 </span>
               </button>
             </div>

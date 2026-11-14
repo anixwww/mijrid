@@ -108,6 +108,8 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
     ? [targetPerson.firstName, targetPerson.lastName].filter(Boolean).join(' ') || 'Картка'
     : '';
 
+  const involvesNote = Boolean(sourcePerson?.isGhost || targetPerson?.isGhost);
+
   const previewLabel =
     mode === 'single'
       ? label.trim() || (targetName ? `→ ${targetName}` : 'Міжгілкове посилання')
@@ -425,8 +427,8 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
                   fill="none"
                   stroke={color}
                   strokeWidth={strokeWidth}
-                  strokeDasharray={lineShape === 'wavy' ? undefined : '7 4'}
-                  strokeLinecap={lineShape === 'wavy' ? 'round' : 'butt'}
+                  strokeDasharray={involvesNote || lineShape !== 'wavy' ? '7 4' : undefined}
+                  strokeLinecap={lineShape === 'wavy' && !involvesNote ? 'round' : 'butt'}
                   strokeLinejoin="round"
                   markerEnd="url(#branch-style-preview-arrow)"
                 />
@@ -454,6 +456,11 @@ export const EditBranchLinkModal: React.FC<EditBranchLinkModalProps> = ({
                 <ArrowUpRight size={10} className="shrink-0" style={{ color }} />
               </span>
             </div>
+            {involvesNote && (
+              <p className="text-[10.5px] font-medium text-amber-800 dark:text-amber-300 text-center">
+                Зв’язок із нотаткою завжди відображається пунктирною лінією
+              </p>
+            )}
           </div>
 
           {/* Scope options (Single Link Mode) */}

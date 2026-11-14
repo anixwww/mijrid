@@ -27,7 +27,6 @@ import {
   Home,
   ArrowUpRight,
   Plus,
-  Ghost,
   StickyNote,
   Link2,
   MessageSquarePlus,
@@ -287,7 +286,18 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           <div className="relative z-10 px-3.5 pt-2.5 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/85 border border-stone-200/70 text-[11px] font-medium text-stone-600">
-                {person.gender === 'female' ? '♀ Жінка' : person.gender === 'male' ? '♂ Чоловік' : 'Особа'}
+                {person.isGhost && !person.isBlankScreenshot ? (
+                  <>
+                    <StickyNote size={11} className="text-amber-600 shrink-0" />
+                    <span>Нотатка</span>
+                  </>
+                ) : person.gender === 'female' ? (
+                  '♀ Жінка'
+                ) : person.gender === 'male' ? (
+                  '♂ Чоловік'
+                ) : (
+                  'Особа'
+                )}
               </span>
 
               <button
@@ -359,12 +369,18 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
 
           {/* Center Profile Identity (Read-Only) */}
           <div className="relative z-10 px-4 pt-2.5 pb-3.5 flex flex-col items-center text-center">
-            <SilhouetteAvatar
-              gender={person.gender}
-              avatarUrl={person.avatarUrl}
-              name={fullName}
-              size="lg"
-            />
+            {!(person.isGhost && !person.isBlankScreenshot) ? (
+              <SilhouetteAvatar
+                gender={person.gender}
+                avatarUrl={person.avatarUrl}
+                name={fullName}
+                size="lg"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700 shadow-2xs">
+                <StickyNote size={22} />
+              </div>
+            )}
 
             <h2 className="mt-2.5 text-[17px] font-bold text-stone-950 leading-snug tracking-tight">
               {fullName}
@@ -609,25 +625,25 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
           </div>
         )}
 
-        {/* GHOST / NOTE CARD BANNER */}
+        {/* STICKY NOTE CARD BANNER */}
         {person.isGhost && (
-          <div className="rounded-2xl border-2 border-dashed border-slate-400/90 dark:border-zinc-600 bg-slate-50/95 dark:bg-zinc-900/90 p-3.5 shadow-2xs space-y-2.5">
+          <div className="rounded-2xl border border-amber-300/90 dark:border-amber-700/80 bg-amber-50/90 dark:bg-amber-950/25 p-3.5 shadow-2xs space-y-2.5">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-7 h-7 rounded-xl bg-slate-700 dark:bg-zinc-700 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                <Ghost size={14} />
+              <span className="w-7 h-7 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center shrink-0 shadow-2xs">
+                <StickyNote size={14} />
               </span>
               <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-900 dark:text-zinc-100 leading-tight">
-                  Примарна картка (нотатка)
+                <div className="text-xs font-bold text-amber-950 dark:text-amber-200 leading-tight">
+                  Нотатка-стікер на полотні
                 </div>
-                <div className="text-[10.5px] text-slate-600 dark:text-zinc-400 leading-snug">
-                  Зв&apos;язок із родовим деревом ще треба встановити
+                <div className="text-[10.5px] text-amber-800/85 dark:text-amber-300/80 leading-snug">
+                  Усі зв&apos;язки з картками відображаються пунктирною лінією
                 </div>
               </div>
             </div>
 
             {(person.ghostNote || person.notes) && (
-              <div className="p-2.5 rounded-xl bg-white dark:bg-zinc-950/80 border border-dashed border-slate-300 dark:border-zinc-700 text-xs text-slate-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap flex items-start gap-2">
+              <div className="p-2.5 rounded-xl bg-white/95 dark:bg-zinc-950/80 border border-amber-200 dark:border-amber-800/70 text-xs text-stone-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap flex items-start gap-2">
                 <StickyNote size={13.5} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <span className="min-w-0 flex-1">{person.ghostNote || person.notes}</span>
               </div>
@@ -641,12 +657,12 @@ export const DetailsSidebar: React.FC<DetailsSidebarProps> = ({
                   className="flex-1 min-w-[140px] px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
                   <UserCheck size={13.5} className="shrink-0" />
-                  <span>Підтвердити і заповнити</span>
+                  <span>Заповнити як особу</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onToggleGhostStatus(person.id, false)}
-                  className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 text-slate-700 dark:text-zinc-200 border border-slate-300 dark:border-zinc-600 text-[11px] font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-stone-100 text-stone-700 dark:text-zinc-200 border border-stone-300 dark:border-zinc-600 text-[11px] font-semibold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
                 >
                   <Check size={12} />
                   <span>Звичайна картка</span>

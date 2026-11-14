@@ -143,7 +143,8 @@ export function generateFullTreeSvg(
       const target = tree.persons[bl.targetPersonId];
       if (!target || target.id === source.id) return;
       const lineShape = normalizeBranchLineShape(bl.lineShape);
-      if (bl.linkKind !== 'godparent' && lineShape !== 'wavy') return;
+      const involvesNote = Boolean(source.isGhost || target.isGhost);
+      if (bl.linkKind !== 'godparent' && lineShape !== 'wavy' && !involvesNote) return;
 
       const linkKind = bl.linkKind === 'godparent' ? 'godparent' : 'branch';
       const reverseLink = target.branchLinks?.find(
@@ -195,8 +196,8 @@ export function generateFullTreeSvg(
         `<g>
           <path d="${pathD}" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="${sw + 2.6}" stroke-linecap="butt" stroke-linejoin="round"/>
           <path d="${pathD}" fill="none" stroke="${escapeXml(color)}" stroke-width="${sw}" ${
-            lineShape === 'wavy' ? '' : 'stroke-dasharray="7,4"'
-          } stroke-linecap="${lineShape === 'wavy' ? 'round' : 'butt'}" stroke-linejoin="round" ${
+            involvesNote || lineShape !== 'wavy' ? 'stroke-dasharray="7,4"' : ''
+          } stroke-linecap="${lineShape === 'wavy' && !involvesNote ? 'round' : 'butt'}" stroke-linejoin="round" ${
             isBidirectional ? `marker-start="url(#${markerId})" ` : ''
           }marker-end="url(#${markerId})"/>
           ${
@@ -326,23 +327,51 @@ export function generateFullTreeSvg(
     `;
       }
 
-      const ghostBadgeSvg = isGhost
-        ? `<g transform="translate(${p.x + 4}, ${p.y + 4})">
-            <rect x="0" y="0" width="38" height="12" rx="6" fill="#475569" stroke="#ffffff" stroke-width="0.7"/>
-            <text x="19" y="8.5" font-family="Plus Jakarta Sans, sans-serif" font-size="6.5" font-weight="bold" fill="#ffffff" text-anchor="middle">Примара</text>
-          </g>`
-        : isProposal
+      if (isGhost) {
+        const stickyBg = p.cardBgColor && p.cardBgColor !== '#f1f5f9' ? p.cardBgColor : '#fef3c7';
+        const rawTitle = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
+        const hasTitle =
+          Boolean(rawTitle) &&
+          rawTitle !== 'Нотатка' &&
+          rawTitle !== 'Примарна нотатка' &&
+          rawTitle !== 'Невідома особа';
+        const noteDisplay = ghostNoteText || (!hasTitle ? 'Нотатка' : '');
+        return `
+      <g id="card-${escapeXml(p.id)}">
+        <path d="M ${p.x + 3} ${p.y} H ${p.x + CARD_WIDTH - 3} Q ${p.x + CARD_WIDTH} ${p.y} ${p.x + CARD_WIDTH} ${p.y + 3} V ${p.y + CARD_HEIGHT - 16} L ${p.x + CARD_WIDTH - 16} ${p.y + CARD_HEIGHT} H ${p.x + 4} Q ${p.x} ${p.y + CARD_HEIGHT} ${p.x} ${p.y + CARD_HEIGHT - 4} V ${p.y + 3} Q ${p.x} ${p.y} ${p.x + 3} ${p.y} Z" fill="${escapeXml(stickyBg)}" stroke="#eab308" stroke-width="1.2"/>
+        <polygon points="${p.x + CARD_WIDTH - 16},${p.y + CARD_HEIGHT} ${p.x + CARD_WIDTH - 16},${p.y + CARD_HEIGHT - 16} ${p.x + CARD_WIDTH},${p.y + CARD_HEIGHT - 16}" fill="#facc15" opacity="0.85"/>
+        <rect x="${p.x + CARD_WIDTH / 2 - 20}" y="${p.y - 4}" width="40" height="8" rx="1.5" fill="rgba(255,255,255,0.7)" stroke="rgba(0,0,0,0.12)" stroke-width="0.6"/>
+        ${
+          hasTitle
+            ? `<text x="${p.x + 9}" y="${p.y + 20}" font-family="Plus Jakarta Sans, sans-serif" font-size="9.5" font-weight="700" fill="#1c1917">${escapeXml(
+                truncateLabel(rawTitle, 20)
+              )}</text>
+              <line x1="${p.x + 9}" y1="${p.y + 25}" x2="${p.x + CARD_WIDTH - 9}" y2="${p.y + 25}" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>`
+            : ''
+        }
+        ${
+          noteDisplay
+            ? `<text x="${p.x + 9}" y="${p.y + (hasTitle ? 39 : 22)}" font-family="Plus Jakarta Sans, sans-serif" font-size="8.8" font-weight="500" fill="#292524">${escapeXml(
+                truncateLabel(noteDisplay, 22)
+              )}</text>`
+            : ''
+        }
+        ${
+          datesInfo.displayLine1
+            ? `<text x="${p.x + 9}" y="${p.y + CARD_HEIGHT - 10}" font-family="monospace" font-size="7.8" fill="#57534e">${escapeXml(datesInfo.displayLine1)}</text>`
+            : ''
+        }
+        ${branchBadgeSvg}
+      </g>
+    `;
+      }
+
+      const ghostBadgeSvg = isProposal
         ? `<g transform="translate(${p.x + 4}, ${p.y + 4})">
             <rect x="0" y="0" width="46" height="12" rx="6" fill="#0284c7" stroke="#ffffff" stroke-width="0.7"/>
             <text x="23" y="8.5" font-family="Plus Jakarta Sans, sans-serif" font-size="6.2" font-weight="bold" fill="#ffffff" text-anchor="middle">Пропозиція</text>
           </g>`
         : '';
-      const ghostNoteSvg =
-        isGhost && ghostNoteText
-          ? `<text x="${p.x + CARD_WIDTH / 2}" y="${p.y + (datesInfo.displayLine1 ? 111 : 94)}" font-family="Plus Jakarta Sans, sans-serif" font-size="7.2" font-style="italic" fill="#475569" text-anchor="middle">${escapeXml(
-              truncateLabel(ghostNoteText, 24)
-            )}</text>`
-          : '';
 
       const frameStyle = p.cardFrame && p.cardFrame !== 'none' ? p.cardFrame : null;
       const frameColorMap: Record<string, string> = {
@@ -362,11 +391,11 @@ export function generateFullTreeSvg(
         : '';
 
       return `
-      <g id="card-${escapeXml(p.id)}"${isGhost ? ' opacity="0.86"' : ''}>
+      <g id="card-${escapeXml(p.id)}">
         ${frameSvg}
         <rect x="${p.x}" y="${p.y}" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="6" fill="${cardBg}" stroke="${
-          isGhost ? '#64748b' : isProposal ? '#0284c7' : cardBorder
-        }" stroke-width="${isGhost || isProposal ? '1.6' : '1.2'}"${isGhost ? ' stroke-dasharray="5,3"' : ''}/>
+          isProposal ? '#0284c7' : cardBorder
+        }" stroke-width="${isProposal ? '1.6' : '1.2'}"/>
         <rect x="${p.x + CARD_WIDTH / 2 - 23}" y="${p.y + 10}" width="46" height="46" rx="8" fill="#ffffff" stroke="${isProposal ? '#0284c7' : cardBorder}" stroke-width="1"/>
         ${avatarSvg}
         ${ghostBadgeSvg}
@@ -380,7 +409,6 @@ export function generateFullTreeSvg(
             : ''
         }
         ${datesSvg}
-        ${ghostNoteSvg}
         ${branchBadgeSvg}
       </g>
     `;

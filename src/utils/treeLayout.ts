@@ -441,10 +441,10 @@ export function generateConnections(
   const couplePartnerMap: Record<string, string> = {};
   const processedVisualCouples = new Set<string>();
   Object.values(persons).forEach((p) => {
-    if (!p || processedVisualCouples.has(p.id) || !p.spouses) return;
+    if (!p || processedVisualCouples.has(p.id) || !p.spouses || p.isGhost || p.isBlankScreenshot) return;
     const spouseId = p.spouses.find((sId) => {
       const sp = persons[sId];
-      if (!sp || processedVisualCouples.has(sId)) return false;
+      if (!sp || processedVisualCouples.has(sId) || sp.isGhost || sp.isBlankScreenshot) return false;
       const mKey = [p.id, sId].sort().join('::');
       const isDivorced = connectionOverrides?.[`marriage:${mKey}`]?.eventType === 'divorce';
       if (isDivorced) return false;
@@ -700,10 +700,11 @@ export function generateConnections(
         d = createRoundedOrthogonalPath(pts, 8, occupiedHorizontalSegments, `marriage:${mKey}`);
       }
 
-      const hasUnverifiedCard = !leftP.isFullyVerified || !rightP.isFullyVerified;
-      const isUnverified = (override?.verified !== undefined
+      const involvesNote = Boolean(leftP.isGhost || rightP.isGhost);
+      const hasUnverifiedCard = !leftP.isFullyVerified || !rightP.isFullyVerified || involvesNote;
+      const isUnverified = involvesNote || ((override?.verified !== undefined
         ? !override.verified
-        : (hasUnverifiedCard || person.unverifiedRelations?.includes(spouse.id) || spouse.unverifiedRelations?.includes(person.id))) && !isDivorced;
+        : (hasUnverifiedCard || person.unverifiedRelations?.includes(spouse.id) || spouse.unverifiedRelations?.includes(person.id))) && !isDivorced);
 
       const sharedMatch = doPersonsShareColor(leftP, rightP, clanMap);
 
@@ -712,7 +713,9 @@ export function generateConnections(
         color = override.color;
       }
 
-      const confidenceLevel = override?.confidenceLevel
+      const confidenceLevel = involvesNote
+        ? 'hypothetical'
+        : override?.confidenceLevel
         ? override.confidenceLevel
         : isDivorced
         ? 'verified'
@@ -726,11 +729,11 @@ export function generateConnections(
         path: d,
         fromId: leftP.id,
         toId: rightP.id,
-        isVerified: !isUnverified,
+        isVerified: !isUnverified && !involvesNote,
         confidenceLevel,
         archiveSource: override?.archiveSource,
         color,
-        isDashed: isDivorced || isUnverified || confidenceLevel === 'hypothetical',
+        isDashed: involvesNote || isDivorced || isUnverified || confidenceLevel === 'hypothetical',
         label: override?.label || (isDivorced ? 'Розлучення' : undefined),
         eventDate: override?.eventDate,
         eventType: override?.eventType || (isDivorced ? 'divorce' : undefined),
@@ -799,8 +802,8 @@ export function generateConnections(
             : 0;
 
         const sharedCoupleColor = doPersonsShareColor(leftP, rightP, clanMap);
-        const leftIsUnverified = !leftP.isFullyVerified;
-        const rightIsUnverified = !rightP.isFullyVerified;
+        const leftIsUnverified = !leftP.isFullyVerified || Boolean(leftP.isGhost);
+        const rightIsUnverified = !rightP.isFullyVerified || Boolean(rightP.isGhost);
         const leftArmColor = leftIsUnverified
           ? '#94a3b8'
           : (sharedCoupleColor.shares && sharedCoupleColor.color)
@@ -1034,11 +1037,14 @@ export function generateConnections(
         : undefined;
 
       const childOverride = connectionOverrides?.[`descent:child:${pKey}:${childObj.id}`] || override;
-      const isCardUnverified = !childObj.isFullyVerified || parentObjs.some((p) => !p.isFullyVerified);
-      const isChildUnverified = childOverride?.verified !== undefined
+      const involvesNote = Boolean(childObj.isGhost || parentObjs.some((p) => p.isGhost));
+      const isCardUnverified = !childObj.isFullyVerified || parentObjs.some((p) => !p.isFullyVerified) || involvesNote;
+      const isChildUnverified = involvesNote || (childOverride?.verified !== undefined
         ? !childOverride.verified
-        : (isCardUnverified || isTrunkUnverified || parents.some((pId) => childObj?.unverifiedRelations?.includes(pId)));
-      const childConfidence = childOverride?.confidenceLevel || (isChildUnverified ? 'hypothetical' : 'verified');
+        : (isCardUnverified || isTrunkUnverified || parents.some((pId) => childObj?.unverifiedRelations?.includes(pId))));
+      const childConfidence = involvesNote
+        ? 'hypothetical'
+        : (childOverride?.confidenceLevel || (isChildUnverified ? 'hypothetical' : 'verified'));
 
       const finalSingleChildColor = (childOverride?.color && childOverride.color !== '#15803d' && childOverride.color !== '#64748b' && childOverride.color !== '#475569')
         ? childOverride.color
@@ -1052,11 +1058,11 @@ export function generateConnections(
         toId: childObj.id,
         fromAnchor: childrenAreAbove ? 'top' : 'bottom',
         toAnchor: childrenAreAbove ? 'bottom' : 'top',
-        isVerified: !isChildUnverified,
+        isVerified: !isChildUnverified && !involvesNote,
         confidenceLevel: childConfidence,
         archiveSource: childOverride?.archiveSource,
         color: finalSingleChildColor,
-        isDashed: isChildUnverified || childConfidence === 'hypothetical',
+        isDashed: involvesNote || isChildUnverified || childConfidence === 'hypothetical',
         label: childOverride?.label,
         eventDate: childOverride?.eventDate,
         eventType: childOverride?.eventType,
@@ -1143,11 +1149,14 @@ export function generateConnections(
       const childVisualColor = sharedMatchColor || defaultVerifiedColor;
 
       const childOverride = connectionOverrides?.[`descent:child:${pKey}:${c.id}`] || override;
-      const isCardUnverified = !childObj?.isFullyVerified || parentObjs.some((p) => !p.isFullyVerified);
-      const isChildUnverified = childOverride?.verified !== undefined
+      const involvesNote = Boolean(childObj?.isGhost || parentObjs.some((p) => p.isGhost));
+      const isCardUnverified = !childObj?.isFullyVerified || parentObjs.some((p) => !p.isFullyVerified) || involvesNote;
+      const isChildUnverified = involvesNote || (childOverride?.verified !== undefined
         ? !childOverride.verified
-        : (isCardUnverified || isTrunkUnverified || parents.some((pId) => childObj?.unverifiedRelations?.includes(pId)));
-      const childConfidence = childOverride?.confidenceLevel || (isChildUnverified ? 'hypothetical' : 'verified');
+        : (isCardUnverified || isTrunkUnverified || parents.some((pId) => childObj?.unverifiedRelations?.includes(pId))));
+      const childConfidence = involvesNote
+        ? 'hypothetical'
+        : (childOverride?.confidenceLevel || (isChildUnverified ? 'hypothetical' : 'verified'));
 
       let childColor = (childOverride?.color && childOverride.color !== '#15803d' && childOverride.color !== '#64748b' && childOverride.color !== '#475569')
         ? childOverride.color
@@ -1179,11 +1188,11 @@ export function generateConnections(
         toId: c.id,
         fromAnchor: childrenAreAbove ? 'top' : 'bottom',
         toAnchor: childrenAreAbove ? 'bottom' : 'top',
-        isVerified: !isChildUnverified,
+        isVerified: !isChildUnverified && !involvesNote,
         confidenceLevel: childConfidence,
         archiveSource: childOverride?.archiveSource,
         color: childColor,
-        isDashed: isChildUnverified || childConfidence === 'hypothetical',
+        isDashed: involvesNote || isChildUnverified || childConfidence === 'hypothetical',
         label: childOverride?.label,
         eventDate: childOverride?.eventDate,
         eventType: childOverride?.eventType,
@@ -1242,12 +1251,13 @@ export function generateConnections(
       });
 
       const override = connectionOverrides?.[`sibling:${gKey}`];
-      const hasUnverifiedSibling = group.some((p) => !p.isFullyVerified);
-      const isUnverified = override?.verified !== undefined
+      const involvesNote = group.some((p) => p.isGhost);
+      const hasUnverifiedSibling = group.some((p) => !p.isFullyVerified) || involvesNote;
+      const isUnverified = involvesNote || (override?.verified !== undefined
         ? !override.verified
-        : (hasUnverifiedSibling || group.some((p) => p.unverifiedRelations && group.some((other) => p.unverifiedRelations?.includes(other.id))));
+        : (hasUnverifiedSibling || group.some((p) => p.unverifiedRelations && group.some((other) => p.unverifiedRelations?.includes(other.id)))));
 
-      const confidence = override?.confidenceLevel || (isUnverified ? 'hypothetical' : 'verified');
+      const confidence = involvesNote ? 'hypothetical' : (override?.confidenceLevel || (isUnverified ? 'hypothetical' : 'verified'));
 
       const allSiblingsShareColor = group.length >= 2 && group.every((s) => doPersonsShareColor(group[0], s, clanMap).shares);
       const sharedSiblingColor = allSiblingsShareColor
@@ -1258,14 +1268,14 @@ export function generateConnections(
         id: `sibling:${gKey}`,
         type: 'sibling-tie',
         path: tiePath,
-        isVerified: !isUnverified,
+        isVerified: !isUnverified && !involvesNote,
         confidenceLevel: confidence,
         archiveSource: override?.archiveSource,
         color: (override?.color && override.color !== '#15803d' && override.color !== '#64748b' && override.color !== '#475569')
           ? override.color
           : (isUnverified ? '#9ca3af' : (sharedSiblingColor || defaultVerifiedColor)),
-        isDashed: isUnverified || confidence === 'hypothetical',
-        label: override?.label || 'Рідні брати / сестри',
+        isDashed: involvesNote || isUnverified || confidence === 'hypothetical',
+        label: override?.label || (involvesNote ? 'Звʼязок із нотаткою' : 'Рідні брати / сестри'),
         eventDate: override?.eventDate,
         eventType: override?.eventType,
         isMainBranch: override?.isMainBranch,

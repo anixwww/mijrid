@@ -109,7 +109,7 @@ export const SystemLogsModal: React.FC<SystemLogsModalProps> = ({ isOpen, onClos
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 border border-sky-200 text-[10.5px] font-bold">
             <Server size={11} />
-            <span>Сервер API</span>
+            <span>Локал-сервер</span>
           </span>
         );
       case 'database':
@@ -228,7 +228,7 @@ export const SystemLogsModal: React.FC<SystemLogsModalProps> = ({ isOpen, onClos
                 </span>
               </div>
               <p className="text-xs text-stone-400 mt-0.5">
-                Моніторинг взаємодії з сервером, базою даних (Firestore) та системних подій
+                Моніторинг локального сховища, бази даних (Firestore) та системних подій
               </p>
             </div>
           </div>
@@ -312,7 +312,6 @@ export const SystemLogsModal: React.FC<SystemLogsModalProps> = ({ isOpen, onClos
                 { id: 'all', label: 'Усі' },
                 { id: 'user', label: 'Дії користувача' },
                 { id: 'tree', label: 'Родовід' },
-                { id: 'server', label: 'Сервер API' },
                 { id: 'database', label: 'База даних (Firestore)' },
                 { id: 'auth', label: 'Авторизація' },
                 { id: 'system', label: 'Система' },
@@ -375,7 +374,7 @@ export const SystemLogsModal: React.FC<SystemLogsModalProps> = ({ isOpen, onClos
               <div>
                 <p className="text-sm font-bold text-stone-400">Логів за вказаними фільтрами не знайдено</p>
                 <p className="text-xs text-stone-600 mt-1">
-                  Усі нові дії, запити до сервера та операції з Firestore будуть з'являтися тут автоматично.
+                  Усі нові дії, локальні збереження та операції з Firestore будуть з'являтися тут автоматично.
                 </p>
               </div>
             </div>

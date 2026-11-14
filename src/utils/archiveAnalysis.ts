@@ -80,7 +80,7 @@ export const BLIND_SPOT_FILTER_LABELS: Record<BlindSpotFilterMode, string> = {
   'missing-dates': 'Без точної дати народження',
   'missing-parents': 'Невідомі батьки',
   'unverified-links': 'Непідтверджені зв’язки',
-  'ghost-and-proposals': 'Примарні та пропозиції',
+  'ghost-and-proposals': 'Нотатки та пропозиції',
 };
 
 function hasBirthMetricPhoto(p: Person): boolean {
@@ -158,7 +158,7 @@ export function analyzeArchiveGaps(tree: FamilyTreeData): ArchiveAnalysisReport 
           ? 'Картка-пропозиція (потребує перевірки)'
           : isBlankScreenshot
           ? 'Порожня картка-скріншот (нерозшифрований запис)'
-          : 'Примарна картка (нотатка)',
+          : 'Нотатка (стікер на полотні)',
         severity: 'info',
       });
       gapCounts['ghost-and-proposals'] += 1;

@@ -6,15 +6,12 @@ import { createServer as createViteServer } from 'vite';
 import { handleLogin, requireAdmin } from './server/auth.js';
 import { ADMIN_PASSWORD, UPLOADS_DIR, ensureDataDirs } from './server/config.js';
 import { createAiRouter } from './server/routes/ai.js';
-import { createTreesRouter } from './server/routes/trees.js';
 import { createUploadsRouter } from './server/routes/uploads.js';
-import { migrateInlineImages } from './server/storage.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function startServer() {
   ensureDataDirs();
-  await migrateInlineImages();
 
   if (!ADMIN_PASSWORD) {
     console.info('[auth] ADMIN_PASSWORD is not set: passwordless admin login enabled.');
@@ -66,7 +63,7 @@ async function startServer() {
     })
   );
 
-  // Auth & health routes
+  // Auth & health routes (for local server AI proxy & optional password protection)
   app.get('/api/auth-mode', (_req, res) => {
     res.json({ success: true, passwordRequired: Boolean(ADMIN_PASSWORD) });
   });
@@ -76,8 +73,7 @@ async function startServer() {
   });
   app.get('/api/session', requireAdmin, (_req, res) => res.json({ success: true }));
 
-  // Domain routers
-  app.use(createTreesRouter());
+  // AI biography proxy router
   app.use(createAiRouter());
 
   if (!isProduction) {

@@ -96,9 +96,9 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
     if (iconState === 'firestore-synced') {
       return {
         label: 'Синхр.',
-        title: 'Сервер та хмара актуальні',
+        title: 'Локально та хмара актуальні',
         desc: isAdmin
-          ? 'Усі полотна збережено локально, на сервері та в хмарі Firebase.'
+          ? 'Усі полотна збережено локально та у Firebase Firestore.'
           : 'Ви переглядаєте актуальну версію дерева.',
         triggerClasses:
           'bg-white hover:bg-emerald-50/50 text-stone-800 border-emerald-200/90 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-emerald-800/60',
@@ -111,9 +111,9 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
 
     if (iconState === 'server-syncing') {
       return {
-        label: 'Синхр…',
-        title: 'Синхронізація…',
-        desc: 'Триває збереження даних на сервері…',
+        label: 'Збереж…',
+        title: 'Збереження…',
+        desc: 'Триває локальне збереження даних у браузері…',
         triggerClasses:
           'bg-sky-50 text-sky-900 border-sky-300 dark:bg-sky-950/60 dark:text-sky-200 dark:border-sky-800/70 cursor-wait',
         glyphBoxClasses:
@@ -125,10 +125,10 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
 
     if (iconState === 'local') {
       return {
-        label: 'Локал',
-        title: 'Локальний режим (у браузері)',
+        label: 'Офлайн',
+        title: 'Офлайн-режим (локально)',
         desc: isAdmin
-          ? 'Сервер зараз недоступний — зміни збережено локально у браузері.'
+          ? 'Немає інтернету — зміни збережено локально у браузері.'
           : 'Відображається локально кешована копія дерева.',
         triggerClasses:
           'bg-stone-100 hover:bg-stone-200/80 text-stone-700 border-stone-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300 dark:border-zinc-700',
@@ -143,7 +143,7 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
       return {
         label: 'Помилка',
         title: 'Помилка синхронізації',
-        desc: 'Дані збережено локально. Натисніть «Синхронізувати», щоб повторити відправку.',
+        desc: 'Дані збережено локально. Натисніть «Синхронізувати», щоб повторити відправку у Firebase.',
         triggerClasses:
           'bg-rose-50 hover:bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/60 dark:hover:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800/70',
         glyphBoxClasses:
@@ -154,12 +154,12 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
     }
 
     return {
-      label: isAdmin ? 'Онлайн' : 'Онлайн',
-      title: 'Синхронізація активна',
+      label: 'Локал',
+      title: 'Збережено локально',
       desc: isAdmin
         ? isCloudAuthenticated
-          ? 'Зміни зберігаються автоматично. Одна кнопка синхронізує і сервер, і Firebase.'
-          : 'Зміни зберігаються автоматично на сервер. Підключіть Google для синхронізації з хмарою Firebase.'
+          ? 'Зміни збережено локально та автоматично синхронізуються з Firebase Firestore.'
+          : 'Зміни збережено локально у браузері. Підключіть Google для синхронізації з Firebase Firestore.'
         : 'Ви переглядаєте актуальну версію дерева.',
       triggerClasses:
         'bg-white hover:bg-stone-50 text-stone-800 border-stone-200/90 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700/90',
@@ -308,7 +308,7 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
                       setIsOpen(false);
                     }}
                     className="group w-full h-9.5 px-3.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50"
-                    title="Зберегти зміни локально, на сервер та у хмару Firebase"
+                    title="Зберегти зміни локально та у Firebase Firestore"
                   >
                     <RefreshCw
                       size={14}
@@ -327,10 +327,10 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
                       setIsOpen(false);
                     }}
                     className="w-full py-1.5 px-2 rounded-lg text-[11px] font-medium text-stone-500 hover:text-stone-800 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-stone-100/80 dark:hover:bg-zinc-800/70 flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-                    title="Завантажити збережену версію з хмари або сервера"
+                    title="Завантажити збережену версію з Firebase Firestore"
                   >
                     <Download size={12} className="shrink-0" />
-                    <span>Відновити з хмари / сервера</span>
+                    <span>Відновити з хмари</span>
                   </button>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import { authHeaders } from './auth';
-import { logError, logServer } from './logger';
+import { logError, logTree } from './logger';
 
 const IMAGE_FILE_EXT_RE = /\.(jpe?g|png|gif|webp|avif|bmp|tiff?|ico|heic|heif)$/i;
 const MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
@@ -130,7 +130,7 @@ export async function uploadFileToServerDetailed(
       const result = await uploadRawViaXhr(file, options?.onProgress);
       if (result.status >= 200 && result.status < 300 && result.url) {
         options?.onProgress?.(100);
-        logServer(`Завантажено медіафайл «${safeName}» на сервер`, {
+        logTree(`Завантажено медіафайл «${safeName}» (локальний кеш)`, {
           fileName: safeName,
           size: file.size,
           url: result.url,
@@ -174,7 +174,7 @@ export async function uploadFileToServerDetailed(
         const json = await res.json();
         if (json?.success && typeof json.url === 'string' && json.url) {
           options?.onProgress?.(100);
-          logServer(`Завантажено медіафайл «${safeName}» на сервер (резервний канал)`, {
+          logTree(`Завантажено медіафайл «${safeName}» (резервний канал)`, {
             fileName: safeName,
             size: file.size,
             url: json.url,
@@ -203,8 +203,8 @@ export async function uploadFileToServerDetailed(
   }
 
   if (file.size > MAX_LOCAL_FALLBACK_BYTES) {
-    const errMessage = `${lastErrorMsg ? `${lastErrorMsg}. ` : ''}Не вдалося зберегти великий файл (${(file.size / (1024 * 1024)).toFixed(1)} МБ) на сервері. Перевірте з'єднання та повторіть спробу.`;
-    logError('server', `Не вдалося завантажити файл «${safeName}»: ${errMessage}`, {
+    const errMessage = `${lastErrorMsg ? `${lastErrorMsg}. ` : ''}Не вдалося зберегти великий файл (${(file.size / (1024 * 1024)).toFixed(1)} МБ). Перевірте з'єднання та повторіть спробу.`;
+    logError('system', `Не вдалося завантажити файл «${safeName}»: ${errMessage}`, {
       fileName: safeName,
       size: file.size,
     });
@@ -212,7 +212,7 @@ export async function uploadFileToServerDetailed(
   }
 
   options?.onProgress?.(100);
-  logServer(`Медіафайл «${safeName}» збережено локально (офлайн-резерв)`, {
+  logTree(`Медіафайл «${safeName}» збережено локально у браузері`, {
     fileName: safeName,
     size: file.size,
   }, 'warn');
@@ -222,7 +222,7 @@ export async function uploadFileToServerDetailed(
     size: file.size,
     fileName: safeName,
     warning:
-      'Сервер тимчасово недоступний: фото збережено локально у браузері й буде відправлено на сервер під час синхронізації.',
+      'Локал-сервер медіа тимчасово недоступний: фото збережено локально у браузері.',
   };
 }
 

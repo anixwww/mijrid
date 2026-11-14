@@ -146,7 +146,12 @@ export function buildInitialDraft(
     isBlankScreenshot: Boolean(person.isBlankScreenshot),
     screenshotUrl: person.screenshotUrl,
     screenshotFit: person.screenshotFit === 'contain' ? 'contain' : 'cover',
-    cardBgColor: person.cardBgColor || (person.isGhost ? '#f1f5f9' : '#e8efe9'),
+    cardBgColor:
+      person.cardBgColor && (!person.isGhost || person.cardBgColor.toLowerCase() !== '#f1f5f9')
+        ? person.cardBgColor
+        : person.isGhost
+        ? '#fef3c7'
+        : '#e8efe9',
     cardFrame: normalizeCardFrame(person.cardFrame),
     avatarUrl: person.avatarUrl,
 

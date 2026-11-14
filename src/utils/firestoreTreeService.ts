@@ -7,10 +7,16 @@ import {
   collection,
   deleteDoc,
   doc,
+  DocumentReference,
+  DocumentSnapshot,
   getDoc,
+  getDocFromServer,
   getDocs,
+  getDocsFromServer,
   onSnapshot,
   query,
+  Query,
+  QuerySnapshot,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -114,6 +120,38 @@ function timestampToIso(value: unknown, fallback?: string): string {
   return fallback || new Date().toISOString();
 }
 
+function isOfflineFirestoreError(err: unknown): boolean {
+  const code = (err as { code?: string })?.code || '';
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    code === 'unavailable' ||
+    msg.includes('client is offline') ||
+    msg.includes('Failed to get document because the client is offline')
+  );
+}
+
+async function getDocPreferServer<T>(ref: DocumentReference<T>): Promise<DocumentSnapshot<T>> {
+  try {
+    return await getDocFromServer(ref);
+  } catch (err) {
+    if (isOfflineFirestoreError(err)) {
+      return await getDoc(ref);
+    }
+    throw err;
+  }
+}
+
+async function getDocsPreferServer<T>(q: Query<T>): Promise<QuerySnapshot<T>> {
+  try {
+    return await getDocsFromServer(q);
+  } catch (err) {
+    if (isOfflineFirestoreError(err)) {
+      return await getDocs(q);
+    }
+    throw err;
+  }
+}
+
 function parseTreeDocData(docData: Record<string, unknown>, docId: string): FamilyTreeData | null {
   const rawJson = docData.treeDataJson;
   if (typeof rawJson !== 'string' || !rawJson.trim()) return null;
@@ -122,7 +160,14 @@ function parseTreeDocData(docData: Record<string, unknown>, docId: string): Fami
     if (!parsed || typeof parsed !== 'object' || !parsed.persons || typeof parsed.persons !== 'object') {
       return null;
     }
-    const updatedIso = parsed.updatedAt || timestampToIso(docData.updatedAt);
+    const docUpdatedIso = docData.updatedAt ? timestampToIso(docData.updatedAt, '') : '';
+    const parsedUpdatedIso = typeof parsed.updatedAt === 'string' ? parsed.updatedAt : '';
+    const docTime = docUpdatedIso ? new Date(docUpdatedIso).getTime() : 0;
+    const parsedTime = parsedUpdatedIso ? new Date(parsedUpdatedIso).getTime() : 0;
+    const updatedIso =
+      docTime > 0 && (isNaN(parsedTime) || docTime - parsedTime > 5000)
+        ? docUpdatedIso
+        : parsedUpdatedIso || docUpdatedIso || new Date().toISOString();
     const createdIso = parsed.createdAt || timestampToIso(docData.createdAt);
     return {
       ...parsed,
@@ -174,7 +219,7 @@ export async function getUserTrees(userId?: string): Promise<TreeMetaItem[]> {
 
   try {
     const publicQuery = query(collection(db, 'trees'), where('isPublic', '==', true));
-    const publicSnap = await getDocs(publicQuery);
+    const publicSnap = await getDocsPreferServer(publicQuery);
     collectSnapshot(publicSnap.docs as unknown as Array<{ id: string; data: () => Record<string, unknown> }>);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'trees');
@@ -184,7 +229,7 @@ export async function getUserTrees(userId?: string): Promise<TreeMetaItem[]> {
   if (activeUid && VALID_ID_RE.test(activeUid)) {
     try {
       const ownQuery = query(collection(db, 'trees'), where('ownerId', '==', activeUid));
-      const ownSnap = await getDocs(ownQuery);
+      const ownSnap = await getDocsPreferServer(ownQuery);
       collectSnapshot(ownSnap.docs as unknown as Array<{ id: string; data: () => Record<string, unknown> }>);
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'trees');
@@ -205,7 +250,7 @@ export async function fetchAllTreesFromFirestore(): Promise<FamilyTreeData[]> {
   };
 
   try {
-    const publicSnap = await getDocs(query(collection(db, 'trees'), where('isPublic', '==', true)));
+    const publicSnap = await getDocsPreferServer(query(collection(db, 'trees'), where('isPublic', '==', true)));
     collect(publicSnap.docs as unknown as Array<{ id: string; data: () => Record<string, unknown> }>);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'trees');
@@ -213,7 +258,7 @@ export async function fetchAllTreesFromFirestore(): Promise<FamilyTreeData[]> {
 
   if (auth.currentUser?.uid && VALID_ID_RE.test(auth.currentUser.uid)) {
     try {
-      const ownSnap = await getDocs(query(collection(db, 'trees'), where('ownerId', '==', auth.currentUser.uid)));
+      const ownSnap = await getDocsPreferServer(query(collection(db, 'trees'), where('ownerId', '==', auth.currentUser.uid)));
       collect(ownSnap.docs as unknown as Array<{ id: string; data: () => Record<string, unknown> }>);
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'trees');
@@ -227,7 +272,7 @@ export async function getTreeById(treeId: string): Promise<FamilyTreeData | null
   const targetId = sanitizeDocId(treeId);
   const path = `trees/${targetId}`;
   try {
-    const snap = await getDoc(doc(db, 'trees', targetId));
+    const snap = await getDocPreferServer(doc(db, 'trees', targetId));
     if (!snap.exists()) return null;
     return parseTreeDocData(snap.data() as Record<string, unknown>, snap.id);
   } catch (error) {
@@ -269,10 +314,11 @@ export async function saveTreeToFirestore(
   };
 
   const serialized = JSON.stringify(payloadTree);
-  if (serialized.length > MAX_TREE_JSON_BYTES) {
+  const byteLength = new TextEncoder().encode(serialized).length;
+  if (byteLength > MAX_TREE_JSON_BYTES) {
     logError(
       'database',
-      `Полотно "${cleanTitle}" перевищує безпечний ліміт Firestore (${Math.round(serialized.length / 1024)} KB > 950 KB). Переконайтеся, що фото завантажені як URL, а не base64.`,
+      `Полотно "${cleanTitle}" перевищує безпечний ліміт Firestore (${Math.round(byteLength / 1024)} KB > 950 KB). Переконайтеся, що фото завантажені як URL, а не base64.`,
       { treeId: targetId }
     );
     return false;
@@ -393,7 +439,7 @@ export async function deleteTreeFromFirestore(treeId: string): Promise<void> {
 export async function fetchGlobalVersionFromFirestore(): Promise<string | null> {
   const path = 'settings/global';
   try {
-    const snap = await getDoc(doc(db, 'settings', 'global'));
+    const snap = await getDocPreferServer(doc(db, 'settings', 'global'));
     if (!snap.exists()) return null;
     const data = snap.data() as Record<string, unknown>;
     return typeof data.version === 'string' && data.version.trim() ? data.version.trim() : null;

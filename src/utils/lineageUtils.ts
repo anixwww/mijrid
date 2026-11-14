@@ -518,12 +518,17 @@ export function groupPersonsIntoRenderUnits(
 
   personList.forEach((person) => {
     if (processed.has(person.id)) return;
+    if (person.isGhost || person.isBlankScreenshot) {
+      processed.add(person.id);
+      singles.push(person);
+      return;
+    }
 
     // Check if person has an adjacent spouse present in persons to form a unified Double Card
-    // IMPORTANT: Divorced partners (eventType === 'divorce') must NEVER be paired as a Double Card!
+    // IMPORTANT: Divorced partners (eventType === 'divorce') and sticky notes/blank cards must NEVER be paired as a Double Card!
     const primarySpouseId = (person.spouses || []).find((sId) => {
       const sp = persons[sId];
-      if (!sp || processed.has(sId)) return false;
+      if (!sp || processed.has(sId) || sp.isGhost || sp.isBlankScreenshot) return false;
 
       const mKey = [person.id, sId].sort().join('::');
       const isDivorced = connectionOverrides?.[`marriage:${mKey}`]?.eventType === 'divorce';
@@ -572,10 +577,10 @@ export function normalizeCoupleCoordinates(
   const processed = new Set<string>();
 
   Object.values(persons).forEach((p) => {
-    if (processed.has(p.id)) return;
+    if (processed.has(p.id) || p.isGhost || p.isBlankScreenshot) return;
     const spouseId = (p.spouses || []).find((sId) => {
       const sp = persons[sId];
-      if (!sp || processed.has(sId)) return false;
+      if (!sp || processed.has(sId) || sp.isGhost || sp.isBlankScreenshot) return false;
 
       const mKey = [p.id, sId].sort().join('::');
       const isDivorced = connectionOverrides?.[`marriage:${mKey}`]?.eventType === 'divorce';

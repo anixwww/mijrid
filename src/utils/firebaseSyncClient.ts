@@ -1,5 +1,4 @@
 import { FamilyTreeData } from '../types/tree';
-import { getAuthToken } from './auth';
 import {
   deleteTreeFromFirestore,
   fetchAllTreesFromFirestore,
@@ -32,11 +31,7 @@ import {
   trackDeletedTreeForFirebase,
 } from './localTreeStorage';
 import { logDatabase, logError } from './logger';
-import {
-  invalidateTreeListCaches,
-  postTreeToServer,
-  syncGlobalVersionToServer,
-} from './treeServerApi';
+import { invalidateTreeListCaches } from './treeServerApi';
 
 export interface ManualFirebasePushResult {
   ok: boolean;
@@ -93,27 +88,10 @@ export async function pushAllTreesToFirestoreManual(
     /* ignore */
   }
 
-  try {
-    const res = await fetch('/api/trees');
-    if (res.ok) {
-      const json = await res.json();
-      if (json?.success && Array.isArray(json.trees)) {
-        (json.trees as LocalTreeIndexItem[]).forEach((item) => {
-          if (item?.id) {
-            candidateIds.add(normalizeTreeId(item.id).targetId);
-          }
-        });
-      }
-    }
-  } catch {
-    /* ignore network error when collecting Express tree list */
-  }
-
   const pendingDeletedSet = new Set(getDeletedTreesForFirebase());
   const cloudMap = new Map<string, FamilyTreeData>();
 
-  // Also include existing Firestore tree IDs (not deleted) so secondary canvases
-  // remain tracked across browser switches / site pushes
+  // Include existing Firestore tree IDs (not deleted) so secondary canvases remain tracked
   try {
     const cloudExisting = await fetchAllTreesFromFirestore().catch(() => [] as FamilyTreeData[]);
     cloudExisting.forEach((ct) => {
@@ -131,36 +109,15 @@ export async function pushAllTreesToFirestoreManual(
 
   const treesToPush = new Map<string, FamilyTreeData>();
 
-  const readExpressCandidate = async (
-    targetId: string,
-    isMainTree: boolean
-  ): Promise<FamilyTreeData | null> => {
-    try {
-      const endpoint = isMainTree ? '/api/tree' : `/api/tree/${encodeURIComponent(targetId)}`;
-      const res = await fetch(endpoint);
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.success && json?.data && json.data.persons && typeof json.data.persons === 'object') {
-          return json.data as FamilyTreeData;
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-    return null;
-  };
-
   for (const rawId of candidateIds) {
     const { targetId, isMainTree } = normalizeTreeId(rawId);
     if (targetId === activeId || pendingDeletedSet.has(targetId)) continue;
 
     const localCandidate = readLocalTreeCandidate(targetId, isMainTree, true);
-    const expressCandidate = await readExpressCandidate(targetId, isMainTree);
     const cloudCandidate = cloudMap.get(targetId) || null;
     const winner =
-      pickNewestTreeData(localCandidate, expressCandidate, cloudCandidate) ||
+      pickNewestTreeData(localCandidate, cloudCandidate) ||
       localCandidate ||
-      expressCandidate ||
       cloudCandidate;
 
     if (winner) {
@@ -196,6 +153,7 @@ export async function pushAllTreesToFirestoreManual(
     mediaRes.updatedTrees.forEach((updatedCanvas) => {
       const normalizedId = normalizeTreeId(updatedCanvas.id).targetId;
       treesToPush.set(normalizedId, updatedCanvas);
+      saveTreeLocally(updatedCanvas, false);
     });
   } catch (err) {
     return {
@@ -213,9 +171,11 @@ export async function pushAllTreesToFirestoreManual(
   let syncedCount = 0;
   let failedCount = 0;
   const skippedTitles: string[] = [];
+  let firstError: string | undefined;
 
   try {
     await saveGlobalVersionToFirestore(effectiveVersion);
+    setLocalGlobalVersion(effectiveVersion, false);
   } catch (err) {
     return {
       ok: false,
@@ -233,14 +193,21 @@ export async function pushAllTreesToFirestoreManual(
     try {
       const saved = await saveTreeToFirestore(id, canvas, userId, userName, true);
       if (saved) {
+        markTreeDirty(id, false);
         syncedCount += 1;
       } else {
         failedCount += 1;
         skippedTitles.push(canvas.title || id);
+        if (!firstError) {
+          firstError = `Полотно «${canvas.title || id}» не вдалося записати в Firestore (перевірте розмір < 950 КБ та авторизацію).`;
+        }
       }
-    } catch {
+    } catch (err) {
       failedCount += 1;
       skippedTitles.push(canvas.title || id);
+      if (!firstError) {
+        firstError = err instanceof Error ? err.message : String(err);
+      }
     }
   }
 
@@ -262,6 +229,8 @@ export async function pushAllTreesToFirestoreManual(
   if (ok) {
     setUnsyncedFirebaseChangesStorage(false);
     setLastFirebaseSyncTimeStorage(new Date());
+    invalidateTreeListCaches();
+    notifyTreesChanged();
     const totalCrossLinks = Array.from(treesToPush.values()).reduce(
       (sum, t) => sum + countTreeCrossCanvasLinks(t),
       0
@@ -276,6 +245,7 @@ export async function pushAllTreesToFirestoreManual(
       syncedCount,
       failedCount,
       skippedTitles,
+      firstError,
     });
   }
 
@@ -287,6 +257,7 @@ export async function pushAllTreesToFirestoreManual(
     version: effectiveVersion,
     uploadedMediaCount,
     failedMediaCount,
+    error: firstError,
   };
 }
 
@@ -332,9 +303,6 @@ export async function pullAllTreesFromFirestoreManual(
     cloudVersion || Array.from(byId.values())[0]?.version || getLocalGlobalVersion() || 'v0.1';
   setLocalGlobalVersion(effectiveVersion, false);
 
-  const hasAdminToken = Boolean(getAuthToken());
-  const expressPushPromises: Promise<unknown>[] = [];
-
   for (const [targetId, treeItem] of byId.entries()) {
     const stamped: FamilyTreeData = {
       ...treeItem,
@@ -343,18 +311,6 @@ export async function pullAllTreesFromFirestoreManual(
     };
     saveTreeLocally(stamped, false);
     markTreeDirty(targetId, false);
-    if (hasAdminToken) {
-      const { isMainTree } = normalizeTreeId(targetId);
-      expressPushPromises.push(postTreeToServer(stamped, isMainTree, false));
-    }
-  }
-
-  if (hasAdminToken && cloudVersion) {
-    expressPushPromises.push(syncGlobalVersionToServer(effectiveVersion));
-  }
-
-  if (expressPushPromises.length > 0) {
-    await Promise.allSettled(expressPushPromises);
   }
 
   invalidateTreeListCaches();

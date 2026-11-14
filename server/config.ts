@@ -21,8 +21,29 @@ export function ensureDataDirs(): void {
 
 // No hardcoded fallback password: admin mode stays disabled until ADMIN_PASSWORD is configured.
 export const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
-export const SESSION_SECRET =
-  (process.env.SESSION_SECRET || '').trim() || crypto.randomBytes(32).toString('hex');
+
+function resolveSessionSecret(): string {
+  const fromEnv = (process.env.SESSION_SECRET || '').trim();
+  if (fromEnv) return fromEnv;
+
+  const secretFile = path.join(DATA_DIR, '.session_secret');
+  try {
+    if (fs.existsSync(secretFile)) {
+      const existing = fs.readFileSync(secretFile, 'utf-8').trim();
+      if (existing.length >= 32) return existing;
+    }
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    const generated = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(secretFile, generated, { mode: 0o600 });
+    return generated;
+  } catch {
+    return crypto.randomBytes(32).toString('hex');
+  }
+}
+
+export const SESSION_SECRET = resolveSessionSecret();
 export const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Strictly raster image extensions & MIME types (SVG excluded to prevent stored XSS)

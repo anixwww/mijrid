@@ -31,7 +31,6 @@ import {
   Plus,
   Search,
   SlidersHorizontal,
-  Ghost,
   StickyNote,
   ImagePlus,
   Check,
@@ -445,26 +444,26 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
           </div>
         </div>
 
-        {/* Ghost Note Card Banner & Textarea */}
+        {/* Sticky Note Card Banner & Textarea */}
         <div
           className={`p-3 rounded-xl border transition-colors space-y-2.5 ${
             draft.isGhost
-              ? 'border-dashed border-slate-400 dark:border-zinc-600 bg-slate-50/80 dark:bg-zinc-900/80'
+              ? 'border-amber-300 dark:border-amber-700/80 bg-amber-50/75 dark:bg-amber-950/20'
               : 'border-stone-200/80 dark:border-zinc-800 bg-stone-50/50 dark:bg-zinc-900/40'
           }`}
         >
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <div className="flex items-center gap-2 min-w-0">
-              <Ghost
+              <StickyNote
                 size={15}
-                className={draft.isGhost ? 'text-slate-700 dark:text-zinc-200 shrink-0' : 'text-stone-400 shrink-0'}
+                className={draft.isGhost ? 'text-amber-600 dark:text-amber-400 shrink-0' : 'text-stone-400 shrink-0'}
               />
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-stone-800 dark:text-zinc-200">
-                  Примарна картка (нотатка)
+                  Нотатка-стікер на полотні
                 </div>
                 <div className="text-[11px] text-stone-500 dark:text-zinc-400">
-                  Чернетка для згадки або особи, зв&apos;язок із якою ще потрібно встановити
+                  Відображається на полотні як стікер; усі зв&apos;язки з картками — пунктирною лінією
                 </div>
               </div>
             </div>
@@ -477,23 +476,26 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
                 if (checked && draft.isBlankScreenshot) {
                   onUpdateField('isBlankScreenshot', false);
                 }
+                if (checked && (!draft.cardBgColor || draft.cardBgColor === '#e8efe9' || draft.cardBgColor === '#f1f5f9')) {
+                  onUpdateField('cardBgColor', '#fef3c7');
+                }
               }}
-              className="w-4 h-4 rounded border-stone-300 text-slate-700 accent-slate-700 cursor-pointer shrink-0"
+              className="w-4 h-4 rounded border-stone-300 text-amber-600 accent-amber-600 cursor-pointer shrink-0"
             />
           </label>
 
           {draft.isGhost && (
             <div className="pt-1 space-y-1">
-              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
+              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-900 dark:text-amber-300">
                 <StickyNote size={12} className="text-amber-600 dark:text-amber-400" />
-                <span>Текст нотатки на примарній картці</span>
+                <span>Текст нотатки на стікері</span>
               </label>
               <textarea
-                rows={2}
+                rows={3}
                 value={draft.ghostNote}
                 onChange={(e) => onUpdateField('ghostNote', e.target.value)}
-                placeholder="Що треба з'ясувати, з якої метрики згадка, з ким потенційно пов'язати..."
-                className="w-full min-w-0 text-xs px-3 py-2 rounded-lg border border-dashed border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-slate-500/35 focus:border-slate-500 resize-y"
+                placeholder="Введіть текст нотатки, гіпотезу або згадку з метрики..."
+                className="w-full min-w-0 text-xs px-3 py-2 rounded-lg border border-amber-300/90 dark:border-amber-800/70 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/35 focus:border-amber-500 resize-y"
               />
             </div>
           )}

@@ -5,8 +5,6 @@ import {
   GuestSuggestion,
   Person,
 } from '../types/tree';
-import { authHeaders, getAuthToken, handleUnauthorized } from './auth';
-import { logServer, logDatabase, logError } from './logger';
 import {
   deleteTreeFromFirestore,
   fetchAllTreesFromFirestore,
@@ -14,13 +12,14 @@ import {
   getTreeById as getTreeByIdFromFirestore,
   getUserTrees as getUserTreesFromFirestore,
   isCloudWriteAuthenticated,
+  renameTreeInFirestore,
+  saveGlobalVersionToFirestore,
+  saveTreeToFirestore,
 } from './firestoreTreeService';
 import { restoreMissingMediaFromFirestore } from './mediaSync';
-import { fetchWithTimeout } from './mediaUploadClient';
 import {
   MAIN_TREE_ID,
   LocalTreeIndexItem,
-  ServerTreeMeta,
   enrichTreeForSave,
   getDeletedTreesForFirebase,
   getDirtyTreeIds,
@@ -30,7 +29,6 @@ import {
   normalizeTreeId,
   notifyTreesChanged,
   parseTimestamp,
-  parseVersionFloat,
   pickNewestTreeData,
   readLocalTreeCandidate,
   readLocalTreeRaw,
@@ -39,6 +37,7 @@ import {
   trackDeletedTreeForFirebase,
   withTimeout,
 } from './localTreeStorage';
+import { logDatabase, logError } from './logger';
 
 const CACHE_TTL_MS = 2500;
 const treesListCache = new Map<string, { ts: number; data: LocalTreeIndexItem[] }>();
@@ -60,29 +59,41 @@ export function invalidateTreeListCaches(): void {
   searchIndexCache.clear();
 }
 
-export async function fetchGlobalVersionFromServer(options?: { includeCloud?: boolean }): Promise<string | null> {
-  const [serverVer, cloudVer] = await Promise.all([
-    (async () => {
-      try {
-        const res = await fetchWithTimeout('/api/version', {}, 3500);
-        if (!res.ok) return null;
-        const json = await res.json();
-        if (json?.success && typeof json.version === 'string' && json.version.trim()) {
-          return json.version.trim();
-        }
-      } catch {
-        /* ignore transient network errors */
-      }
-      return null;
-    })(),
-    options?.includeCloud
-      ? withTimeout(fetchGlobalVersionFromFirestore().catch(() => null), 3500, null)
-      : Promise.resolve(null),
-  ]);
+function compareVersionStrings(a?: string | null, b?: string | null): number {
+  const segs = (v?: string | null) =>
+    (v || '')
+      .replace(/^v/i, '')
+      .split('.')
+      .map((s) => {
+        const n = parseInt(s.replace(/[^0-9]/g, ''), 10);
+        return Number.isFinite(n) ? n : 0;
+      });
+  const sa = segs(a);
+  const sb = segs(b);
+  const len = Math.max(sa.length, sb.length);
+  for (let i = 0; i < len; i++) {
+    const da = sa[i] ?? 0;
+    const db = sb[i] ?? 0;
+    if (da !== db) return da - db;
+  }
+  return 0;
+}
 
-  let winner = serverVer;
+export async function fetchGlobalVersionFromServer(options?: { includeCloud?: boolean }): Promise<string | null> {
+  const localVer = getLocalGlobalVersion();
+  if (options?.includeCloud === false) {
+    return localVer;
+  }
+
+  const cloudVer = await withTimeout(
+    fetchGlobalVersionFromFirestore().catch(() => null),
+    6000,
+    null
+  );
+
+  let winner = localVer;
   if (cloudVer) {
-    if (!winner || parseVersionFloat(cloudVer) >= parseVersionFloat(winner)) {
+    if (!winner || (!hasDirtyGlobalVersion() && compareVersionStrings(cloudVer, winner) >= 0)) {
       winner = cloudVer;
     }
   }
@@ -95,133 +106,50 @@ export async function fetchGlobalVersionFromServer(options?: { includeCloud?: bo
 
 export async function syncGlobalVersionToServer(version: string): Promise<boolean> {
   const cleanVersion = setLocalGlobalVersion(version, true);
-  let expressOk = false;
 
-  try {
-    const res = await fetch('/api/version', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ version: cleanVersion }),
-    });
-    if (res.status === 401) {
-      handleUnauthorized();
-    } else if (res.ok) {
-      expressOk = true;
+  if (isCloudWriteAuthenticated()) {
+    try {
+      const ok = await saveGlobalVersionToFirestore(cleanVersion);
+      if (ok) {
+        setLocalGlobalVersion(cleanVersion, false);
+        return true;
+      }
+    } catch {
+      /* keep dirty flag for retry on next sync */
     }
-  } catch {
-    /* ignore */
   }
 
-  if (expressOk) {
-    setLocalGlobalVersion(cleanVersion, false);
-    logServer(`Синхронізовано глобальну версію ${cleanVersion} із сервером`, { version: cleanVersion }, 'success');
-    return true;
-  }
-  logServer(`Не вдалося оновити версію ${cleanVersion} на сервері (збережено локально)`, { version: cleanVersion }, 'warn');
-  return false;
-}
-
-const inFlightSaves = new Map<string, Promise<boolean>>();
-const queuedLatestTrees = new Map<string, FamilyTreeData>();
-
-export async function postTreeToServer(
-  enriched: FamilyTreeData,
-  isMainTree: boolean,
-  keepalive = false
-): Promise<boolean> {
-  const endpoint = isMainTree ? '/api/tree' : `/api/tree/${encodeURIComponent(enriched.id)}`;
-  const serialized = JSON.stringify(enriched);
-  const canKeepalive = keepalive && serialized.length < 60 * 1024;
-
-  let expressOk = false;
-  try {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: serialized,
-      keepalive: canKeepalive,
-    });
-
-    if (res.status === 401) {
-      handleUnauthorized();
-    } else if (!res.ok) {
-      logError('server', `Сервер повернув код ${res.status} при синхронізації полотна "${enriched.title}"`, {
-        endpoint,
-        status: res.status,
-      });
-    } else {
-      expressOk = true;
-      invalidateTreeListCaches();
-      logServer(
-        `Успішно синхронізовано полотно "${enriched.title}" із сервером (${Object.keys(enriched.persons || {}).length} осіб, версія: ${enriched.version || 'v0.1'})`,
-        { endpoint, treeId: enriched.id },
-        'success'
-      );
-    }
-  } catch (err) {
-    logError('server', `Мережева помилка при синхронізації з сервером API`, {
-      error: String(err),
-      treeId: enriched.id,
-    });
-  }
-
-  markTreeDirty(enriched.id, !expressOk);
-  return expressOk;
+  return true;
 }
 
 export async function syncTreeToServer(
   tree: FamilyTreeData,
-  options?: { keepalive?: boolean }
+  _options?: { keepalive?: boolean }
 ): Promise<boolean> {
   const stamped: FamilyTreeData = {
     ...tree,
     updatedAt: tree.updatedAt || new Date().toISOString(),
   };
 
-  const { enriched: fallbackEnriched } = enrichTreeForSave(stamped);
-  const savedLocally = saveTreeLocally(stamped, true);
-  const enriched = savedLocally || fallbackEnriched;
-
-  const { isMainTree } = normalizeTreeId(enriched.id);
-
-  if (options?.keepalive) {
-    return postTreeToServer(enriched, isMainTree, true);
-  }
-
-  if (inFlightSaves.has(enriched.id)) {
-    queuedLatestTrees.set(enriched.id, enriched);
-    return inFlightSaves.get(enriched.id)!;
-  }
-
-  const runLoop = (async () => {
-    let latestToSend: FamilyTreeData | undefined = enriched;
-    let lastResult = false;
-
-    while (latestToSend) {
-      const current = latestToSend;
-      queuedLatestTrees.delete(enriched.id);
-      const { isMainTree: currentIsMain } = normalizeTreeId(current.id);
-      lastResult = await postTreeToServer(current, currentIsMain, false);
-      latestToSend = queuedLatestTrees.get(enriched.id);
-    }
-
-    return lastResult;
-  })();
-
-  inFlightSaves.set(enriched.id, runLoop);
-  try {
-    return await runLoop;
-  } finally {
-    inFlightSaves.delete(enriched.id);
-  }
+  const savedLocally = saveTreeLocally(stamped, false);
+  invalidateTreeListCaches();
+  return Boolean(savedLocally);
 }
 
 export async function syncTreeToCloudAndServer(tree: FamilyTreeData): Promise<boolean> {
-  return syncTreeToServer(tree);
+  const localOk = await syncTreeToServer(tree);
+  if (isCloudWriteAuthenticated()) {
+    const { enriched } = enrichTreeForSave(tree);
+    const cloudOk = await saveTreeToFirestore(enriched.id, enriched, undefined, undefined, true).catch(() => false);
+    if (cloudOk) {
+      markTreeDirty(enriched.id, false);
+    }
+  }
+  return localOk;
 }
 
 export async function syncPendingDirtyTrees(): Promise<number> {
-  if (!getAuthToken()) return 0;
+  if (!isCloudWriteAuthenticated()) return 0;
 
   if (hasDirtyGlobalVersion()) {
     const dirtyVer = getLocalGlobalVersion();
@@ -243,8 +171,11 @@ export async function syncPendingDirtyTrees(): Promise<number> {
         continue;
       }
       const localTree = JSON.parse(raw) as FamilyTreeData;
-      const ok = await syncTreeToServer(localTree);
-      if (ok) syncedCount += 1;
+      const ok = await saveTreeToFirestore(targetId, localTree, undefined, undefined, true);
+      if (ok) {
+        markTreeDirty(targetId, false);
+        syncedCount += 1;
+      }
     } catch {
       /* keep dirty for next retry */
     }
@@ -253,63 +184,26 @@ export async function syncPendingDirtyTrees(): Promise<number> {
 }
 
 export async function checkServerHealth(): Promise<boolean> {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch('/api/health', { signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) return false;
-    const json = await res.json();
-    return Boolean(json && json.success);
-  } catch {
-    return false;
-  }
-}
-
-export async function fetchServerTreeMeta(treeId: string): Promise<ServerTreeMeta | null> {
-  try {
-    const { targetId, isMainTree } = normalizeTreeId(treeId);
-    const endpoint = isMainTree ? '/api/tree/meta' : `/api/tree/${encodeURIComponent(targetId)}/meta`;
-    const res = await fetchWithTimeout(endpoint, {}, 4000);
-    if (!res.ok) return null;
-    const json = await res.json();
-    if (json?.success && json?.meta) {
-      return json.meta as ServerTreeMeta;
-    }
-  } catch {
-    /* ignore transient polling errors */
-  }
-  return null;
+  return typeof navigator !== 'undefined' ? navigator.onLine : true;
 }
 
 export async function loadTreeById(
   treeId: string,
-  options?: { allowEmpty?: boolean; pushLocalIfNewer?: boolean; preferServer?: boolean; includeCloud?: boolean }
+  options?: {
+    allowEmpty?: boolean;
+    pushLocalIfNewer?: boolean;
+    preferServer?: boolean;
+    forceRemote?: boolean;
+    includeCloud?: boolean;
+  }
 ): Promise<FamilyTreeData | null> {
   const { targetId, isMainTree } = normalizeTreeId(treeId);
 
   const localTree = readLocalTreeCandidate(targetId, isMainTree, Boolean(options?.allowEmpty));
 
-  const [serverTree, firestoreTree] = await Promise.all([
-    (async (): Promise<FamilyTreeData | null> => {
-      try {
-        const endpoint = isMainTree ? '/api/tree' : `/api/tree/${encodeURIComponent(targetId)}`;
-        const res = await fetchWithTimeout(endpoint, {}, 4000);
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.success && json?.data?.persons && typeof json.data.persons === 'object') {
-            if (Object.keys(json.data.persons).length > 0 || options?.allowEmpty) {
-              return json.data as FamilyTreeData;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn(`Server fetch failed for ${targetId}:`, err);
-      }
-      return null;
-    })(),
-    options?.includeCloud
-      ? withTimeout(
+  const firestoreTree =
+    options?.includeCloud !== false
+      ? await withTimeout(
           (async (): Promise<FamilyTreeData | null> => {
             try {
               const cloud = await getTreeByIdFromFirestore(targetId);
@@ -323,49 +217,46 @@ export async function loadTreeById(
             }
             return null;
           })(),
-          4000,
+          8000,
           null
         )
-      : Promise.resolve(null),
-  ]);
+      : null;
 
   const isLocalDirty = getDirtyTreeIds().has(targetId);
-  const remoteWinner = pickNewestTreeData(firestoreTree, serverTree) || firestoreTree || serverTree;
 
-  let winner =
-    options?.preferServer && !isLocalDirty && remoteWinner
-      ? remoteWinner
-      : pickNewestTreeData(firestoreTree, serverTree, localTree);
+  let winner: FamilyTreeData | null = null;
+  if (options?.forceRemote && firestoreTree) {
+    winner = firestoreTree;
+  } else {
+    const newestOverall = pickNewestTreeData(firestoreTree, localTree);
+    if (options?.preferServer && !isLocalDirty && firestoreTree) {
+      const localTime = parseTimestamp(localTree?.updatedAt || localTree?.createdAt);
+      const remoteTime = parseTimestamp(firestoreTree.updatedAt || firestoreTree.createdAt);
+      // Only prefer cloud when local is NOT strictly newer (> 1s)
+      winner = localTree && localTime > remoteTime + 1000 ? newestOverall : firestoreTree;
+    } else {
+      winner = newestOverall;
+    }
+  }
 
   if (!winner && options?.allowEmpty) {
-    winner = firestoreTree || serverTree || localTree || null;
+    winner = firestoreTree || localTree || null;
   }
   if (!winner) return null;
 
   const effectiveGlobalVersion = hasDirtyGlobalVersion()
     ? getLocalGlobalVersion()
-    : firestoreTree?.version || serverTree?.version || getLocalGlobalVersion();
+    : winner === localTree
+    ? localTree?.version || getLocalGlobalVersion() || firestoreTree?.version
+    : firestoreTree?.version || getLocalGlobalVersion();
   if (effectiveGlobalVersion && winner.version !== effectiveGlobalVersion) {
     winner = { ...winner, version: effectiveGlobalVersion };
   }
 
-  if (winner === firestoreTree || winner === serverTree || (remoteWinner && !isLocalDirty && options?.preferServer)) {
+  if (winner === firestoreTree || (options?.forceRemote && firestoreTree)) {
     saveTreeLocally(winner, false);
     if (isLocalDirty) {
       markTreeDirty(targetId, false);
-    }
-    if (winner === firestoreTree && getAuthToken()) {
-      const fsTime = parseTimestamp(firestoreTree.updatedAt || firestoreTree.createdAt);
-      const srvTime = parseTimestamp(serverTree?.updatedAt || serverTree?.createdAt);
-      if (!serverTree || fsTime > srvTime + 1000) {
-        void postTreeToServer(winner, isMainTree, false);
-      }
-    }
-  } else if (winner === localTree && (options?.pushLocalIfNewer || isLocalDirty) && getAuthToken()) {
-    const remoteTime = parseTimestamp(remoteWinner?.updatedAt || remoteWinner?.createdAt);
-    const localTime = parseTimestamp(localTree?.updatedAt || localTree?.createdAt);
-    if (!remoteWinner || localTime > remoteTime + 1000 || isLocalDirty) {
-      void syncTreeToServer(localTree);
     }
   }
 
@@ -467,55 +358,74 @@ export async function fetchServerTrees(options?: { includeCloud?: boolean }): Pr
 
   const task = (async () => {
     const byId = new Map<string, LocalTreeIndexItem>();
-
-    const [expressList, cloudList] = await Promise.all([
-      (async (): Promise<LocalTreeIndexItem[]> => {
-        try {
-          const res = await fetchWithTimeout('/api/trees', {}, 4000);
-          if (res.ok) {
-            const json = await res.json();
-            if (json && json.success && Array.isArray(json.trees)) {
-              return json.trees as LocalTreeIndexItem[];
-            }
-          }
-        } catch (err) {
-          console.warn('Failed to fetch trees list from server:', err);
-        }
-        return [];
-      })(),
-      options?.includeCloud
-        ? withTimeout(
-            getUserTreesFromFirestore().catch(() => []),
-            4000,
-            [] as Awaited<ReturnType<typeof getUserTreesFromFirestore>>
-          )
-        : Promise.resolve([]),
-    ]);
-
     const deletedSet = new Set(getDeletedTreesForFirebase());
 
-    expressList.forEach((item) => {
-      const { targetId, isMainTree } = normalizeTreeId(item.id);
-      if (deletedSet.has(targetId)) return;
-      byId.set(targetId, { ...item, id: targetId, isMain: isMainTree });
-    });
-
-    cloudList.forEach((item) => {
-      const { targetId, isMainTree } = normalizeTreeId(item.id);
-      if (deletedSet.has(targetId)) return;
-      const existing = byId.get(targetId);
-      const cloudTime = parseTimestamp(item.updatedAt);
-      const existingTime = existing ? parseTimestamp(existing.updatedAt) : -1;
-      if (!existing || cloudTime >= existingTime) {
-        byId.set(targetId, {
-          id: targetId,
-          title: item.title,
-          personCount: item.personCount || 0,
-          updatedAt: item.updatedAt,
-          isMain: isMainTree,
-        });
+    try {
+      const mainRaw = readLocalTreeRaw(MAIN_TREE_ID, true);
+      if (mainRaw) {
+        const mainParsed = JSON.parse(mainRaw) as FamilyTreeData;
+        if (mainParsed && mainParsed.persons) {
+          byId.set(MAIN_TREE_ID, {
+            id: MAIN_TREE_ID,
+            title: mainParsed.title || 'Головне родове дерево',
+            personCount: Object.keys(mainParsed.persons || {}).length,
+            updatedAt: mainParsed.updatedAt || mainParsed.createdAt || new Date().toISOString(),
+            isMain: true,
+          });
+        }
       }
-    });
+
+      const rawIndex = localStorage.getItem('rodovid_local_trees_index');
+      if (rawIndex) {
+        const indexList: LocalTreeIndexItem[] = JSON.parse(rawIndex);
+        if (Array.isArray(indexList)) {
+          indexList.forEach((item) => {
+            if (!item?.id) return;
+            const { targetId, isMainTree } = normalizeTreeId(item.id);
+            if (deletedSet.has(targetId)) return;
+            const existing = byId.get(targetId);
+            const itemTime = parseTimestamp(item.updatedAt);
+            const existingTime = existing ? parseTimestamp(existing.updatedAt) : -1;
+            if (!existing || itemTime >= existingTime) {
+              byId.set(targetId, {
+                id: targetId,
+                title: item.title || (isMainTree ? 'Головне родове дерево' : 'Родове полотно'),
+                personCount: item.personCount || 0,
+                updatedAt: item.updatedAt,
+                isMain: isMainTree,
+              });
+            }
+          });
+        }
+      }
+    } catch {
+      /* ignore localStorage read errors */
+    }
+
+    if (options?.includeCloud) {
+      const cloudList = await withTimeout(
+        getUserTreesFromFirestore().catch(() => []),
+        4500,
+        [] as Awaited<ReturnType<typeof getUserTreesFromFirestore>>
+      );
+
+      cloudList.forEach((item) => {
+        const { targetId, isMainTree } = normalizeTreeId(item.id);
+        if (deletedSet.has(targetId)) return;
+        const existing = byId.get(targetId);
+        const cloudTime = parseTimestamp(item.updatedAt);
+        const existingTime = existing ? parseTimestamp(existing.updatedAt) : -1;
+        if (!existing || cloudTime >= existingTime) {
+          byId.set(targetId, {
+            id: targetId,
+            title: item.title,
+            personCount: item.personCount || 0,
+            updatedAt: item.updatedAt,
+            isMain: isMainTree,
+          });
+        }
+      });
+    }
 
     const list = Array.from(byId.values());
     treesListCache.set(cacheKey, { ts: Date.now(), data: list });
@@ -582,80 +492,39 @@ export async function fetchAllTreesSearchIndex(options?: {
       /* ignore localStorage parse errors */
     }
 
-    try {
-      const [expressJson, cloudTrees] = await Promise.all([
-        (async () => {
-          try {
-            const res = await fetchWithTimeout('/api/trees/search-index', {}, 4500);
-            if (res.ok) return await res.json();
-          } catch (err) {
-            console.warn('Failed to fetch cross-canvas search index:', err);
-          }
-          return null;
-        })(),
-        options?.includeCloud
-          ? withTimeout(
-              fetchAllTreesFromFirestore().catch(() => [] as FamilyTreeData[]),
-              4500,
-              [] as FamilyTreeData[]
-            )
-          : Promise.resolve([] as FamilyTreeData[]),
-      ]);
+    if (options?.includeCloud) {
+      try {
+        const cloudTrees = await withTimeout(
+          fetchAllTreesFromFirestore().catch(() => [] as FamilyTreeData[]),
+          5000,
+          [] as FamilyTreeData[]
+        );
 
-      const dirtySet = getDirtyTreeIds();
-      const deletedSet = new Set(getDeletedTreesForFirebase());
-      const expressUpdatedMap = new Map<string, number>();
+        const dirtySet = getDirtyTreeIds();
+        const deletedSet = new Set(getDeletedTreesForFirebase());
 
-      if (expressJson?.success && Array.isArray(expressJson.trees)) {
-        for (const item of expressJson.trees as CrossCanvasSearchTree[]) {
-          const { targetId, isMainTree } = normalizeTreeId(item.treeId);
+        for (const cloudTree of cloudTrees) {
+          const { targetId, isMainTree } = normalizeTreeId(cloudTree.id);
           if (deletedSet.has(targetId)) continue;
-          const serverTime = parseTimestamp(item.updatedAt);
-          expressUpdatedMap.set(targetId, serverTime);
           const existing = byTreeId.get(targetId);
+          const cloudTime = parseTimestamp(cloudTree.updatedAt || cloudTree.createdAt);
           const existingTime = existing ? parseTimestamp(existing.updatedAt) : -1;
           const isDirty = dirtySet.has(targetId);
-          if (!existing || (!isDirty && serverTime >= existingTime)) {
+          if (!existing || (!isDirty && cloudTime > existingTime + 1000)) {
+            const normalizedCloud: FamilyTreeData = { ...cloudTree, id: targetId };
             byTreeId.set(targetId, {
               treeId: targetId,
-              treeTitle: item.treeTitle || (isMainTree ? 'Головне родове дерево' : 'Родове полотно'),
+              treeTitle: normalizedCloud.title || (isMainTree ? 'Головне родове дерево' : 'Родове полотно'),
               isMain: isMainTree,
-              updatedAt: item.updatedAt || '',
-              persons: Array.isArray(item.persons) ? item.persons : [],
+              updatedAt: normalizedCloud.updatedAt || '',
+              persons: Object.values(normalizedCloud.persons || {}).filter(Boolean),
             });
+            saveTreeLocally(normalizedCloud, false);
           }
         }
+      } catch (err) {
+        console.warn('Failed to merge cross-canvas search index from Firestore:', err);
       }
-
-      const hasAdminToken = Boolean(getAuthToken());
-      for (const cloudTree of cloudTrees) {
-        const { targetId, isMainTree } = normalizeTreeId(cloudTree.id);
-        if (deletedSet.has(targetId)) continue;
-        const existing = byTreeId.get(targetId);
-        const cloudTime = parseTimestamp(cloudTree.updatedAt || cloudTree.createdAt);
-        const existingTime = existing ? parseTimestamp(existing.updatedAt) : -1;
-        const isDirty = dirtySet.has(targetId);
-        if (!existing || (!isDirty && cloudTime > existingTime + 1000)) {
-          const normalizedCloud: FamilyTreeData = { ...cloudTree, id: targetId };
-          byTreeId.set(targetId, {
-            treeId: targetId,
-            treeTitle: normalizedCloud.title || (isMainTree ? 'Головне родове дерево' : 'Родове полотно'),
-            isMain: isMainTree,
-            updatedAt: normalizedCloud.updatedAt || '',
-            persons: Object.values(normalizedCloud.persons || {}).filter(Boolean),
-          });
-          // Hydrate cloud canvas locally and onto Express after a site redeploy so cross-canvas links survive
-          saveTreeLocally(normalizedCloud, false);
-          if (hasAdminToken) {
-            const expressTime = expressUpdatedMap.get(targetId) ?? -1;
-            if (expressTime < 0 || cloudTime > expressTime + 1000) {
-              void postTreeToServer(normalizedCloud, isMainTree, false);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to merge cross-canvas search index:', err);
     }
 
     const deletedSetFinal = new Set(getDeletedTreesForFirebase());
@@ -704,34 +573,6 @@ export async function deleteTreeFromServerOrStorage(treeId: string): Promise<boo
 
   invalidateTreeListCaches();
 
-  let serverOk = true;
-  try {
-    const res = await fetch(`/api/tree/${encodeURIComponent(targetId)}`, {
-      method: 'DELETE',
-      headers: { ...authHeaders() },
-    });
-    if (res.status === 401) {
-      handleUnauthorized();
-      logError('server', `Немає прав адміністратора для видалення полотна ${targetId}`, { treeId: targetId });
-      return false;
-    } else if (res.ok || res.status === 404) {
-      serverOk = true;
-      logServer(`Видалено полотно ${targetId} на сервері`, { treeId: targetId, status: res.status }, 'success');
-    } else {
-      serverOk = false;
-      logError('server', `Сервер повернув код ${res.status} при видаленні полотна ${targetId}`, {
-        treeId: targetId,
-        status: res.status,
-      });
-    }
-  } catch (err) {
-    console.warn('Failed to delete tree from server:', err);
-    logServer(`Сервер недоступний: полотно ${targetId} видалено локально`, {
-      treeId: targetId,
-      error: String(err),
-    }, 'warn');
-  }
-
   if (isCloudWriteAuthenticated()) {
     try {
       await deleteTreeFromFirestore(targetId);
@@ -746,20 +587,21 @@ export async function deleteTreeFromServerOrStorage(treeId: string): Promise<boo
 
   invalidateTreeListCaches();
   notifyTreesChanged();
-  return serverOk;
+  return true;
 }
 
 export async function renameTreeOnServerOrStorage(treeId: string, newTitle: string): Promise<boolean> {
   const { targetId, isMainTree } = normalizeTreeId(treeId);
   if (isMainTree || !newTitle.trim()) return false;
   const cleanTitle = newTitle.trim();
+  const nowIso = new Date().toISOString();
 
   try {
     const rawTree = localStorage.getItem(`rodovid_tree_${targetId}`);
     if (rawTree) {
       const parsed = JSON.parse(rawTree);
       parsed.title = cleanTitle;
-      parsed.updatedAt = new Date().toISOString();
+      parsed.updatedAt = nowIso;
       localStorage.setItem(`rodovid_tree_${targetId}`, JSON.stringify(parsed));
     }
 
@@ -767,48 +609,38 @@ export async function renameTreeOnServerOrStorage(treeId: string, newTitle: stri
     if (rawIndex) {
       const list: LocalTreeIndexItem[] = JSON.parse(rawIndex);
       const updated = list.map((t) =>
-        t.id === targetId ? { ...t, title: cleanTitle, updatedAt: new Date().toISOString() } : t
+        t.id === targetId ? { ...t, title: cleanTitle, updatedAt: nowIso } : t
       );
       localStorage.setItem('rodovid_local_trees_index', JSON.stringify(updated));
     }
   } catch (err) {
     console.warn('Failed to update renamed tree in local storage:', err);
+    return false;
   }
 
-  let serverOk = false;
-  try {
-    const res = await fetch(`/api/tree/${encodeURIComponent(targetId)}/rename`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ title: cleanTitle }),
-    });
-    if (res.status === 401) {
-      handleUnauthorized();
-    } else {
-      serverOk = res.ok;
-      if (serverOk) {
-        invalidateTreeListCaches();
-        notifyTreesChanged();
-        logServer(`Перейменовано полотно ${targetId} на «${cleanTitle}»`, {
-          treeId: targetId,
-          title: cleanTitle,
-        }, 'success');
-      }
+  if (isCloudWriteAuthenticated()) {
+    try {
+      await renameTreeInFirestore(targetId, cleanTitle);
+      logDatabase(`Перейменовано полотно ${targetId} у Firebase на «${cleanTitle}»`, {
+        treeId: targetId,
+        title: cleanTitle,
+      });
+    } catch (err) {
+      logError('database', `Помилка перейменування полотна ${targetId} у Firebase`, {
+        treeId: targetId,
+        error: String(err),
+      });
     }
-  } catch (err) {
-    console.warn('Failed to rename tree on server:', err);
-    logError('server', `Помилка перейменування полотна ${targetId} на сервері`, {
-      treeId: targetId,
-      error: String(err),
-    });
   }
 
-  return serverOk;
+  invalidateTreeListCaches();
+  notifyTreesChanged();
+  return true;
 }
 
 export async function submitGuestSuggestionToServer(
-  treeId: string | undefined,
-  payload:
+  _treeId: string | undefined,
+  _payload:
     | {
         kind: 'note';
         personId: string;
@@ -824,23 +656,8 @@ export async function submitGuestSuggestionToServer(
         linkedAsSiblingOf: string[];
         connectionOverridesPatch?: Record<string, ConnectionMeta>;
       }
-): Promise<{ ok: boolean; updatedAt?: string; error?: string }> {
-  const { targetId } = normalizeTreeId(treeId);
-  try {
-    const res = await fetch(`/api/tree/${encodeURIComponent(targetId)}/guest-suggestion`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.success) {
-      return { ok: false, error: json?.error || `Помилка сервера (${res.status})` };
-    }
-    invalidateTreeListCaches();
-    return { ok: true, updatedAt: json.updatedAt };
-  } catch (err) {
-    return { ok: false, error: (err as Error)?.message || 'Немає зв’язку із сервером' };
-  }
+): Promise<{ ok: boolean; localOnly?: boolean; updatedAt?: string; error?: string }> {
+  return { ok: true, localOnly: true, updatedAt: new Date().toISOString() };
 }
 
 export interface GuestCustomizePayload {
@@ -852,6 +669,7 @@ export interface GuestCustomizePayload {
 
 export interface GuestCustomizeResponse {
   ok: boolean;
+  localOnly?: boolean;
   updatedAt?: string;
   personPatch?: {
     avatarUrl?: string;
@@ -863,27 +681,19 @@ export interface GuestCustomizeResponse {
 }
 
 export async function submitGuestCustomizeToServer(
-  treeId: string | undefined,
+  _treeId: string | undefined,
   payload: GuestCustomizePayload
 ): Promise<GuestCustomizeResponse> {
-  const { targetId } = normalizeTreeId(treeId);
-  try {
-    const res = await fetch(`/api/tree/${encodeURIComponent(targetId)}/guest-customize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json().catch(() => null);
-    if (!res.ok || !json?.success) {
-      return { ok: false, error: json?.error || `Помилка сервера (${res.status})` };
-    }
-    invalidateTreeListCaches();
-    return {
-      ok: true,
-      updatedAt: json.updatedAt,
-      personPatch: json.personPatch,
-    };
-  } catch (err) {
-    return { ok: false, error: (err as Error)?.message || 'Немає зв’язку із сервером' };
-  }
+  const nowIso = new Date().toISOString();
+  return {
+    ok: true,
+    localOnly: true,
+    updatedAt: nowIso,
+    personPatch: {
+      avatarUrl: payload.avatarUrl || undefined,
+      cardBgColor: payload.cardBgColor || undefined,
+      cardFrame: payload.cardFrame && payload.cardFrame !== 'none' ? payload.cardFrame : undefined,
+      selfCustomizedAt: nowIso,
+    },
+  };
 }

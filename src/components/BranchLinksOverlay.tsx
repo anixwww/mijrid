@@ -46,6 +46,7 @@ interface RenderedArc {
   jumpSourceId: string;
   jumpTargetName: string;
   isEmphasized: boolean;
+  involvesNote: boolean;
 }
 
 interface MarkerSpec {
@@ -157,8 +158,11 @@ const BranchLinksOverlayComponent: React.FC<BranchLinksOverlayProps> = ({
           selectedPersonId === source.id ||
           selectedPersonId === target.id;
 
+        const involvesNote = Boolean(source.isGhost || target.isGhost);
+
         if (
           !showAll &&
+          !involvesNote &&
           linkKind !== 'godparent' &&
           lineShape !== 'wavy' &&
           !matchesHoverLink &&
@@ -265,6 +269,7 @@ const BranchLinksOverlayComponent: React.FC<BranchLinksOverlayProps> = ({
           jumpSourceId,
           jumpTargetName,
           isEmphasized,
+          involvesNote,
         });
       });
     });
@@ -326,8 +331,8 @@ const BranchLinksOverlayComponent: React.FC<BranchLinksOverlayProps> = ({
               fill="none"
               stroke={arc.color}
               strokeWidth={arc.strokeWidth}
-              strokeDasharray={arc.lineShape === 'wavy' ? undefined : '7 4'}
-              strokeLinecap={arc.lineShape === 'wavy' ? 'round' : 'butt'}
+              strokeDasharray={arc.involvesNote || arc.lineShape !== 'wavy' ? '7 4' : undefined}
+              strokeLinecap={arc.lineShape === 'wavy' && !arc.involvesNote ? 'round' : 'butt'}
               strokeLinejoin="round"
               markerStart={arc.isBidirectional ? `url(#${arc.markerId})` : undefined}
               markerEnd={`url(#${arc.markerId})`}

@@ -926,7 +926,7 @@ export function applyCreateGhostCard(
   const newId = `ghost-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   const persons = { ...prev.persons };
 
-  const cleanFirst = data.firstName.trim() || 'Примарна нотатка';
+  const cleanFirst = data.firstName.trim() || 'Нотатка';
   const cleanLast = (data.lastName || '').trim();
   const cleanNote = data.ghostNote?.trim() || undefined;
   const cleanYear = data.birthYear?.trim() || undefined;
@@ -961,8 +961,8 @@ export function applyCreateGhostCard(
           {
             id: `bl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             targetPersonId: data.hintTargetPersonId,
-            label: data.hintLabel?.trim() || 'Потенційний зв’язок',
-            color: data.hintColor || '#64748b',
+            label: data.hintLabel?.trim() || 'Нотатка',
+            color: data.hintColor || '#d97706',
             lineShape: 'curved',
             strokeWidth: 2,
           },
@@ -980,7 +980,7 @@ export function applyCreateGhostCard(
     isGhost: true,
     ghostNote: cleanNote,
     notes: cleanNote,
-    cardBgColor: data.cardBgColor || '#f1f5f9',
+    cardBgColor: data.cardBgColor || '#fef3c7',
     parents: [],
     spouses: [],
     children: [],

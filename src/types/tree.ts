@@ -90,8 +90,8 @@ export interface Person {
   houseNumber?: string; // Номер дому народження (e.g. "47", "12a")
   isChronologicallyPinned?: boolean; // Pinned vertically to birth year on timeline
   isFullyVerified?: boolean; // Вся інформація в картці достовірна й перевірена
-  isGhost?: boolean; // Примарна картка (нотатка, зв'язок з іншими картками ще не встановлено)
-  ghostNote?: string; // Короткий текст нотатки на примарній картці
+  isGhost?: boolean; // Картка-нотатка (стікер на полотні з пунктирними зв'язками)
+  ghostNote?: string; // Основний текст нотатки на стікері
   isBlankScreenshot?: boolean; // Порожня картка-скріншот (нерозшифрований запис на всю ширину й висоту картки)
   screenshotUrl?: string; // Зображення скріншоту, що заповнює всю картку
   screenshotFit?: 'cover' | 'contain'; // Режим масштабування фото на картці (заповнити чи показати повністю)

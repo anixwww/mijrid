@@ -5,7 +5,7 @@ import { formatCardId, getPersonIdMatchScore } from '../utils/cardIdUtils';
 import { buildBranchOptions, getClanName } from '../utils/lineageUtils';
 import { CrossCanvasSearchTree, fetchAllTreesSearchIndex } from '../utils/fileStorage';
 import { isSameCanvasId } from '../utils/crossCanvasLinks';
-import { X, Link2, Heart, Users, User, FileText, Flame, ShieldAlert, ArrowUpRight, Palette, Ghost, FolderTree, ExternalLink, Search } from 'lucide-react';
+import { X, Link2, Heart, Users, User, FileText, Flame, ShieldAlert, ArrowUpRight, Palette, StickyNote, FolderTree, ExternalLink, Search } from 'lucide-react';
 
 export interface ConnectOptions {
   verified: boolean;
@@ -100,7 +100,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
   initialMode = 'relation',
 }) => {
   const [selectedTargetId, setSelectedTargetId] = useState<string>(initialTargetId || '');
-  const [connectionKind, setConnectionKind] = useState<'relation' | 'branch-link' | 'godparent'>(initialMode);
+  const [connectionKind, setConnectionKind] = useState<'relation' | 'branch-link' | 'godparent' | 'note-link'>(initialMode);
   const [relationType, setRelationType] = useState<RelativeType>('spouse');
   const [unionType, setUnionType] = useState<'marriage' | 'cohabitation' | 'divorce'>('marriage');
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,7 +117,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
   const [archiveSource, setArchiveSource] = useState('');
   const [isMainBranch, setIsMainBranch] = useState(false);
   const [linkExistingSpouseChildren, setLinkExistingSpouseChildren] = useState(true);
-  const [graduateGhostCards, setGraduateGhostCards] = useState(true);
+  const [graduateGhostCards, setGraduateGhostCards] = useState(false);
 
   // Cross-branch / Godparent link options
   const [branchLabel, setBranchLabel] = useState('');
@@ -173,6 +173,19 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
     }
   };
 
+  const selectNoteLinkMode = () => {
+    setConnectionKind('note-link');
+    setSelectedTargetCanvasId('__CURRENT__');
+    setBranchLabel('');
+    setBranchColor('#d97706');
+    setBranchStrokeWidth(2);
+    setBranchLineShape('curved');
+    setBranchBidirectional(false);
+    if (selectedTargetId && !allPersons[selectedTargetId]) {
+      setSelectedTargetId('');
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
@@ -190,29 +203,39 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setConnectionKind(initialMode);
+      const initialTarget = initialTargetId ? allPersons[initialTargetId] : null;
+      const involvesNoteOnOpen = Boolean(sourcePerson.isGhost || initialTarget?.isGhost);
+      const nextKind =
+        initialMode === 'relation' && involvesNoteOnOpen ? 'note-link' : initialMode;
+
+      setConnectionKind(nextKind);
       setSelectedTargetId(initialTargetId || '');
       setSearchQuery('');
       setCrossCanvasColor('#047857');
       setCrossCanvasBidirectional(true);
-      const initialTarget = initialTargetId ? allPersons[initialTargetId] : null;
       if (initialTarget) {
         setSelectedBranch(getClanName(initialTarget));
         setSelectedTargetCanvasId('__CURRENT__');
       } else {
-        setSelectedTargetCanvasId('');
+        setSelectedTargetCanvasId(nextKind === 'note-link' ? '__CURRENT__' : '');
         if (branchOptions.length === 1) {
           setSelectedBranch(branchOptions[0].name);
         } else {
           setSelectedBranch('');
         }
       }
-      setGraduateGhostCards(true);
-      if (initialMode === 'godparent') {
+      setGraduateGhostCards(false);
+      if (nextKind === 'godparent') {
         setBranchLabel(defaultGodparentLabel);
         setBranchColor('#d97706');
         setBranchStrokeWidth(2);
         setBranchLineShape('wavy');
+        setBranchBidirectional(false);
+      } else if (nextKind === 'note-link') {
+        setBranchLabel('');
+        setBranchColor('#d97706');
+        setBranchStrokeWidth(2);
+        setBranchLineShape('curved');
         setBranchBidirectional(false);
       } else {
         setBranchLabel('');
@@ -222,7 +245,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
         setBranchBidirectional(false);
       }
     }
-  }, [isOpen, initialMode, initialTargetId, sourcePerson.id, defaultGodparentLabel, allPersons, branchOptions]);
+  }, [isOpen, initialMode, initialTargetId, sourcePerson.id, sourcePerson.isGhost, defaultGodparentLabel, allPersons, branchOptions]);
 
   const effectiveTargetCanvasId =
     selectedTargetCanvasId || (otherCanvasTrees.length === 1 && !initialTargetId ? otherCanvasTrees[0].treeId : '');
@@ -293,6 +316,10 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
     ? [targetPerson.firstName, targetPerson.lastName].filter(Boolean).join(' ') || '?'
     : '';
 
+  const involvesNote = Boolean(
+    sourcePerson.isGhost || targetPerson?.isGhost || selectedCrossCanvasEntry?.person.isGhost
+  );
+
   // Cycle and validity check
   const cycleWarning = useMemo(() => {
     if (isCrossCanvasPickerActive) return null;
@@ -300,7 +327,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
     if (selectedTargetId === sourcePerson.id) {
       return "Неможливо з'єднати особу із самою собою.";
     }
-    if (connectionKind === 'branch-link' || connectionKind === 'godparent') {
+    if (connectionKind === 'branch-link' || connectionKind === 'godparent' || connectionKind === 'note-link') {
       return null;
     }
 
@@ -381,7 +408,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
       return;
     }
 
-    if (connectionKind === 'branch-link' || connectionKind === 'godparent') {
+    if (connectionKind === 'branch-link' || connectionKind === 'godparent' || connectionKind === 'note-link') {
       const cleanLabel = branchLabel.trim() || (connectionKind === 'godparent' ? defaultGodparentLabel : undefined);
       const reverseGodparentLabel =
         cleanLabel === 'Кум / Кума'
@@ -397,7 +424,10 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
         label: cleanLabel,
         color: branchColor,
         strokeWidth: branchStrokeWidth,
-        lineShape: branchLineShape,
+        lineShape:
+          connectionKind === 'note-link' && branchLineShape === 'wavy'
+            ? 'curved'
+            : branchLineShape,
         bidirectional: branchBidirectional,
         reverseLabel: connectionKind === 'godparent' && branchBidirectional ? reverseGodparentLabel : undefined,
       });
@@ -568,6 +598,39 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                       Перехід до картки на іншому полотні (або стрілка на цьому)
                     </span>
                   </button>
+
+                  {onConnectBranchLink && (
+                    <button
+                      type="button"
+                      onClick={selectNoteLinkMode}
+                      className={`col-span-2 p-2.5 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
+                        connectionKind === 'note-link'
+                          ? 'border-amber-600 bg-amber-50 text-amber-950 ring-2 ring-amber-500/30 font-semibold shadow-xs'
+                          : 'border-stone-200 bg-white text-stone-700 hover:bg-amber-50/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 font-bold text-xs">
+                          <StickyNote size={14} className="text-amber-600 shrink-0" />
+                          <span>Зв&apos;язок нотатки (пунктирна лінія)</span>
+                        </div>
+                        <svg className="w-10 h-2.5 shrink-0" viewBox="0 0 40 10">
+                          <line
+                            x1="1"
+                            y1="5"
+                            x2="38"
+                            y2="5"
+                            stroke="#d97706"
+                            strokeWidth="2"
+                            strokeDasharray="4 3"
+                          />
+                        </svg>
+                      </div>
+                      <span className="text-[10px] text-stone-500 font-normal leading-tight">
+                        Прикріпити нотатку-стікер до картки або до іншої нотатки пунктиром
+                      </span>
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -883,9 +946,9 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                               </span>
                             )}
                             {p.isGhost && (
-                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-slate-700 bg-slate-100 border border-dashed border-slate-400 px-1.5 py-0.2 rounded-full shrink-0">
-                                <Ghost size={9} />
-                                Примара
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.2 rounded-sm shrink-0">
+                                <StickyNote size={9} />
+                                Нотатка
                               </span>
                             )}
                             {p.yearsDisplay && (
@@ -995,10 +1058,10 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                 </span>
               </label>
             </div>
-          ) : connectionKind === 'branch-link' || connectionKind === 'godparent' ? (
+          ) : connectionKind === 'branch-link' || connectionKind === 'godparent' || connectionKind === 'note-link' ? (
             <div
               className={`p-3.5 rounded-xl border space-y-3 ${
-                connectionKind === 'godparent'
+                connectionKind === 'godparent' || connectionKind === 'note-link'
                   ? 'bg-amber-50/60 border-amber-200/90'
                   : 'bg-indigo-50/60 border-indigo-200/80'
               }`}
@@ -1030,11 +1093,13 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               <div>
                 <label
                   className={`block text-[11px] font-bold uppercase tracking-wider mb-1 ${
-                    connectionKind === 'godparent' ? 'text-amber-950' : 'text-indigo-950'
+                    connectionKind === 'godparent' || connectionKind === 'note-link' ? 'text-amber-950' : 'text-indigo-950'
                   }`}
                 >
                   {connectionKind === 'godparent'
                     ? 'Підпис на хвилястій лінії'
+                    : connectionKind === 'note-link'
+                    ? "Підпис на пунктирній лінії (необов'язково)"
                     : "Підпис на стрілці (необов'язково)"}
                 </label>
                 <input
@@ -1044,26 +1109,28 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                   placeholder={
                     connectionKind === 'godparent'
                       ? 'напр. Хресний / Хресна / Кум'
+                      : connectionKind === 'note-link'
+                      ? 'напр. Згадка з метрики / Ймовірний зв’язок'
                       : 'напр. Споріднена гілка / Куми / Перехід до роду'
                   }
                   className={`w-full text-xs px-2.5 py-1.5 rounded-lg border focus:outline-none focus:ring-1 bg-white ${
-                    connectionKind === 'godparent'
+                    connectionKind === 'godparent' || connectionKind === 'note-link'
                       ? 'border-amber-200 focus:ring-amber-600'
                       : 'border-indigo-200 focus:ring-indigo-600'
                   }`}
                 />
               </div>
 
-              {/* Line Shape: Curved vs Straight vs Wavy */}
+              {/* Line Shape: Curved vs Straight (vs Wavy when not pure note-link) */}
               <div className="space-y-1.5">
                 <span
                   className={`block text-[11px] font-semibold ${
-                    connectionKind === 'godparent' ? 'text-amber-950' : 'text-indigo-950'
+                    connectionKind === 'godparent' || connectionKind === 'note-link' ? 'text-amber-950' : 'text-indigo-950'
                   }`}
                 >
-                  Форма лінії:
+                  Форма пунктирної лінії:
                 </span>
-                <div className="grid grid-cols-3 gap-2">
+                <div className={`grid ${connectionKind === 'note-link' ? 'grid-cols-2' : 'grid-cols-3'} gap-2`}>
                   <button
                     type="button"
                     onClick={() => setBranchLineShape('curved')}
@@ -1106,26 +1173,28 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                     </svg>
                     <span className="truncate">Пряма</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setBranchLineShape('wavy')}
-                    className={`px-2 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      branchLineShape === 'wavy'
-                        ? 'border-amber-600 bg-white text-amber-950 ring-1 ring-amber-500 shadow-2xs'
-                        : 'border-stone-200/80 bg-white/70 text-stone-600 hover:bg-white'
-                    }`}
-                  >
-                    <svg className="w-5.5 h-3.5 overflow-visible shrink-0" viewBox="0 0 24 16">
-                      <path
-                        d="M 1 8 Q 4 2 7 8 T 13 8 T 19 8 L 23 8"
-                        fill="none"
-                        stroke={branchLineShape === 'wavy' ? branchColor : '#78716c'}
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="truncate">Хвиляста</span>
-                  </button>
+                  {connectionKind !== 'note-link' && (
+                    <button
+                      type="button"
+                      onClick={() => setBranchLineShape('wavy')}
+                      className={`px-2 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        branchLineShape === 'wavy'
+                          ? 'border-amber-600 bg-white text-amber-950 ring-1 ring-amber-500 shadow-2xs'
+                          : 'border-stone-200/80 bg-white/70 text-stone-600 hover:bg-white'
+                      }`}
+                    >
+                      <svg className="w-5.5 h-3.5 overflow-visible shrink-0" viewBox="0 0 24 16">
+                        <path
+                          d="M 1 8 Q 4 2 7 8 T 13 8 T 19 8 L 23 8"
+                          fill="none"
+                          stroke={branchLineShape === 'wavy' ? branchColor : '#78716c'}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="truncate">Хвиляста</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1248,8 +1317,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                           fill="none"
                           stroke={branchColor}
                           strokeWidth={branchStrokeWidth}
-                          strokeDasharray={branchLineShape === 'wavy' ? undefined : '7 4'}
-                          strokeLinecap={branchLineShape === 'wavy' ? 'round' : 'butt'}
+                          strokeDasharray={involvesNote || branchLineShape !== 'wavy' ? '7 4' : undefined}
+                          strokeLinecap={branchLineShape === 'wavy' && !involvesNote ? 'round' : 'butt'}
                           strokeLinejoin="round"
                           markerEnd="url(#connect-modal-arrow-preview)"
                         />
@@ -1277,6 +1346,11 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                         <ArrowUpRight size={10} className="shrink-0" style={{ color: branchColor }} />
                       </span>
                     </div>
+                    {(involvesNote || connectionKind === 'note-link') && (
+                      <span className="text-[10px] font-medium text-amber-800 dark:text-amber-300">
+                        Лінія зв&apos;язку з нотаткою завжди пунктирна
+                      </span>
+                    )}
                   </div>
                 );
               })()}
@@ -1380,19 +1454,26 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
                 </label>
               )}
 
-              {/* Auto-graduate ghost card when relation is established */}
+              {/* Auto-graduate sticky note card when relation is established */}
               {(sourcePerson.isGhost || targetPerson?.isGhost) && (
-                <label className="flex items-start gap-2 cursor-pointer pt-1.5 border-t border-dashed border-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={graduateGhostCards}
-                    onChange={(e) => setGraduateGhostCards(e.target.checked)}
-                    className="mt-0.5 rounded text-emerald-800 focus:ring-emerald-600 accent-emerald-800 w-3.5 h-3.5 cursor-pointer"
-                  />
-                  <span className="text-xs text-slate-800 leading-snug">
-                    Зняти статус <strong className="font-semibold">«Примарна картка»</strong> після встановлення родинного зв&apos;язку
-                  </span>
-                </label>
+                <div className="space-y-1.5 pt-1.5 border-t border-dashed border-amber-300">
+                  {!graduateGhostCards && (
+                    <p className="text-[11px] font-medium text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 leading-snug">
+                      Зв&apos;язок із нотаткою автоматично малюватиметься пунктирною лінією.
+                    </p>
+                  )}
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={graduateGhostCards}
+                      onChange={(e) => setGraduateGhostCards(e.target.checked)}
+                      className="mt-0.5 rounded text-emerald-800 focus:ring-emerald-600 accent-emerald-800 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span className="text-xs text-stone-800 leading-snug">
+                      Перетворити нотатку на звичайну картку особи після з&apos;єднання
+                    </span>
+                  </label>
+                </div>
               )}
             </div>
           )}
@@ -1416,7 +1497,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               className={`px-5 py-2 text-xs font-semibold text-white rounded-lg shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer ${
                 isCrossCanvasPickerActive
                   ? 'bg-emerald-700 hover:bg-emerald-800'
-                  : connectionKind === 'godparent'
+                  : connectionKind === 'godparent' || connectionKind === 'note-link'
                   ? 'bg-amber-600 hover:bg-amber-700'
                   : connectionKind === 'branch-link'
                   ? 'bg-indigo-600 hover:bg-indigo-700'
@@ -1425,7 +1506,7 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
             >
               {isCrossCanvasPickerActive ? (
                 <ExternalLink size={14} />
-              ) : connectionKind === 'branch-link' || connectionKind === 'godparent' ? (
+              ) : connectionKind === 'branch-link' || connectionKind === 'godparent' || connectionKind === 'note-link' ? (
                 <ArrowUpRight size={14} />
               ) : (
                 <Link2 size={14} />
@@ -1433,6 +1514,8 @@ export const ConnectPersonsModal: React.FC<ConnectPersonsModalProps> = ({
               <span>
                 {connectionKind === 'godparent'
                   ? 'Створити лінію «Хресний / Хресна»'
+                  : connectionKind === 'note-link'
+                  ? 'Провести пунктирну лінію'
                   : connectionKind === 'branch-link'
                   ? "Створити міжгілковий зв'язок"
                   : "З'єднати лінією"}

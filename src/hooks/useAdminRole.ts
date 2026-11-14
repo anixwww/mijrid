@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   AUTH_EXPIRED_EVENT,
   clearAuthToken,
+  fetchAuthMode,
   getAuthToken,
   loginWithPassword,
   verifyStoredToken,
@@ -11,13 +12,11 @@ import { logAuth } from '../utils/logger';
 
 interface UseAdminRoleOptions {
   showToast: (msg: Omit<ToastMessage, 'id'>) => void;
-  onOpenAuthModal: () => void;
   onGuestCleanup?: () => void;
 }
 
 export function useAdminRole({
   showToast,
-  onOpenAuthModal,
   onGuestCleanup,
 }: UseAdminRoleOptions) {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => Boolean(getAuthToken()));
@@ -35,10 +34,24 @@ export function useAdminRole({
     let cancelled = false;
     const token = getAuthToken();
     if (token) {
-      verifyStoredToken().then((valid) => {
-        if (!cancelled) {
-          setIsAdmin(valid);
+      verifyStoredToken().then(async (valid) => {
+        if (cancelled) return;
+        if (valid) {
+          setIsAdmin(true);
+          return;
         }
+        // If server restarted/redeployed with a new SESSION_SECRET and passwordless mode is active,
+        // seamlessly re-issue the admin token instead of demoting the admin to Guest mode.
+        const mode = await fetchAuthMode();
+        if (cancelled) return;
+        if (!mode.passwordRequired) {
+          const refreshed = await loginWithPassword('');
+          if (!cancelled) {
+            setIsAdmin(refreshed);
+          }
+          return;
+        }
+        setIsAdmin(false);
       });
     } else {
       setIsAdmin(false);
@@ -63,22 +76,14 @@ export function useAdminRole({
   const loginInFlightRef = useRef(false);
 
   const handleLoginAsAdmin = useCallback(
-    async (
-      password = '',
-      method: 'button' | 'key_a' | 'mouse_click' = 'button'
-    ): Promise<boolean> => {
+    async (password = '', method: 'mouse_click' | 'auto' = 'mouse_click'): Promise<boolean> => {
       if (loginInFlightRef.current) return false;
       loginInFlightRef.current = true;
       try {
         const ok = await loginWithPassword(password);
         if (ok) {
           setIsAdmin(true);
-          const methodLabel =
-            method === 'key_a'
-              ? '5× натискання клавіші A'
-              : method === 'mouse_click'
-              ? '5× клік миші'
-              : 'форма входу';
+          const methodLabel = method === 'mouse_click' ? '5× клік миші' : 'сесія';
           logAuth(`Вхід у режим адміністратора (${methodLabel})`, { method }, 'success');
           showToast({
             type: 'success',
@@ -96,12 +101,9 @@ export function useAdminRole({
     [showToast]
   );
 
-  // Enter admin mode without a password via 5 presses of 'A'/'А' or 5 rapid mouse clicks
+  // Secret admin entry strictly via 5 rapid mouse clicks
   useEffect(() => {
     if (isAdmin) return;
-
-    let keyPressCount = 0;
-    let lastKeyTime = 0;
 
     let clickCount = 0;
     let lastClickTime = 0;
@@ -118,40 +120,6 @@ export function useAdminRole({
         tag === 'select' ||
         node.isContentEditable
       );
-    };
-
-    const triggerAdminEntry = async (method: 'key_a' | 'mouse_click') => {
-      const ok = await handleLoginAsAdmin('', method);
-      if (!ok) {
-        onOpenAuthModal();
-      }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isAdminRef.current || e.repeat) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (isEditableElement(document.activeElement) || isEditableElement(e.target)) return;
-
-      const lowerKey = e.key.toLowerCase();
-      const isAKey = e.code === 'KeyA' || lowerKey === 'a' || lowerKey === 'а';
-      if (!isAKey) {
-        keyPressCount = 0;
-        return;
-      }
-
-      const now = Date.now();
-      if (now - lastKeyTime > 900) {
-        keyPressCount = 1;
-      } else {
-        keyPressCount += 1;
-      }
-      lastKeyTime = now;
-
-      if (keyPressCount >= 5) {
-        keyPressCount = 0;
-        lastKeyTime = 0;
-        void triggerAdminEntry('key_a');
-      }
     };
 
     const handleClick = (e: MouseEvent) => {
@@ -172,17 +140,15 @@ export function useAdminRole({
       if (clickCount >= 5) {
         clickCount = 0;
         lastClickTime = 0;
-        void triggerAdminEntry('mouse_click');
+        void handleLoginAsAdmin('', 'mouse_click');
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('click', handleClick, true);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('click', handleClick, true);
     };
-  }, [isAdmin, handleLoginAsAdmin, onOpenAuthModal]);
+  }, [isAdmin, handleLoginAsAdmin]);
 
   const handleSwitchToGuest = useCallback(() => {
     clearAuthToken();
@@ -198,10 +164,8 @@ export function useAdminRole({
   const handleToggleAdminRole = useCallback(() => {
     if (isAdmin) {
       handleSwitchToGuest();
-    } else {
-      onOpenAuthModal();
     }
-  }, [isAdmin, handleSwitchToGuest, onOpenAuthModal]);
+  }, [isAdmin, handleSwitchToGuest]);
 
   return {
     isAdmin,

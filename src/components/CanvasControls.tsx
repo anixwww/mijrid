@@ -14,7 +14,7 @@ import {
   Map,
   Magnet,
   Grid,
-  FilePlus2,
+  StickyNote,
   EyeOff,
   BookMarked,
   CalendarRange,
@@ -595,17 +595,17 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
               </button>
             )}
 
-            {/* Create Quick Draft Card (Ghost / Screenshot) - Admin only */}
+            {/* Create Quick Note (Sticker) / Screenshot Card - Admin only */}
             {isAdmin && onOpenQuickDraft && (
               <button
                 type="button"
                 onClick={onOpenQuickDraft}
-                className="group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-950 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:hover:text-white border border-dashed border-stone-300 dark:border-zinc-600 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap snap-start focus-visible:outline-2 focus-visible:outline-emerald-600"
-                title="Додати чернетку: примарну нотатку або картку-фото (скріншот)"
-                aria-label="Додати чернетку"
+                className="group h-11 min-w-[44px] px-3 sm:h-10 sm:min-w-[40px] sm:px-3 rounded-[14px] sm:rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 dark:bg-amber-950/40 dark:hover:bg-amber-950/70 dark:text-amber-200 border border-amber-300/90 dark:border-amber-800/70 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 font-semibold text-xs shrink-0 whitespace-nowrap snap-start focus-visible:outline-2 focus-visible:outline-amber-500"
+                title="Створити нотатку (стікер) або картку-фото на полотні (Alt + подвійний клік)"
+                aria-label="Створити нотатку на полотні"
               >
-                <FilePlus2 size={17} className="text-stone-600 dark:text-zinc-300 transition-transform duration-200 group-hover:scale-110 shrink-0" />
-                <span className="hidden md:inline">+ Чернетка</span>
+                <StickyNote size={16.5} className="text-amber-600 dark:text-amber-400 transition-transform duration-200 group-hover:scale-110 shrink-0" />
+                <span className="hidden md:inline">+ Нотатка</span>
               </button>
             )}
           </div>
